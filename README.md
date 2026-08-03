@@ -27,10 +27,15 @@ many blocks off you were and which way to go, and unlocks another clue:
 
 The Town itself is the ruler, not a hiding place, so it can't be searched.
 
-**Pinch the map with two fingers to zoom in**, drag to move around, and press
-**⤢ Whole town** to come back out. The page itself never zooms — the map takes
-the gesture. A mouse wheel zooms too. A drag that moves is a pan, not a tap, so
-panning never picks a place by accident.
+**Double-tap the map to zoom in** toward that spot, drag to move around, and
+double-tap again — or press **⤢ Whole town** — to come back out. A mouse wheel
+zooms too. A drag that travels is a pan, not a tap, so moving around never picks
+a place by accident.
+
+Zoom is deliberately not a pinch. iOS hands two-finger gestures to the browser
+before the page sees them, so a pinch zooms Safari itself and never reaches the
+map — and that is true in Chrome on iPhone too, which is WebKit underneath. A
+double-tap is just a tap twice, which every browser delivers.
 
 **New hunt** starts another round immediately, without waiting for tomorrow. It
 always changes both the person and the place, so a reset never looks like it did

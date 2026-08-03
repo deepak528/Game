@@ -36,7 +36,8 @@
   header .date{color:var(--muted);font-size:12px;margin-left:auto}
 
   #mapWrap{flex:1 1 auto;min-height:0;position:relative;background:var(--paper);transition:background .6s}
-  /* touch-action:none so two fingers zoom the map instead of the page */
+  /* touch-action:none turns off the browser's own double-tap zoom, so the
+     map gets the double-tap instead */
   svg#map{width:100%;height:100%;display:block;touch-action:none;user-select:none}
   #zoomOut{
     position:absolute;right:10px;bottom:10px;width:auto;z-index:6;
@@ -213,7 +214,7 @@
   <div id="endBox"></div>
   <button id="guessBtn" disabled>Pick a place on the map</button>
   <button id="resetBtn" class="ghost">🔄 New hunt — someone else, somewhere else</button>
-  <p class="hint" id="hint">Tap a location. Everything is measured from The Town.</p>
+  <p class="hint" id="hint">Tap a location to search it. Double-tap the map to zoom in, drag to move.</p>
 </div>
 
 <script>
@@ -544,13 +545,18 @@
 
   const gfx = id => svg.querySelector('.loc[data-id="' + id + '"]');
 
-  /* ---------- pinch to zoom the map (not the page) ---------- */
+  /* ---------- zoom: double-tap in, double-tap out, drag to move ----------
+     Not pinch. iOS hands two-finger gestures to the browser before the page
+     ever sees them, so a pinch zooms Safari's page and never reaches the map.
+     A double-tap is a plain tap twice — every browser delivers it. */
 
   const BASE = { x:48, y:48, w:904, h:904 };
   const MAX_ZOOM = 4;
+  const TAP_ZOOM = 2.6;           // how far one double-tap goes in
   let view = { x:BASE.x, y:BASE.y, w:BASE.w, h:BASE.h };
-  const pointers = new Map();
-  let pinchDist = 0, panFrom = null, moved = 0, suppressClick = false;
+  const pointers = new Set();
+  let panFrom = null, moved = 0, suppressClick = false;
+  let lastTapAt = -1e9, lastTapPt = null;
 
   function applyView(){
     svg.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + view.w + ' ' + view.h);
@@ -590,68 +596,56 @@
     applyView();
   }
 
-  const spread = () => {
-    const [a, b] = [...pointers.values()];
-    return Math.hypot(a.x - b.x, a.y - b.y);
-  };
-  const centre = () => {
-    const [a, b] = [...pointers.values()];
-    return toMap((a.x + b.x) / 2, (a.y + b.y) / 2);
-  };
-
   svg.addEventListener('pointerdown', function(e){
-    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    pointers.add(e.pointerId);
     moved = 0;
-    if (pointers.size === 2){ pinchDist = spread(); panFrom = null; }
-    else if (pointers.size === 1){ panFrom = { x:e.clientX, y:e.clientY }; }
+    // one finger drags the map; a second finger means the browser is zooming
+    panFrom = pointers.size === 1 ? { x:e.clientX, y:e.clientY } : null;
   });
 
   svg.addEventListener('pointermove', function(e){
-    if (!pointers.has(e.pointerId)) return;
-    const prev = pointers.get(e.pointerId);
-    moved += Math.hypot(e.clientX - prev.x, e.clientY - prev.y);
-    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
-
-    if (pointers.size === 2){
-      e.preventDefault();
-      const d = spread();
-      // Fingers closer together than this are not a readable gesture, and
-      // dividing by a near-zero spread would snap the zoom across its whole
-      // range in one frame. Cap the per-move step for the same reason.
-      if (pinchDist > 24 && d > 24) zoomAt(centre(), clamp(d / pinchDist, 0.5, 2));
-      pinchDist = d;
-      suppressClick = true;
-    } else if (pointers.size === 1 && panFrom && view.w < BASE.w){
+    if (!panFrom || pointers.size !== 1) return;
+    moved += Math.hypot(e.clientX - panFrom.x, e.clientY - panFrom.y);
+    if (view.w < BASE.w){
       const r = svg.getBoundingClientRect();
       const k = Math.min(r.width / view.w, r.height / view.h);
       panBy((e.clientX - panFrom.x) / k, (e.clientY - panFrom.y) / k);
-      panFrom = { x:e.clientX, y:e.clientY };
-      if (moved > 8) suppressClick = true;
     }
+    panFrom = { x:e.clientX, y:e.clientY };
+    if (moved > 8) suppressClick = true;
   });
 
   function endPointer(e){
     pointers.delete(e.pointerId);
-    if (pointers.size < 2) pinchDist = 0;
     if (pointers.size === 0) panFrom = null;
   }
   svg.addEventListener('pointerup', endPointer);
   svg.addEventListener('pointercancel', endPointer);
 
-  // a drag that moved is not a tap on a place
   svg.addEventListener('click', function(e){
-    if (suppressClick){ e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+    // a drag that travelled is not a tap on a place
+    if (suppressClick){
+      e.stopPropagation();
+      e.preventDefault();
+      suppressClick = false;
+      return;
+    }
+    // performance.now(), not Date.now() — the clock is stubbed in tests
+    const t = performance.now(), pt = { x:e.clientX, y:e.clientY };
+    if (t - lastTapAt < 350 && lastTapPt && Math.hypot(pt.x - lastTapPt.x, pt.y - lastTapPt.y) < 32){
+      lastTapAt = -1e9;
+      if (view.w < BASE.w - 1) resetView();          // second double-tap comes back out
+      else zoomAt(toMap(pt.x, pt.y), TAP_ZOOM);      // otherwise zoom toward the tap
+    } else {
+      lastTapAt = t;
+      lastTapPt = pt;
+    }
   }, true);
 
   svg.addEventListener('wheel', function(e){
     e.preventDefault();
     zoomAt(toMap(e.clientX, e.clientY), e.deltaY < 0 ? 1.18 : 1 / 1.18);
   }, { passive:false });
-
-  // iOS pinches the page unless the gesture events are refused outright
-  ['gesturestart','gesturechange','gestureend'].forEach(function(t){
-    svg.addEventListener(t, function(e){ e.preventDefault(); });
-  });
 
   el('zoomOut').onclick = resetView;
 
