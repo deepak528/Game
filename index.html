@@ -14,17 +14,9 @@
     --card:rgba(0,0,0,.05); --seg:rgba(0,0,0,.1); --sharebg:rgba(0,0,0,.05);
     --dash:#ffdf7e; --dis-bg:#ece1cb; --dis-ink:#a3947e;
   }
-  /* the Upside Down: everything goes cold, red and wrong */
-  body.ud{
-    --bg:#0a0507; --panel:#150a0d; --line:#3a1a20; --ink:#f0dfe2;
-    --muted:#b08b91; --accent:#ff2d3f; --good:#ff2d3f;
-    --glow:rgba(255,45,63,.4);
-    --paper:#12080a; --road:#3a1c22; --road2:#2a1216; --grass:#2a1218;
-    --water:#241016; --woods:#1e0d11; --rail:#4a2028;
-    --card:rgba(255,255,255,.04); --seg:rgba(255,255,255,.07);
-    --sharebg:rgba(0,0,0,.35); --dash:#4a1a22;
-    --dis-bg:#2a333d; --dis-ink:#6c7a88;
-  }
+  /* When the gate is open, only the map crosses over: red vines grow across
+     the town, spores drift, the sun goes dark. The UI stays in daylight, and
+     the crayon colours stay readable. */
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{
@@ -40,19 +32,16 @@
   header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.5px}
   header h1 span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
   /* in the Upside Down even the sign is the wrong way round */
-  body.ud header h1{display:inline-block;transform:scaleX(-1);color:var(--accent)}
+  body.ud header h1{display:inline-block;transform:scaleX(-1);color:#c41f30}
   header .date{color:var(--muted);font-size:12px;margin-left:auto}
 
   #mapWrap{flex:1 1 auto;min-height:0;position:relative;background:var(--paper);transition:background .6s}
   svg#map{width:100%;height:100%;display:block;touch-action:manipulation}
-  #haze{
-    position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s;
-    background:radial-gradient(ellipse at 50% 45%,rgba(120,0,20,.12),rgba(20,0,6,.66) 80%);
-  }
+  #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s}
   body.ud #haze{opacity:1}
   .spore{
     position:absolute;width:3px;height:3px;border-radius:50%;
-    background:rgba(255,220,225,.85);box-shadow:0 0 6px 2px rgba(255,90,110,.5);
+    background:rgba(190,26,48,.8);box-shadow:0 0 6px 2px rgba(220,50,70,.45);
     animation:drift linear infinite;
   }
   @keyframes drift{
@@ -75,7 +64,9 @@
   /* every block of town coloured in with its own crayon */
   .b0{fill:#ffeaa7}.b1{fill:#ffd6de}.b2{fill:#c9edcb}.b3{fill:#cbe7f8}
   .b4{fill:#ffdfba}.b5{fill:#e4daf8}.b6{fill:#dcf2b0}.b7{fill:#ffe3d2}
-  body.ud .blk{fill:#180a0e}
+  .vine{fill:none;stroke:#8f1626;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+  .vine.alt{stroke:#ab2136}
+  .bud{fill:#8f1626;opacity:.9}
   .sun-disc{fill:#ffd43b;stroke:#f2a71b;stroke-width:2.5}
   .sun-ray{stroke:#f2a71b;stroke-width:4;stroke-linecap:round}
   .sun-eye{fill:#8a5a00}
@@ -135,7 +126,9 @@
   }
   .poster .p-top{font-size:9.5px;letter-spacing:2px;color:var(--muted)}
   .poster .p-name{font-size:15px;font-weight:700;line-height:1.2}
-  body.ud .poster{background:#200d11;border-color:var(--accent);box-shadow:2px 3px 0 rgba(0,0,0,.4)}
+  body.ud .poster{border-color:#c41f30}
+  .banner.open{border-color:#c41f30}
+  .banner.open b{color:#c41f30}
   .warmth{margin:0 0 12px}
   .warmth .cap{
     display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;
@@ -284,6 +277,25 @@
     { tone:'b5', points:'516,676 744,672 746,934 514,936' },    // ball-field block
     { tone:'b1', points:'770,676 944,672 944,936 684,938' }     // SE, past the parkway
   ];
+
+  // Red growth for the days the gate is open. Vines creep in from the edges
+  // of the drawing; the longest one reaches the green and stops.
+  const VINES = [
+    { d:'M52,60 C90,140 40,240 88,330 S60,480 96,560', w:7 },
+    { d:'M88,330 q40,-16 74,-6', w:4, alt:true },
+    { d:'M96,560 q34,18 44,52', w:4, alt:true },
+    { d:'M420,52 C400,120 460,170 430,240 q-18,40 8,84', w:5 },
+    { d:'M430,240 q-40,10 -66,-6', w:3.5, alt:true },
+    { d:'M948,180 C880,220 840,190 780,240 S730,330 742,400 q6,30 -6,50', w:6 },
+    { d:'M780,240 q-30,-30 -60,-36', w:4, alt:true },
+    { d:'M250,948 C280,880 240,820 280,760 S330,690 320,640', w:6 },
+    { d:'M280,760 q40,6 62,30', w:4, alt:true },
+    { d:'M948,900 C880,870 850,900 800,860 S740,800 720,750', w:5 },
+    { d:'M700,52 q30,60 -6,110', w:4 },
+    { d:'M948,520 C860,540 800,500 720,530 S620,540 585,515', w:5, alt:true },
+    { d:'M720,530 q-20,30 -54,34', w:3.5 }
+  ];
+  const BUDS = [[96,560,4],[438,324,3.5],[736,450,4],[320,640,3.5],[720,750,3.5],[694,162,3],[585,515,4.5],[162,324,3]];
 
   /* ---------- cast ---------- */
 
@@ -464,6 +476,18 @@
     sun.appendChild(node('path', { d:'M106,119 Q118,130 130,119', class:'sun-mouth' }));
     ground.appendChild(sun);
 
+    // the gate's growth sits over the streets but under every label and marker
+    if (puzzle.ud){
+      const vines = node('g', { filter:'url(#wobble)' });
+      VINES.forEach(function(v){
+        vines.appendChild(node('path', { d:v.d, class:'vine' + (v.alt ? ' alt' : ''), 'stroke-width':v.w }));
+      });
+      BUDS.forEach(function(b){
+        vines.appendChild(node('circle', { cx:b[0], cy:b[1], r:b[2], class:'bud' }));
+      });
+      svg.appendChild(vines);
+    }
+
     STREETS.forEach(function(s){
       const horiz = Math.abs(s.y2 - s.y1) < Math.abs(s.x2 - s.x1);
       const lx = Math.min(s.x1 + 9, 934);   // keep the Parkway's name inside the crop
@@ -541,7 +565,7 @@
       '<div class="p-name">' + puzzle.cast.pic + ' ' + puzzle.cast.name + '</div>';
 
     el('banner').innerHTML = puzzle.ud
-      ? '<div class="banner">🙃 <b>The gate is open.</b> Every clue reading comes back ' +
+      ? '<div class="banner open">🙃 <b>The gate is open.</b> Every clue reading comes back ' +
         '<b>mirrored</b> — flip it end for end. Your own guesses still read true.</div>'
       : (puzzle.cast.boss
           ? '<div class="banner">🕰️ <b>Vecna is the quarry.</b> He costs you a guess. You get four.</div>'

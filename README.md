@@ -52,8 +52,7 @@ pure Bethpage.
 The town is drawn like a crayon map: cream paper, every block coloured in with
 its own pastel, dashed yellow centrelines down the big streets, a smiling sun in
 the corner, and a turbulence filter over the ground so nothing is quite
-straight. In the Upside Down the crayon drains out — the blocks go dark and the
-sun goes out.
+straight.
 
 Streets, blocks, parks, the pond, the woods and the railway are all drawn from
 the `STREETS`, `BLOCKS`, `AREAS` and `PLACES` arrays at the top of the script —
@@ -70,10 +69,15 @@ of five, and the panel warns you up front.
 
 ## The Upside Down
 
-Roughly one day in three the gate is open. When it is:
+Roughly one day in three the gate is open. When it is, the town keeps its
+daylight crayon colours — the gate shows up as growth, not darkness:
 
-- The town goes cold and red, spores drift up through a haze, and the sign over
-  the door reads backwards.
+- **Red vines creep in from the edges of the drawing**, over blocks and
+  streets, and the longest one reaches the green and stops. Spores drift up
+  over the map, the smiling sun goes dark and loses its face, and the sign
+  over the door reads backwards.
+- The panel, clues and buttons never change — only the map crosses over, and
+  every place stays exactly as readable as on a normal day.
 - **Every clue reading comes back mirrored.** Clue 2 says north-east, so look
   south-west. The banner tells you this — the map is wrong, not the game.
 - Your own guesses still read true. The blocks and the arrow after each guess
