@@ -34,7 +34,12 @@
   body.ud header h1{display:inline-block;transform:scaleX(-1);color:#c41f30}
   header .date{color:var(--muted);font-size:12px;margin-left:auto}
 
-  #mapWrap{flex:1 1 auto;min-height:0;position:relative;background:var(--paper);transition:background .6s}
+  /* The map gets 70% of the screen, but never so much that the panel has no
+     room to work on a short landscape screen. */
+  #mapWrap{
+    flex:0 0 auto;height:min(70vh,calc(100vh - 250px));
+    position:relative;background:var(--paper);transition:background .6s;
+  }
   /* touch-action:none turns off the browser's own double-tap zoom, so the
      map gets the double-tap instead */
   svg#map{width:100%;height:100%;display:block;touch-action:none;user-select:none}
@@ -122,14 +127,13 @@
 
   /* --- panel --- */
   .panel{
-    flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);
-    padding:12px 14px;max-height:46vh;overflow-y:auto;position:relative;z-index:5;
+    flex:1 1 auto;min-height:0;background:var(--panel);border-top:1px solid var(--line);
+    padding:12px 14px;position:relative;z-index:5;display:flex;flex-direction:column;
   }
-  /* Portrait: the map is limited by width, so panel height costs it nothing —
-     give the clues the room. Landscape: the map is limited by height, so take
-     it back. */
-  @media (orientation:landscape){ .panel{max-height:38vh} }
-  .status{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+  /* Clues scroll; the buttons stay put, so the guess is always in reach. */
+  .panel-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;position:relative}
+  .panel-foot{flex:0 0 auto;padding-top:8px}
+  .status{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
   .status .pill{
     background:var(--card);border:1px solid var(--line);border-radius:999px;
     padding:3px 10px;font-size:12px;color:var(--muted)
@@ -144,7 +148,7 @@
   /* the missing poster */
   .poster{
     background:#fffdf4;border:2px dashed #4a4238;border-radius:4px;
-    padding:5px 14px 6px;text-align:center;transform:rotate(-2deg);
+    padding:4px 14px 5px;text-align:center;transform:rotate(-2deg);
     box-shadow:2px 3px 0 rgba(0,0,0,.1);
   }
   .poster .p-top{font-size:9.5px;letter-spacing:2px;color:var(--muted)}
@@ -152,10 +156,10 @@
   body.ud .poster{border-color:#c41f30}
   .banner.open{border-color:#c41f30}
   .banner.open b{color:#c41f30}
-  .warmth{margin:0 0 12px}
+  .warmth{margin:0 0 8px}
   .warmth .cap{
     display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;
-    text-transform:uppercase;color:var(--muted);margin-bottom:5px;
+    text-transform:uppercase;color:var(--muted);margin-bottom:3px;
   }
   .warmth .cap b{color:var(--accent);letter-spacing:0}
   .bar{display:flex;gap:4px}
@@ -166,7 +170,7 @@
   .seg.on{background:var(--accent)}
   .clue{
     border-left:3px solid var(--accent);background:var(--card);
-    padding:8px 12px;margin:0 0 8px;border-radius:0 6px 6px 0;
+    padding:7px 12px;margin:0 0 6px;border-radius:0 6px 6px 0;
   }
   .clue .n{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
   .clue p{margin:2px 0 0}
@@ -177,13 +181,13 @@
   .guess-row .dist{color:var(--muted);font-variant-numeric:tabular-nums}
   .guess-row .arrow{font-size:18px}
   button{
-    font:inherit;font-weight:600;border:0;border-radius:8px;padding:11px 16px;
+    font:inherit;font-weight:600;border:0;border-radius:8px;padding:10px 16px;
     background:var(--accent);color:#fff;cursor:pointer;width:100%;
   }
   button:disabled{background:var(--dis-bg);color:var(--dis-ink);cursor:not-allowed}
-  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:8px}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:6px;padding:8px 16px}
   button.ghost:hover{color:var(--accent);border-color:var(--accent)}
-  .hint{color:var(--muted);font-size:12.5px;text-align:center;margin:8px 0 0}
+  .hint{color:var(--muted);font-size:11.5px;text-align:center;margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .result{text-align:center;padding:4px 0 10px}
   .result h2{margin:0 0 4px;font-size:20px;font-weight:700}
   .result .who{color:var(--accent)}
@@ -210,18 +214,22 @@
 </div>
 
 <div class="panel" id="panel">
-  <div class="status">
-    <span class="pill">Guesses left <b id="left">5</b></span>
-    <div class="poster" id="targetPill">Hunting…</div>
+  <div class="panel-scroll">
+    <div class="status">
+      <span class="pill">Guesses left <b id="left">5</b></span>
+      <div class="poster" id="targetPill">Hunting…</div>
+    </div>
+    <div id="banner"></div>
+    <div class="warmth" id="warmth"></div>
+    <div id="clues"></div>
+    <div id="guesses"></div>
+    <div id="endBox"></div>
   </div>
-  <div id="banner"></div>
-  <div class="warmth" id="warmth"></div>
-  <div id="clues"></div>
-  <div id="guesses"></div>
-  <div id="endBox"></div>
-  <button id="guessBtn" disabled>Pick a place on the map</button>
-  <button id="resetBtn" class="ghost">🔄 New hunt — someone else, somewhere else</button>
-  <p class="hint" id="hint">Tap a location to search it. Double-tap the map to zoom in, drag to move.</p>
+  <div class="panel-foot">
+    <button id="guessBtn" disabled>Pick a place on the map</button>
+    <button id="resetBtn" class="ghost">🔄 New hunt</button>
+    <p class="hint" id="hint">Double-tap the map to zoom · drag to move</p>
+  </div>
 </div>
 
 <script>
@@ -553,50 +561,69 @@
   const BASE = { x:48, y:48, w:904, h:904 };
   const MAX_ZOOM = 4;
   const TAP_ZOOM = 2.6;           // how far one double-tap goes in
-  let view = { x:BASE.x, y:BASE.y, w:BASE.w, h:BASE.h };
+  // The view is a width and a centre; its height follows the shape of the map
+  // area. That way a zoomed-in view fills the box instead of leaving bands of
+  // blank paper above and below it.
+  let zoomW = BASE.w, viewCx = BASE.x + BASE.w / 2, viewCy = BASE.y + BASE.h / 2;
   const pointers = new Set();
   let panFrom = null, moved = 0, suppressClick = false;
   let lastTapAt = -1e9, lastTapPt = null;
 
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  function viewSize(){
+    const rect = svg.getBoundingClientRect();
+    return { w:zoomW, h:zoomW * (rect.width > 0 ? rect.height / rect.width : 1), rect:rect };
+  }
+
   function applyView(){
-    svg.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + view.w + ' ' + view.h);
-    el('zoomOut').classList.toggle('show', view.w < BASE.w - 1);
-    el('zin').disabled = view.w <= BASE.w / MAX_ZOOM + 0.5;
-    el('zminus').disabled = view.w >= BASE.w - 0.5;
+    const v = viewSize();
+    // on whichever axis shows more than the whole town, centre it
+    viewCx = v.w >= BASE.w ? BASE.x + BASE.w / 2
+           : clamp(viewCx, BASE.x + v.w / 2, BASE.x + BASE.w - v.w / 2);
+    viewCy = v.h >= BASE.h ? BASE.y + BASE.h / 2
+           : clamp(viewCy, BASE.y + v.h / 2, BASE.y + BASE.h - v.h / 2);
+    svg.setAttribute('viewBox',
+      (viewCx - v.w / 2) + ' ' + (viewCy - v.h / 2) + ' ' + v.w + ' ' + v.h);
+    el('zoomOut').classList.toggle('show', zoomW < BASE.w - 1);
+    el('zin').disabled = zoomW <= BASE.w / MAX_ZOOM + 0.5;
+    el('zminus').disabled = zoomW >= BASE.w - 0.5;
   }
 
   function resetView(){
-    view = { x:BASE.x, y:BASE.y, w:BASE.w, h:BASE.h };
+    zoomW = BASE.w;
+    viewCx = BASE.x + BASE.w / 2;
+    viewCy = BASE.y + BASE.h / 2;
     applyView();
   }
 
-  // client pixels -> map units, allowing for the letterboxing of xMidYMid meet
-  function toMap(cx, cy){
-    const r = svg.getBoundingClientRect();
-    const k = Math.min(r.width / view.w, r.height / view.h);
+  // client pixels -> map units; the viewBox matches the box, so this is linear
+  function toMap(px, py){
+    const v = viewSize();
     return {
-      x: view.x + (cx - r.left - (r.width  - view.w * k) / 2) / k,
-      y: view.y + (cy - r.top  - (r.height - view.h * k) / 2) / k
+      x: viewCx - v.w / 2 + (px - v.rect.left) / v.rect.width  * v.w,
+      y: viewCy - v.h / 2 + (py - v.rect.top)  / v.rect.height * v.h
     };
   }
 
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
-  // zoom by `factor` while keeping the map point under the fingers put
+  // zoom by `factor`, leaving the map point under the cursor where it is
   function zoomAt(focus, factor){
-    const w = clamp(view.w / factor, BASE.w / MAX_ZOOM, BASE.w);
-    const rx = (focus.x - view.x) / view.w, ry = (focus.y - view.y) / view.h;
-    view.w = view.h = w;
-    view.x = clamp(focus.x - rx * w, BASE.x, BASE.x + BASE.w - w);
-    view.y = clamp(focus.y - ry * w, BASE.y, BASE.y + BASE.h - w);
+    const w = clamp(zoomW / factor, BASE.w / MAX_ZOOM, BASE.w);
+    const k = w / zoomW;
+    viewCx = focus.x + (viewCx - focus.x) * k;
+    viewCy = focus.y + (viewCy - focus.y) * k;
+    zoomW = w;
     applyView();
   }
 
   function panBy(dxUnits, dyUnits){
-    view.x = clamp(view.x - dxUnits, BASE.x, BASE.x + BASE.w - view.w);
-    view.y = clamp(view.y - dyUnits, BASE.y, BASE.y + BASE.h - view.h);
+    viewCx -= dxUnits;
+    viewCy -= dyUnits;
     applyView();
   }
+
+  // the map area changes shape when the phone turns
+  window.addEventListener('resize', applyView);
 
   svg.addEventListener('pointerdown', function(e){
     pointers.add(e.pointerId);
@@ -608,10 +635,10 @@
   svg.addEventListener('pointermove', function(e){
     if (!panFrom || pointers.size !== 1) return;
     moved += Math.hypot(e.clientX - panFrom.x, e.clientY - panFrom.y);
-    if (view.w < BASE.w){
-      const r = svg.getBoundingClientRect();
-      const k = Math.min(r.width / view.w, r.height / view.h);
-      panBy((e.clientX - panFrom.x) / k, (e.clientY - panFrom.y) / k);
+    if (zoomW < BASE.w){
+      const v = viewSize();
+      const perPixel = v.w / v.rect.width;
+      panBy((e.clientX - panFrom.x) * perPixel, (e.clientY - panFrom.y) * perPixel);
     }
     panFrom = { x:e.clientX, y:e.clientY };
     if (moved > 8) suppressClick = true;
@@ -636,7 +663,7 @@
     const t = performance.now(), pt = { x:e.clientX, y:e.clientY };
     if (t - lastTapAt < 350 && lastTapPt && Math.hypot(pt.x - lastTapPt.x, pt.y - lastTapPt.y) < 32){
       lastTapAt = -1e9;
-      if (view.w < BASE.w - 1) resetView();          // second double-tap comes back out
+      if (zoomW < BASE.w - 1) resetView();           // second double-tap comes back out
       else zoomAt(toMap(pt.x, pt.y), TAP_ZOOM);      // otherwise zoom toward the tap
     } else {
       lastTapAt = t;
@@ -650,7 +677,7 @@
   }, { passive:false });
 
   el('zoomOut').onclick = resetView;
-  const viewCentre = () => ({ x:view.x + view.w / 2, y:view.y + view.h / 2 });
+  const viewCentre = () => ({ x:viewCx, y:viewCy });
   el('zin').onclick = function(){ zoomAt(viewCentre(), 1.5); };
   el('zminus').onclick = function(){ zoomAt(viewCentre(), 1 / 1.5); };
 
@@ -747,6 +774,8 @@
     } else {
       btn.disabled = !selected;
       btn.textContent = selected ? 'Search ' + byId(selected).name : 'Pick a place on the map';
+      // the zoom hint has done its job once the hunt is under way
+      el('hint').style.display = guesses.length ? 'none' : '';
     }
   }
 
@@ -783,6 +812,9 @@
       '<button id="copyBtn">Copy result</button>' +
       '<p class="hint">Someone new misses dinner every day at midnight.</p>';
 
+    const box = document.querySelector('.panel-scroll');
+    if (box) box.scrollTo({ top:box.scrollHeight, behavior:'smooth' });
+
     el('copyBtn').onclick = function(){
       navigator.clipboard.writeText(share).then(function(){
         el('copyBtn').textContent = 'Copied ✓';
@@ -815,7 +847,15 @@
 
     if (g.hit) finish(true);
     else if (guesses.length >= MAX_GUESSES) finish(false);
-    else render();
+    else { render(); showNewestClue(); }
+  }
+
+  // The panel is short by design — bring the clue a miss just bought into view.
+  function showNewestClue(){
+    const box = document.querySelector('.panel-scroll');
+    const list = el('clues').querySelectorAll('.clue');
+    const last = list[list.length - 1];
+    if (box && last) box.scrollTo({ top:Math.max(0, last.offsetTop - 6), behavior:'smooth' });
   }
 
   /* ---------- boot ---------- */

@@ -13,6 +13,10 @@ HAVE YOU SEEN, the face, the name.
 Open `index.html` in a browser. That is the whole game — one file, no build, no
 dependencies, no network at all.
 
+The map takes 70% of the screen. The panel below it keeps the guess and New
+hunt buttons pinned so they are always in reach, scrolls the clues above them,
+and scrolls the newest clue into view each time a miss buys one.
+
 Everything is measured from **The Town**, the green at the centre of the map.
 The date decides who is hiding and where, so everyone gets the same puzzle and
 scores are directly comparable, with no server and no accounts.
