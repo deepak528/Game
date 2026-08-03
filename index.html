@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- viewport-fit=cover lets the paper run under the notch; the safe-area insets
+     below keep the actual controls clear of it -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7edd8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Home Before Dinner">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
 <title>Home Before Dinner — The Town</title>
 <style>
   :root{
@@ -20,25 +28,53 @@
   html,body{height:100%;margin:0}
   body{
     background:var(--bg); color:var(--ink);
-    font:15px/1.5 "Comic Sans MS","Comic Neue","Chalkboard SE","Segoe Print",sans-serif;
+    font:15px/1.5 "Comic Sans MS","Chalkboard SE","Marker Felt","Comic Neue","Segoe Print",sans-serif;
     display:flex; flex-direction:column; overflow:hidden;
     transition:background .6s,color .6s;
+    /* iOS: no blue flash on tap, no long-press callout, no text inflation,
+       and no rubber-banding the whole page */
+    -webkit-tap-highlight-color:transparent;
+    -webkit-touch-callout:none;
+    -webkit-text-size-adjust:100%;
+    overscroll-behavior:none;
   }
+  /* dvh follows Safari's shrinking toolbar; vh stays as the fallback */
+  body{height:100vh}
+  @supports (height:100dvh){ body{height:100dvh} }
   header{
     padding:10px 14px; border-bottom:1px solid var(--line);
     display:flex; align-items:baseline; gap:10px; flex:0 0 auto; position:relative; z-index:5;
+    padding-top:calc(10px + env(safe-area-inset-top));
+    padding-left:calc(14px + env(safe-area-inset-left));
+    padding-right:calc(14px + env(safe-area-inset-right));
   }
-  header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.5px}
+  header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.5px;white-space:nowrap}
   header h1 span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
   /* in the Upside Down even the sign is the wrong way round */
   body.ud header h1{display:inline-block;transform:scaleX(-1);color:#c41f30}
-  header .date{color:var(--muted);font-size:12px;margin-left:auto}
+  header .date{
+    color:var(--muted);font-size:12px;margin-left:auto;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  /* a narrow phone must not wrap the title onto a second line */
+  @media (max-width:410px){
+    header{padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
+    header h1{font-size:15px}
+    header .date{font-size:10.5px}
+  }
 
   /* The map gets 70% of the screen, but never so much that the panel has no
      room to work on a short landscape screen. */
   #mapWrap{
-    flex:0 0 auto;height:min(70vh,calc(100vh - 250px));
-    position:relative;background:var(--paper);transition:background .6s;
+    flex:0 0 auto;position:relative;background:var(--paper);transition:background .6s;
+    height:min(70vh,calc(100vh - 250px));
+  }
+  /* the notch and the home indicator come out of the map's share, so the
+     buttons below never get squeezed off the bottom of the screen */
+  @supports (height:100dvh){
+    #mapWrap{
+      height:min(70dvh,calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+    }
   }
   /* touch-action:none turns off the browser's own double-tap zoom, so the
      map gets the double-tap instead */
@@ -46,18 +82,19 @@
   #zoomOut{
     position:absolute;right:10px;bottom:10px;width:auto;z-index:6;
     padding:7px 12px;font-size:13px;border-radius:8px;opacity:0;pointer-events:none;
+    min-height:44px;touch-action:manipulation;
     background:var(--panel);color:var(--ink);border:1px solid var(--line);
     box-shadow:0 2px 6px rgba(0,0,0,.12);transition:opacity .2s;
   }
   #zoomOut.show{opacity:1;pointer-events:auto}
   .zbtn{
-    position:absolute;right:10px;width:38px;height:38px;z-index:6;padding:0;
+    position:absolute;right:10px;width:44px;height:44px;z-index:6;padding:0;
     font-size:20px;line-height:1;border-radius:8px;
     background:var(--panel);color:var(--ink);border:1px solid var(--line);
     box-shadow:0 2px 6px rgba(0,0,0,.12);
   }
-  #zin{bottom:98px}
-  #zminus{bottom:54px}
+  #zin{bottom:114px}
+  #zminus{bottom:62px}
   #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s}
   body.ud #haze{opacity:1}
   .spore{
@@ -129,14 +166,20 @@
   .panel{
     flex:1 1 auto;min-height:0;background:var(--panel);border-top:1px solid var(--line);
     padding:12px 14px;position:relative;z-index:5;display:flex;flex-direction:column;
+    padding-bottom:calc(12px + env(safe-area-inset-bottom));
+    padding-left:calc(14px + env(safe-area-inset-left));
+    padding-right:calc(14px + env(safe-area-inset-right));
   }
   /* Clues scroll; the buttons stay put, so the guess is always in reach. */
-  .panel-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;position:relative}
+  .panel-scroll{
+    flex:1 1 auto;min-height:0;overflow-y:auto;position:relative;
+    -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  }
   .panel-foot{flex:0 0 auto;padding-top:8px}
-  .status{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+  .status{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
   .status .pill{
     background:var(--card);border:1px solid var(--line);border-radius:999px;
-    padding:3px 10px;font-size:12px;color:var(--muted)
+    padding:2px 9px;font-size:11.5px;color:var(--muted);white-space:nowrap
   }
   .status .pill b{color:var(--ink)}
   .banner{
@@ -146,17 +189,20 @@
   }
   .banner b{color:var(--accent)}
   /* the missing poster */
+  /* one line, so the clue below it still fits on a small phone */
   .poster{
+    display:inline-flex;align-items:baseline;gap:7px;
     background:#fffdf4;border:2px dashed #4a4238;border-radius:4px;
-    padding:4px 14px 5px;text-align:center;transform:rotate(-2deg);
-    box-shadow:2px 3px 0 rgba(0,0,0,.1);
+    padding:2px 10px 3px;transform:rotate(-1.5deg);
+    box-shadow:2px 2px 0 rgba(0,0,0,.1);
   }
-  .poster .p-top{font-size:9.5px;letter-spacing:2px;color:var(--muted)}
-  .poster .p-name{font-size:15px;font-weight:700;line-height:1.2}
+  .poster .p-top{font-size:9px;letter-spacing:1.5px;color:var(--muted);white-space:nowrap}
+  .poster .p-name{font-size:14px;font-weight:700;line-height:1.15;white-space:nowrap}
   body.ud .poster{border-color:#c41f30}
   .banner.open{border-color:#c41f30}
   .banner.open b{color:#c41f30}
   .warmth{margin:0 0 8px}
+  .warmth:empty{display:none}          /* no bar, no gap, before the first guess */
   .warmth .cap{
     display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;
     text-transform:uppercase;color:var(--muted);margin-bottom:3px;
@@ -172,8 +218,9 @@
     border-left:3px solid var(--accent);background:var(--card);
     padding:7px 12px;margin:0 0 6px;border-radius:0 6px 6px 0;
   }
-  .clue .n{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
-  .clue p{margin:2px 0 0}
+  /* the clue number rides inline with the text — a whole line saved */
+  .clue .n{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-right:6px}
+  .clue p{margin:0;font-size:14px;line-height:1.4}
   .guess-row{
     display:flex;justify-content:space-between;align-items:center;gap:10px;
     padding:6px 10px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;
@@ -183,9 +230,13 @@
   button{
     font:inherit;font-weight:600;border:0;border-radius:8px;padding:10px 16px;
     background:var(--accent);color:#fff;cursor:pointer;width:100%;
+    min-height:44px;touch-action:manipulation;   /* Apple's minimum tap target */
   }
   button:disabled{background:var(--dis-bg);color:var(--dis-ink);cursor:not-allowed}
-  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:6px;padding:8px 16px}
+  button.ghost{
+    background:transparent;color:var(--muted);border:1px solid var(--line);
+    margin-top:6px;padding:6px 16px;min-height:40px;font-size:13.5px;
+  }
   button.ghost:hover{color:var(--accent);border-color:var(--accent)}
   .hint{color:var(--muted);font-size:11.5px;text-align:center;margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .result{text-align:center;padding:4px 0 10px}
@@ -224,11 +275,11 @@
     <div id="clues"></div>
     <div id="guesses"></div>
     <div id="endBox"></div>
+    <p class="hint" id="hint">Double-tap the map to zoom · drag to move</p>
   </div>
   <div class="panel-foot">
     <button id="guessBtn" disabled>Pick a place on the map</button>
     <button id="resetBtn" class="ghost">🔄 New hunt</button>
-    <p class="hint" id="hint">Double-tap the map to zoom · drag to move</p>
   </div>
 </div>
 
@@ -542,7 +593,9 @@
 
     PLACES.forEach(function(p){
       const g = node('g', { class:'loc' + (p.id === 'town' ? ' town' : ''), 'data-id':p.id });
-      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:32, class:'halo' }));   // fat tap target
+      // fat tap target: 46 units is as wide as it goes before the two closest
+      // places (the water tower and the station, 96 apart) start overlapping
+      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:46, class:'halo' }));
       g.appendChild(node('circle', { cx:p.x, cy:p.y, r:15, class:'dot' }));
       g.appendChild(node('text',   { x:p.x, y:p.y + 6,  class:'pic' }, p.pic));
       g.appendChild(node('text',   { x:p.x, y:p.y + 35, class:'label' }, p.name));
@@ -552,6 +605,21 @@
   }
 
   const gfx = id => svg.querySelector('.loc[data-id="' + id + '"]');
+
+  // A drawn marker can only be so fat before neighbours collide — the water
+  // tower and the station sit 96 units apart. So a tap that lands near a place
+  // counts for it: the nearest one inside this radius wins, which gives big
+  // finger-sized targets without any overlapping circles on the map.
+  const NEAR = 70;
+
+  function nearestPlace(pt){
+    let best = null, bestD = Infinity;
+    PLACES.forEach(function(p){
+      const d = Math.hypot(p.x - pt.x, p.y - pt.y);
+      if (d < bestD){ bestD = d; best = p; }
+    });
+    return bestD <= NEAR ? best : null;
+  }
 
   /* ---------- zoom: double-tap in, double-tap out, drag to move ----------
      Not pinch. iOS hands two-finger gestures to the browser before the page
@@ -669,6 +737,11 @@
       lastTapAt = t;
       lastTapPt = pt;
     }
+    // a near miss still counts: pick the closest place to where the finger landed
+    if (!e.target.closest('.loc')){
+      const near = nearestPlace(toMap(pt.x, pt.y));
+      if (near) pick(near.id);
+    }
   }, true);
 
   svg.addEventListener('wheel', function(e){
@@ -738,8 +811,8 @@
     renderVines(false);
     el('left').textContent = Math.max(0, MAX_GUESSES - guesses.length);
     el('targetPill').innerHTML =
-      '<div class="p-top">HAVE YOU SEEN</div>' +
-      '<div class="p-name">' + puzzle.cast.pic + ' ' + puzzle.cast.name + '</div>';
+      '<span class="p-top">HAVE YOU SEEN</span>' +
+      '<span class="p-name">' + puzzle.cast.pic + ' ' + puzzle.cast.name + '</span>';
 
     el('banner').innerHTML = puzzle.ud
       ? '<div class="banner open">🙃 <b>The gate is open.</b> Every clue reading comes back ' +
@@ -753,7 +826,7 @@
     const clues = clueList();
     const shown = Math.min(guesses.length + 1, clues.length);
     el('clues').innerHTML = clues.slice(0, shown).map(function(c, i){
-      return '<div class="clue"><div class="n">Clue ' + (i+1) + '</div><p>' + c + '</p></div>';
+      return '<div class="clue"><p><span class="n">Clue ' + (i+1) + '</span>' + c + '</p></div>';
     }).join('');
 
     el('guesses').innerHTML = guesses.map(function(g){

@@ -17,6 +17,13 @@ The map takes 70% of the screen. The panel below it keeps the guess and New
 hunt buttons pinned so they are always in reach, scrolls the clues above them,
 and scrolls the newest clue into view each time a miss buys one.
 
+It is built for a phone. A tap counts for the nearest place within 70 map
+units, so the targets are finger-sized (about 60px on an iPhone) without any
+overlapping circles drawn on the map. Safe-area insets keep the controls clear
+of the notch and the home indicator, `dvh` units keep the layout honest while
+Safari's toolbar slides in and out, and adding it to the home screen gives it a
+name and an icon.
+
 Everything is measured from **The Town**, the green at the centre of the map.
 The date decides who is hiding and where, so everyone gets the same puzzle and
 scores are directly comparable, with no server and no accounts.
