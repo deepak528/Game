@@ -13,9 +13,9 @@ HAVE YOU SEEN, the face, the name.
 Open `index.html` in a browser. That is the whole game — one file, no build, no
 dependencies, no network at all.
 
-The map takes 70% of the screen. The panel below it keeps the guess and New
-hunt buttons pinned so they are always in reach, scrolls the clues above them,
-and scrolls the newest clue into view each time a miss buys one.
+The map takes 62% of the screen. The panel below it keeps the guess and New
+hunt buttons pinned on one row so they are always in reach, scrolls the clues
+above them, and scrolls the newest clue into view each time a miss buys one.
 
 It is built for a phone. A tap counts for the nearest place within 70 map
 units, so the targets are finger-sized (about 60px on an iPhone) without any
@@ -38,15 +38,17 @@ many blocks off you were and which way to go, and unlocks another clue:
 
 The Town itself is the ruler, not a hiding place, so it can't be searched.
 
-**Double-tap the map to zoom in** toward that spot, or use the **+ / −**
-buttons in the corner of the map. Drag to move around; double-tap again — or
-press **⤢ Whole town** — to come back out. A mouse wheel zooms too. A drag that travels is a pan, not a tap, so moving around never picks
-a place by accident.
+**Pinch the map with two fingers to zoom**, double-tap to zoom toward a spot,
+or use the **+ / −** buttons in the corner of the map. Drag to move around;
+double-tap again — or press **⤢ Whole town** — to come back out. A mouse wheel
+zooms too. A drag that travels is a pan, not a tap, so moving around never
+picks a place by accident.
 
-Zoom is deliberately not a pinch. iOS hands two-finger gestures to the browser
-before the page sees them, so a pinch zooms Safari itself and never reaches the
-map — and that is true in Chrome on iPhone too, which is WebKit underneath. A
-double-tap is just a tap twice, which every browser delivers.
+Pinch runs on touch events, not pointer events. `preventDefault` on a
+pointermove does not stop Safari running its own page zoom, so a pointer-based
+pinch does nothing on an iPhone — the page zooms and the map never sees the
+gesture. `preventDefault` on a two-finger `touchmove` does stop it, which is
+how map libraries get pinch working on iOS.
 
 **New hunt** starts another round immediately, without waiting for tomorrow. It
 always changes both the person and the place, so a reset never looks like it did
