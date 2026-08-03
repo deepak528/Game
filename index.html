@@ -6,11 +6,13 @@
 <title>Findr — The Town</title>
 <style>
   :root{
-    --bg:#101418; --panel:#181e25; --line:#2a333d; --ink:#e8edf2;
-    --muted:#95a3b1; --accent:#ffc73a; --good:#3ddc97;
-    --glow:rgba(255,199,58,.35);
-    --paper:#16202a; --road:#2e3d4a; --road2:#22303c; --grass:#1b3327;
-    --water:#16323f; --woods:#172c22; --rail:#3b4a58;
+    --bg:#f7edd8; --panel:#fff8ea; --line:#e6d8bd; --ink:#3a332c;
+    --muted:#8a7d6a; --accent:#e05e10; --good:#2e9e63;
+    --glow:rgba(224,94,16,.25);
+    --paper:#fbf3df; --road:#b6ab97; --road2:#d2c8b3; --grass:#a3dd90;
+    --water:#a4d9f2; --woods:#7fc57f; --rail:#a68d72;
+    --card:rgba(0,0,0,.05); --seg:rgba(0,0,0,.1); --sharebg:rgba(0,0,0,.05);
+    --dash:#ffdf7e; --dis-bg:#ece1cb; --dis-ink:#a3947e;
   }
   /* the Upside Down: everything goes cold, red and wrong */
   body.ud{
@@ -19,12 +21,15 @@
     --glow:rgba(255,45,63,.4);
     --paper:#12080a; --road:#3a1c22; --road2:#2a1216; --grass:#2a1218;
     --water:#241016; --woods:#1e0d11; --rail:#4a2028;
+    --card:rgba(255,255,255,.04); --seg:rgba(255,255,255,.07);
+    --sharebg:rgba(0,0,0,.35); --dash:#4a1a22;
+    --dis-bg:#2a333d; --dis-ink:#6c7a88;
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{
     background:var(--bg); color:var(--ink);
-    font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font:15px/1.5 "Comic Sans MS","Comic Neue","Chalkboard SE","Segoe Print",sans-serif;
     display:flex; flex-direction:column; overflow:hidden;
     transition:background .6s,color .6s;
   }
@@ -32,7 +37,7 @@
     padding:10px 14px; border-bottom:1px solid var(--line);
     display:flex; align-items:baseline; gap:10px; flex:0 0 auto; position:relative; z-index:5;
   }
-  header h1{font:700 17px/1.2 ui-serif,Georgia,serif;margin:0;letter-spacing:.5px}
+  header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.5px}
   header h1 span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
   /* in the Upside Down even the sign is the wrong way round */
   body.ud header h1{display:inline-block;transform:scaleX(-1);color:var(--accent)}
@@ -64,8 +69,21 @@
   .park{fill:var(--grass)}
   .water{fill:var(--water)}
   .woods{fill:var(--woods)}
-  .streetname{fill:var(--muted);font-size:11px;opacity:.55;font-family:ui-sans-serif,system-ui}
+  .streetname{fill:var(--muted);font-size:11px;opacity:.8;font-family:inherit}
   .green-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.3}
+  .cline{stroke:var(--dash);stroke-width:3;stroke-dasharray:15 11;stroke-linecap:round;fill:none}
+  /* every block of town coloured in with its own crayon */
+  .b0{fill:#ffeaa7}.b1{fill:#ffd6de}.b2{fill:#c9edcb}.b3{fill:#cbe7f8}
+  .b4{fill:#ffdfba}.b5{fill:#e4daf8}.b6{fill:#dcf2b0}.b7{fill:#ffe3d2}
+  body.ud .blk{fill:#180a0e}
+  .sun-disc{fill:#ffd43b;stroke:#f2a71b;stroke-width:2.5}
+  .sun-ray{stroke:#f2a71b;stroke-width:4;stroke-linecap:round}
+  .sun-eye{fill:#8a5a00}
+  .sun-mouth{fill:none;stroke:#8a5a00;stroke-width:2.5;stroke-linecap:round}
+  /* in the Upside Down the sun goes out */
+  body.ud .sun-disc{fill:#30070d;stroke:#571620}
+  body.ud .sun-ray{stroke:#571620}
+  body.ud .sun-eye,body.ud .sun-mouth{display:none}
 
   .loc{cursor:pointer}
   .loc .halo{fill:transparent}
@@ -73,7 +91,7 @@
   .loc .label{
     fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle;
     paint-order:stroke;stroke:var(--paper);stroke-width:3.5px;stroke-linejoin:round;
-    font-family:ui-sans-serif,system-ui;pointer-events:none;
+    font-family:inherit;pointer-events:none;
   }
   .loc .pic{font-size:18px;text-anchor:middle;pointer-events:none}
   .loc:hover .dot{stroke:var(--accent)}
@@ -99,7 +117,7 @@
   @media (orientation:landscape){ .panel{max-height:38vh} }
   .status{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .status .pill{
-    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;
+    background:var(--card);border:1px solid var(--line);border-radius:999px;
     padding:3px 10px;font-size:12px;color:var(--muted)
   }
   .status .pill b{color:var(--ink)}
@@ -117,12 +135,12 @@
   .warmth .cap b{color:var(--accent);letter-spacing:0}
   .bar{display:flex;gap:4px}
   .seg{
-    flex:1 1 0;height:12px;border-radius:2px;background:rgba(255,255,255,.07);
+    flex:1 1 0;height:12px;border-radius:2px;background:var(--seg);
     transition:background .3s;
   }
   .seg.on{background:var(--accent)}
   .clue{
-    border-left:3px solid var(--accent);background:rgba(255,255,255,.035);
+    border-left:3px solid var(--accent);background:var(--card);
     padding:8px 12px;margin:0 0 8px;border-radius:0 6px 6px 0;
   }
   .clue .n{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
@@ -135,18 +153,17 @@
   .guess-row .arrow{font-size:18px}
   button{
     font:inherit;font-weight:600;border:0;border-radius:8px;padding:11px 16px;
-    background:var(--accent);color:#141821;cursor:pointer;width:100%;
+    background:var(--accent);color:#fff;cursor:pointer;width:100%;
   }
-  body.ud button{color:#fff}
-  button:disabled{background:#2a333d;color:#6c7a88;cursor:not-allowed}
+  button:disabled{background:var(--dis-bg);color:var(--dis-ink);cursor:not-allowed}
   button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:8px}
   button.ghost:hover{color:var(--accent);border-color:var(--accent)}
   .hint{color:var(--muted);font-size:12.5px;text-align:center;margin:8px 0 0}
   .result{text-align:center;padding:4px 0 10px}
-  .result h2{margin:0 0 4px;font:700 20px/1.3 ui-serif,Georgia,serif}
+  .result h2{margin:0 0 4px;font-size:20px;font-weight:700}
   .result .who{color:var(--accent)}
   .share{
-    white-space:pre-wrap;background:rgba(0,0,0,.35);border:1px solid var(--line);
+    white-space:pre-wrap;background:var(--sharebg);border:1px solid var(--line);
     border-radius:8px;padding:10px;margin:10px 0;font-size:14px;text-align:center;
   }
 </style>
@@ -229,6 +246,27 @@
     { cls:'park',  points:'178,238 362,218 382,398 198,418' },          // the old bowl
     { cls:'water', points:'238,782 342,758 402,830 320,892 240,862' },  // the pond
     { cls:'park',  points:'640,742 838,752 848,904 652,894' }           // ball fields
+  ];
+
+  // Every block of town coloured in like a crayon map. Corners are nudged a
+  // little off-square on purpose, and the wobble filter does the rest.
+  const BLOCKS = [
+    { tone:'b3', points:'58,62 224,58 228,270 60,266' },        // NW corner
+    { tone:'b1', points:'256,60 484,66 482,268 254,272' },
+    { tone:'b6', points:'516,58 744,64 748,270 514,266' },
+    { tone:'b4', points:'776,64 926,70 866,268 772,272' },      // under the pines
+    { tone:'b0', points:'58,356 226,352 224,486 60,482' },
+    { tone:'b5', points:'254,354 486,358 482,484 256,486' },
+    { tone:'b7', points:'514,356 746,352 744,486 516,482' },
+    { tone:'b6', points:'774,354 838,358 800,482 774,486' },    // west of the parkway
+    { tone:'b2', points:'872,356 944,352 944,638 780,642' },    // east of the parkway
+    { tone:'b1', points:'60,516 224,512 226,648 58,644' },
+    { tone:'b3', points:'256,514 484,518 482,646 254,644' },
+    { tone:'b0', points:'516,516 744,514 746,644 514,648' },
+    { tone:'b6', points:'58,676 226,672 224,936 62,938' },      // pond block
+    { tone:'b7', points:'254,674 486,678 484,936 256,934' },
+    { tone:'b5', points:'516,676 744,672 746,934 514,936' },    // ball-field block
+    { tone:'b1', points:'770,676 944,672 944,936 684,938' }     // SE, past the parkway
   ];
 
   /* ---------- cast ---------- */
@@ -370,21 +408,54 @@
   }
 
   function drawMap(){
-    AREAS.forEach(function(a){ svg.appendChild(node('polygon', { points:a.points, class:a.cls })); });
+    // a touch of turbulence so the ground looks drawn by hand
+    const defs = node('defs', {});
+    const wob = node('filter', { id:'wobble', x:'-5%', y:'-5%', width:'110%', height:'110%' });
+    wob.appendChild(node('feTurbulence', { type:'fractalNoise', baseFrequency:'0.013', numOctaves:'2', seed:'7', result:'n' }));
+    wob.appendChild(node('feDisplacementMap', { in:'SourceGraphic', in2:'n', scale:'7' }));
+    defs.appendChild(wob);
+    svg.appendChild(defs);
+
+    // the ground wobbles; labels and markers stay crisp on top of it
+    const ground = node('g', { filter:'url(#wobble)' });
+    svg.appendChild(ground);
+
+    BLOCKS.forEach(function(b){ ground.appendChild(node('polygon', { points:b.points, class:'blk ' + b.tone })); });
+    AREAS.forEach(function(a){ ground.appendChild(node('polygon', { points:a.points, class:a.cls })); });
 
     // the railway runs east to west, just above Depot St
-    svg.appendChild(node('line', { x1:60, y1:286, x2:940, y2:286, class:'rail' }));
+    ground.appendChild(node('line', { x1:60, y1:286, x2:940, y2:286, class:'rail' }));
 
     STREETS.forEach(function(s){
-      svg.appendChild(node('line', {
+      ground.appendChild(node('line', {
         x1:s.x1, y1:s.y1, x2:s.x2, y2:s.y2, class:'street ' + (s.major ? 'major' : 'minor')
       }));
+      if (s.major) ground.appendChild(node('line', { x1:s.x1, y1:s.y1, x2:s.x2, y2:s.y2, class:'cline' }));
+    });
+
+    // a sun for the corner of the drawing (it goes out in the Upside Down)
+    const sun = node('g', { class:'sun' });
+    sun.appendChild(node('circle', { cx:118, cy:112, r:28, class:'sun-disc' }));
+    for (let i = 0; i < 8; i++){
+      const a = i * Math.PI / 4;
+      sun.appendChild(node('line', {
+        x1: 118 + Math.cos(a) * 38, y1: 112 + Math.sin(a) * 38,
+        x2: 118 + Math.cos(a) * 52, y2: 112 + Math.sin(a) * 52, class:'sun-ray'
+      }));
+    }
+    sun.appendChild(node('circle', { cx:108, cy:106, r:3, class:'sun-eye' }));
+    sun.appendChild(node('circle', { cx:128, cy:106, r:3, class:'sun-eye' }));
+    sun.appendChild(node('path', { d:'M106,119 Q118,130 130,119', class:'sun-mouth' }));
+    ground.appendChild(sun);
+
+    STREETS.forEach(function(s){
       const horiz = Math.abs(s.y2 - s.y1) < Math.abs(s.x2 - s.x1);
+      const lx = Math.min(s.x1 + 9, 934);   // keep the Parkway's name inside the crop
       svg.appendChild(node('text', {
         class:'streetname',
-        x: horiz ? 84 : s.x1 + 9,
+        x: horiz ? 84 : lx,
         y: horiz ? s.y1 - 9 : 96,
-        transform: horiz ? '' : 'rotate(90 ' + (s.x1 + 9) + ' 96)'
+        transform: horiz ? '' : 'rotate(90 ' + lx + ' 96)'
       }, s.name));
     });
 

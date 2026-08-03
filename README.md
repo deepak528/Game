@@ -40,10 +40,16 @@ Eighteen locations, one block = 100 units:
 ⚾ Baseball Field · 📻 Sparks Radio · 🪦 Old Grove · 🔧 Smithy's Hardware ·
 🌲 The Pines · 🚐 Cherry Lane
 
-Streets, parks, the pond, the woods and the railway are all drawn from the
-`STREETS`, `AREAS` and `PLACES` arrays at the top of the script — move a
-coordinate and the town redraws. Adding a location means adding one entry with
-an `x`, a `y` and a `hint`; the clue system picks it up automatically.
+The town is drawn like a crayon map: cream paper, every block coloured in with
+its own pastel, dashed yellow centrelines down the big streets, a smiling sun in
+the corner, and a turbulence filter over the ground so nothing is quite
+straight. In the Upside Down the crayon drains out — the blocks go dark and the
+sun goes out.
+
+Streets, blocks, parks, the pond, the woods and the railway are all drawn from
+the `STREETS`, `BLOCKS`, `AREAS` and `PLACES` arrays at the top of the script —
+move a coordinate and the town redraws. Adding a location means adding one entry
+with an `x`, a `y` and a `hint`; the clue system picks it up automatically.
 
 ## Who hides
 
