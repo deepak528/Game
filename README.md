@@ -13,7 +13,7 @@ HAVE YOU SEEN, the face, the name.
 Open `index.html` in a browser. That is the whole game — one file, no build, no
 dependencies, no network at all.
 
-The map takes 62% of the screen. The panel below it keeps the guess and New
+The map takes 55% of the screen. The panel below it keeps the guess and New
 hunt buttons pinned on one row so they are always in reach, scrolls the clues
 above them, and scrolls the newest clue into view each time a miss buys one.
 
@@ -94,17 +94,30 @@ are not from Hawkins but hide just as well.
 **Vecna costs you a guess.** On the days he is the quarry you get four instead
 of five, and the panel warns you up front.
 
+## The clock
+
+You go out at **5:00 PM** and an hour passes every thirty seconds, so a whole
+evening runs in two minutes.
+
+- **7:30 PM** — the light starts to go, and the vines start coming through.
+  The town dims steadily from here and the clock turns red.
+- **9:00 PM** — it is fully dark, the vines have taken the town, and whoever is
+  still out there is not coming home. The hunt ends whatever guesses you had
+  left.
+
+Vines follow the clock rather than your guesses, and on every day, not only
+gate days — night is night. The clock stops the moment the hunt ends, and New
+hunt puts it back to five o'clock. It runs per round rather than being stored,
+so a reload starts the evening over.
+
 ## The Upside Down
 
 Roughly one day in three the gate is open. When it is, the town keeps its
 daylight crayon colours — the gate shows up as growth, not darkness:
 
-- **Red vines grow with every miss.** Two creep in at the start; each wrong
-  guess draws the next wave on over blocks and streets, sprouting buds, until
-  by the last guess the town is overgrown and one vine has crossed it to stop
-  at the edge of the green. Finding them — or running out — opens the gate
-  fully. Spores drift up over the map, the smiling sun goes dark and loses its
-  face, and the sign over the door reads backwards.
+- Spores drift up over the map, the smiling sun goes dark and loses its face,
+  and the sign over the door reads backwards. The vines are on the clock now
+  (see above), and the reveal opens the gate the rest of the way.
 - The panel, clues and buttons never change — only the map crosses over, and
   every place stays exactly as readable as on a normal day.
 - **Every clue reading comes back mirrored.** Clue 2 says north-east, so look

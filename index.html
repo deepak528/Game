@@ -67,13 +67,13 @@
      room to work on a short landscape screen. */
   #mapWrap{
     flex:0 0 auto;position:relative;background:var(--paper);transition:background .6s;
-    height:min(62vh,calc(100vh - 250px));
+    height:min(55vh,calc(100vh - 250px));
   }
   /* the notch and the home indicator come out of the map's share, so the
      buttons below never get squeezed off the bottom of the screen */
   @supports (height:100dvh){
     #mapWrap{
-      height:min(62dvh,calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+      height:min(55dvh,calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
     }
   }
   /* touch-action:none turns off the browser's own double-tap zoom, so the
@@ -95,7 +95,14 @@
   }
   #zin{bottom:114px}
   #zminus{bottom:62px}
-  #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s}
+  /* night coming down over the town, from half seven onwards */
+  #dusk{
+    position:absolute;inset:0;pointer-events:none;opacity:0;z-index:3;
+    transition:opacity .4s linear;
+    background:linear-gradient(180deg,rgba(46,34,86,.62),rgba(10,12,34,.74));
+  }
+  header .date.late{color:#8f1626;font-weight:700}
+  #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s;z-index:4}
   body.ud #haze{opacity:1}
   .spore{
     position:absolute;width:3px;height:3px;border-radius:50%;
@@ -113,7 +120,7 @@
   .street.major{stroke-width:13}
   .street.minor{stroke:var(--road2);stroke-width:7}
   .rail{stroke:var(--rail);stroke-width:3;stroke-dasharray:9 7;fill:none}
-  .streetname{fill:var(--muted);font-size:11px;opacity:.8;font-family:inherit}
+  .streetname{fill:var(--muted);font-size:13px;opacity:.8;font-family:inherit}
   .green-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.3}
   .cline{stroke:var(--dash);stroke-width:3;stroke-dasharray:15 11;stroke-linecap:round;fill:none}
   /* every block of town coloured in with its own crayon */
@@ -145,11 +152,11 @@
   .loc .halo{fill:transparent}
   .loc .dot{fill:var(--panel);stroke:var(--muted);stroke-width:2;transition:stroke .2s,fill .2s}
   .loc .label{
-    fill:var(--ink);font-size:13px;font-weight:600;text-anchor:middle;
+    fill:var(--ink);font-size:15.5px;font-weight:600;text-anchor:middle;
     paint-order:stroke;stroke:var(--paper);stroke-width:3.5px;stroke-linejoin:round;
     font-family:inherit;pointer-events:none;
   }
-  .loc .pic{font-size:18px;text-anchor:middle;pointer-events:none}
+  .loc .pic{font-size:29px;text-anchor:middle;pointer-events:none}
   .loc:hover .dot{stroke:var(--accent)}
   .loc.sel .dot{stroke:var(--accent);fill:var(--accent);stroke-width:3}
   .loc.sel .label{fill:var(--accent)}
@@ -158,7 +165,7 @@
   .loc.hit .dot{stroke:var(--good);fill:var(--good)}
   .loc.town{cursor:default}
   .loc.town .dot{stroke:var(--accent);stroke-width:3}
-  .loc.town .label{fill:var(--accent);font-size:15px;letter-spacing:.5px}
+  .loc.town .label{fill:var(--accent);font-size:18px;letter-spacing:.5px}
   .gate{animation:pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 
@@ -258,12 +265,13 @@
 
 <header>
   <h1>HOME BEFORE <span>DINNER</span></h1>
-  <span class="date" id="dateLabel"></span>
+  <span class="date" id="clock">5:00 PM</span>
 </header>
 
 <div id="mapWrap">
   <!-- cropped to the drawn area: the town fills the frame instead of floating in margin -->
   <svg id="map" viewBox="48 48 904 904" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
+  <div id="dusk"></div>
   <div id="haze"></div>
   <button id="zin" class="zbtn" aria-label="Zoom in">+</button>
   <button id="zminus" class="zbtn" aria-label="Zoom out">−</button>
@@ -567,8 +575,8 @@
     sun.appendChild(node('path', { d:'M106,119 Q118,130 130,119', class:'sun-mouth' }));
     ground.appendChild(sun);
 
-    // the gate's growth sits over the streets but under every label and marker
-    if (puzzle.ud){
+    // the growth sits over the streets but under every label and marker
+    {
       const vines = node('g', { filter:'url(#wobble)' });
       VINES.forEach(function(v){
         const path = node('path', { d:v.d, class:'vine' + (v.alt ? ' alt' : ''), 'stroke-width':v.w, 'data-stage':v.stage });
@@ -602,9 +610,9 @@
       // fat tap target: 46 units is as wide as it goes before the two closest
       // places (the water tower and the station, 96 apart) start overlapping
       g.appendChild(node('circle', { cx:p.x, cy:p.y, r:46, class:'halo' }));
-      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:15, class:'dot' }));
-      g.appendChild(node('text',   { x:p.x, y:p.y + 6,  class:'pic' }, p.pic));
-      g.appendChild(node('text',   { x:p.x, y:p.y + 35, class:'label' }, p.name));
+      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:24, class:'dot' }));
+      g.appendChild(node('text',   { x:p.x, y:p.y + 10, class:'pic' }, p.pic));
+      g.appendChild(node('text',   { x:p.x, y:p.y + 46, class:'label' }, p.name));
       g.addEventListener('click', function(){ pick(p.id); });
       svg.appendChild(g);
     });
@@ -849,10 +857,52 @@
                     '<div class="bar">' + segs + '</div>';
   }
 
-  // Each miss lets the next wave of growth in; the reveal opens the gate fully.
+  /* ---------- the clock ----------
+     Tea time to bedtime in two minutes. An hour goes by every thirty seconds:
+     out at five, the light starts going at half seven, and whoever is still
+     out there at nine is not coming home. */
+
+  const CLOCK_START = 17 * 60;        // 5:00 pm, in minutes
+  const DUSK_AT     = 19 * 60 + 30;   // 7:30 pm — the light goes, the vines come
+  const NIGHT_AT    = 21 * 60;        // 9:00 pm — time is up
+  const MIN_PER_SEC = 2;              // one hour every thirty seconds
+
+  let clockFrom = 0, clockTimer = null;
+
+  const clockNow = () => CLOCK_START + (performance.now() - clockFrom) / 1000 * MIN_PER_SEC;
+  const duskAmount = m => clamp((m - DUSK_AT) / (NIGHT_AT - DUSK_AT), 0, 1);
+
+  function fmtClock(mins){
+    const t = Math.max(0, Math.floor(mins)), h24 = Math.floor(t / 60) % 24, m = t % 60;
+    return (((h24 + 11) % 12) + 1) + ':' + String(m).padStart(2, '0') + (h24 < 12 ? ' AM' : ' PM');
+  }
+
+  function tick(){
+    const mins = Math.min(clockNow(), NIGHT_AT);
+    const dusk = duskAmount(mins);
+    el('clock').textContent = fmtClock(mins) + (round ? ' · hunt ' + (round + 1) : '');
+    el('clock').classList.toggle('late', dusk > 0);
+    el('dusk').style.opacity = dusk;
+    renderVines(false);
+    if (!done && clockNow() >= NIGHT_AT) finish(false, true);
+  }
+
+  function startClock(){
+    clockFrom = performance.now();
+    stopClock();
+    clockTimer = setInterval(tick, 250);
+    tick();
+  }
+
+  function stopClock(){
+    if (clockTimer){ clearInterval(clockTimer); clockTimer = null; }
+  }
+
+  // The vines come with the dark: nothing before half seven, everything by nine.
+  // The reveal opens the gate the rest of the way.
   function renderVines(all){
-    if (!puzzle.ud) return;
-    const reached = all ? Infinity : guesses.length;
+    const p = duskAmount(clockNow());
+    const reached = all ? Infinity : (p <= 0 ? -1 : Math.floor(p * 5));
     svg.querySelectorAll('.vine,.bud').forEach(function(n){
       n.classList.toggle('grown', +n.getAttribute('data-stage') <= reached);
     });
@@ -903,8 +953,9 @@
     }
   }
 
-  function finish(won){
+  function finish(won, ranOut){
     done = true;
+    stopClock();
     save();
 
     const g = gfx(puzzle.place.id);
@@ -926,7 +977,7 @@
 
     el('endBox').innerHTML =
       '<div class="result">' +
-        '<h2>' + (won ? 'Found them.' : (puzzle.ud ? 'The gate closed.' : 'They got away.')) + '</h2>' +
+        '<h2>' + (won ? 'Found them.' : ranOut ? 'Nine o&rsquo;clock.' : (puzzle.ud ? 'The gate closed.' : 'They got away.')) + '</h2>' +
         '<p style="margin:0;color:var(--muted)">' + puzzle.cast.pic +
           ' <span class="who">' + puzzle.cast.name + '</span> was hiding at ' +
           puzzle.place.pic + ' <b>' + puzzle.place.name + '</b> — ' +
@@ -999,7 +1050,8 @@
     el('endBox').innerHTML = '';
     el('guessBtn').style.display = '';
     el('hint').style.display = '';
-    el('dateLabel').textContent = key + ' · The Town' + (round ? ' · hunt ' + (round + 1) : '');
+    el('dusk').style.opacity = 0;
+    startClock();
 
     if (resume){
       const saved = load();
