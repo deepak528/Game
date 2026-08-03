@@ -1,9 +1,12 @@
-# Findr
+# Home Before Dinner
 
 A daily hide-and-seek game played on a small fictional town, loosely shaped
 after the middle of Bethpage, NY. Someone from Hawkins is hiding at one of
-seventeen places. You get clues, you search a place, and the town tells you how
-far off you were.
+twenty-four places, and they were supposed to be home before dinner. You get
+clues, you search a place, and the town tells you how far off you were.
+
+A crooked missing poster at the top of the panel says who you are looking for:
+HAVE YOU SEEN, the face, the name.
 
 ## Playing
 
@@ -32,13 +35,19 @@ everyone shares.
 
 ## The map
 
-Eighteen locations, one block = 100 units:
+Twenty-five locations, one block = 100 units:
 
-🏛️ The Town · 🍕 Palermo's Pizza · 📚 Public Library · 🎒 Middle School ·
-🏫 High School · 🗼 Water Tower · 🥤 The Grand Diner · 👾 Quarter Palace ·
-🎳 Lucky Strike · 🚂 Train Station · ⛰️ The Old Bowl · 🏊 Community Pool ·
+🏛️ The Town · 🍕 Pappardelle's Pizzeria · 📚 Public Library · 🎒 Middle School ·
+🏫 High School · 🗼 Water Tower · 🥤 The Grand Diner · 👾 Palace Arcade ·
+💈 Lucky Salon · 🚂 Train Station · ⛰️ The Old Bowl · 🏊 Community Pool ·
 ⚾ Baseball Field · 📻 Sparks Radio · 🪦 Old Grove · 🔧 Smithy's Hardware ·
-🌲 The Pines · 🚐 Cherry Lane
+🌲 The Pines · 🚐 Cherry Lane · 🥯 Stuff a Bagel · ☕ Mongo's Coffee ·
+🥂 Campagne House · 📼 Family Video · 🧪 Hawkins Lab · 🛍️ Starcourt Mall ·
+🍦 Scoops Ahoy
+
+Palace Arcade, Family Video, Hawkins Lab, Starcourt Mall and Scoops Ahoy are
+on loan from Hawkins; the bagels, the salon, the coffee and Campagne House are
+pure Bethpage.
 
 The town is drawn like a crayon map: cream paper, every block coloured in with
 its own pastel, dashed yellow centrelines down the big streets, a smiling sun in
@@ -64,7 +73,7 @@ of five, and the panel warns you up front.
 Roughly one day in three the gate is open. When it is:
 
 - The town goes cold and red, spores drift up through a haze, and the sign over
-  the door reads **ЯDNIF**.
+  the door reads backwards.
 - **Every clue reading comes back mirrored.** Clue 2 says north-east, so look
   south-west. The banner tells you this — the map is wrong, not the game.
 - Your own guesses still read true. The blocks and the arrow after each guess
@@ -80,7 +89,7 @@ trust it.
 
 After each guess a ten-block bar fills to show how close you landed — one block
 from the far side of town, ten when you have found them, with a word for it
-(freezing, cold, warm, hot, boiling). The scale is linear against 7.5 blocks,
+(freezing, cold, warm, hot, boiling). The scale is linear against 9 blocks,
 which is roughly the widest gap between two places on the map.
 
 ## Prototype notes
@@ -88,7 +97,7 @@ which is roughly the widest gap between two places on the map.
 - The puzzle is computed client-side, so the answer is visible to anyone who
   reads the source. Fine for a solo daily; it would need a server to be
   competitive.
-- With seventeen hideable places and five guesses, the clues carry the game.
+- With twenty-four hideable places and five guesses, the clues carry the game.
   Clue 4 is close to a giveaway on purpose — it is the reward for surviving
   three misses.
 - Fan-made, for personal use. The Stranger Things characters belong to their

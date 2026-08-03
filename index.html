@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Findr — The Town</title>
+<title>Home Before Dinner — The Town</title>
 <style>
   :root{
     --bg:#f7edd8; --panel:#fff8ea; --line:#e6d8bd; --ink:#3a332c;
@@ -127,6 +127,15 @@
     box-shadow:0 0 22px -6px var(--glow);
   }
   .banner b{color:var(--accent)}
+  /* the missing poster */
+  .poster{
+    background:#fffdf4;border:2px dashed #4a4238;border-radius:4px;
+    padding:5px 14px 6px;text-align:center;transform:rotate(-2deg);
+    box-shadow:2px 3px 0 rgba(0,0,0,.1);
+  }
+  .poster .p-top{font-size:9.5px;letter-spacing:2px;color:var(--muted)}
+  .poster .p-name{font-size:15px;font-weight:700;line-height:1.2}
+  body.ud .poster{background:#200d11;border-color:var(--accent);box-shadow:2px 3px 0 rgba(0,0,0,.4)}
   .warmth{margin:0 0 12px}
   .warmth .cap{
     display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;
@@ -171,7 +180,7 @@
 <body>
 
 <header>
-  <h1>FIND<span>R</span></h1>
+  <h1>HOME BEFORE <span>DINNER</span></h1>
   <span class="date" id="dateLabel"></span>
 </header>
 
@@ -184,7 +193,7 @@
 <div class="panel" id="panel">
   <div class="status">
     <span class="pill">Guesses left <b id="left">5</b></span>
-    <span class="pill" id="targetPill">Hunting…</span>
+    <div class="poster" id="targetPill">Hunting…</div>
   </div>
   <div id="banner"></div>
   <div class="warmth" id="warmth"></div>
@@ -208,14 +217,14 @@
 
   const PLACES = [
     { id:'town',    name:'The Town',          pic:'🏛️', x:500, y:500, hint:'the middle of everything' },
-    { id:'pizza',   name:"Palermo's Pizza",   pic:'🍕', x:596, y:430, hint:'the whole block smells of oregano after four' },
+    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:596, y:430, hint:'the whole block smells of oregano after four' },
     { id:'library', name:'Public Library',    pic:'📚', x:400, y:434, hint:'you need a card to get in, and quiet to stay' },
     { id:'middle',  name:'Middle School',     pic:'🎒', x:348, y:646, hint:'the bell still rings at 2:40, even in summer' },
     { id:'high',    name:'High School',       pic:'🏫', x:672, y:672, hint:'the field lights come on Friday nights' },
     { id:'tower',   name:'Water Tower',       pic:'🗼', x:500, y:342, hint:'you can see the whole grid from the catwalk' },
     { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:634, y:556, hint:'it is open late and the jukebox eats quarters' },
-    { id:'arcade',  name:'Quarter Palace',    pic:'👾', x:544, y:610, hint:'it is loud, and nobody looks up from the cabinets' },
-    { id:'lanes',   name:'Lucky Strike',      pic:'🎳', x:752, y:462, hint:'nobody there notices one more pair of rented shoes' },
+    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:544, y:610, hint:'it is loud, and nobody looks up from the cabinets' },
+    { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:752, y:462, hint:'you can walk in as yourself and walk out as somebody else' },
     { id:'station', name:'Train Station',     pic:'🚂', x:500, y:246, hint:'the freight goes through hard enough to rattle windows' },
     { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:266, y:314, hint:'the town gave up on that quarry and the kids did not' },
     { id:'pool',    name:'Community Pool',    pic:'🏊', x:316, y:768, hint:'it is closed for the season and the fence is easy enough' },
@@ -224,7 +233,14 @@
     { id:'grove',   name:'Old Grove',         pic:'🪦', x:232, y:518, hint:'the oldest stones there predate the parkway' },
     { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:448, y:588, hint:'if a thing in this town is broken, the part is there' },
     { id:'woods',   name:'The Pines',         pic:'🌲', x:820, y:232, hint:'the trees swallow a flashlight ten feet in' },
-    { id:'trailer', name:'Cherry Lane',       pic:'🚐', x:826, y:640, hint:'the walls are thin and everyone hears everything' }
+    { id:'trailer', name:'Cherry Lane',       pic:'🚐', x:826, y:640, hint:'the walls are thin and everyone hears everything' },
+    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:118, y:436, hint:'the ovens run before sunrise and the line asks no questions' },
+    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:124, y:556, hint:'the milk steamer hisses loud enough to cover any conversation' },
+    { id:'campagne',name:'Campagne House',    pic:'🥂', x:884, y:448, hint:'there is always a wedding on and nobody counts the guests' },
+    { id:'video',   name:'Family Video',      pic:'📼', x:360, y:150, hint:'the horror aisle cannot be seen from the register' },
+    { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:892, y:148, hint:'the fence says keep out and the gate was left open' },
+    { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:896, y:788, hint:'it is brand new and nobody looks twice at a stranger' },
+    { id:'scoops',  name:'Scoops Ahoy',       pic:'🍦', x:900, y:884, hint:'the back room has one door, no windows and free ice cream' }
   ];
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
@@ -502,8 +518,8 @@
   /* ---------- rendering ---------- */
 
   // Ten blocks, filled by how close the last guess landed. The far corners of
-  // the town are about 7.5 blocks apart, so that is the cold end of the scale.
-  const COLD = 7.5;
+  // the town are about 9 blocks apart, so that is the cold end of the scale.
+  const COLD = 9;
 
   function renderWarmth(){
     const box = el('warmth');
@@ -520,7 +536,9 @@
 
   function render(){
     el('left').textContent = Math.max(0, MAX_GUESSES - guesses.length);
-    el('targetPill').innerHTML = puzzle.cast.pic + ' Looking for <b>' + puzzle.cast.name + '</b>';
+    el('targetPill').innerHTML =
+      '<div class="p-top">HAVE YOU SEEN</div>' +
+      '<div class="p-name">' + puzzle.cast.pic + ' ' + puzzle.cast.name + '</div>';
 
     el('banner').innerHTML = puzzle.ud
       ? '<div class="banner">🙃 <b>The gate is open.</b> Every clue reading comes back ' +
@@ -573,7 +591,7 @@
     PLACES.forEach(function(p){ gfx(p.id).classList.remove('sel'); });
 
     const best = guesses.reduce(function(m, x){ return Math.min(m, x.blocks); }, Infinity);
-    const share = (puzzle.ud ? '🙃' : '🔦') + ' Findr ' + key + '  ' +
+    const share = (puzzle.ud ? '🙃' : '🔦') + ' Home Before Dinner ' + key + '  ' +
       (won ? guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES) + '\n' +
       guesses.map(function(x){ return x.hit ? '🎯' : ARROWS[octant(x.bearing)]; }).join('') +
       '\nclosest: ' + fmtBlocks(best);
@@ -588,7 +606,7 @@
       '</div>' +
       '<div class="share">' + share + '</div>' +
       '<button id="copyBtn">Copy result</button>' +
-      '<p class="hint">Someone new hides every day at midnight.</p>';
+      '<p class="hint">Someone new misses dinner every day at midnight.</p>';
 
     el('copyBtn').onclick = function(){
       navigator.clipboard.writeText(share).then(function(){
