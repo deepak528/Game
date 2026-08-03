@@ -27,9 +27,9 @@ many blocks off you were and which way to go, and unlocks another clue:
 
 The Town itself is the ruler, not a hiding place, so it can't be searched.
 
-**Double-tap the map to zoom in** toward that spot, drag to move around, and
-double-tap again — or press **⤢ Whole town** — to come back out. A mouse wheel
-zooms too. A drag that travels is a pan, not a tap, so moving around never picks
+**Double-tap the map to zoom in** toward that spot, or use the **+ / −**
+buttons in the corner of the map. Drag to move around; double-tap again — or
+press **⤢ Whole town** — to come back out. A mouse wheel zooms too. A drag that travels is a pan, not a tap, so moving around never picks
 a place by accident.
 
 Zoom is deliberately not a pinch. iOS hands two-finger gestures to the browser
@@ -64,9 +64,13 @@ its own pastel, dashed yellow centrelines down the big streets, a smiling sun in
 the corner, and a turbulence filter over the ground so nothing is quite
 straight.
 
-Streets, blocks, parks, the pond, the woods and the railway are all drawn from
-the `STREETS`, `BLOCKS`, `AREAS` and `PLACES` arrays at the top of the script —
-move a coordinate and the town redraws. Adding a location means adding one entry
+Shading is one flat colour per block — nothing is layered on top. Where a
+block is a place, the whole block takes its colour: the pines and the ball
+fields are green, the pond block is blue.
+
+Streets, blocks and the railway are all drawn from the `STREETS`, `BLOCKS` and
+`PLACES` arrays at the top of the script — move a coordinate and the town
+redraws. Adding a location means adding one entry
 with an `x`, a `y` and a `hint`; the clue system picks it up automatically.
 
 ## Who hides

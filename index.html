@@ -9,8 +9,7 @@
     --bg:#f7edd8; --panel:#fff8ea; --line:#e6d8bd; --ink:#3a332c;
     --muted:#8a7d6a; --accent:#e05e10; --good:#2e9e63;
     --glow:rgba(224,94,16,.25);
-    --paper:#fbf3df; --road:#b6ab97; --road2:#d2c8b3; --grass:#a3dd90;
-    --water:#a4d9f2; --woods:#7fc57f; --rail:#a68d72;
+    --paper:#fbf3df; --road:#b6ab97; --road2:#d2c8b3; --rail:#a68d72;
     --card:rgba(0,0,0,.05); --seg:rgba(0,0,0,.1); --sharebg:rgba(0,0,0,.05);
     --dash:#ffdf7e; --dis-bg:#ece1cb; --dis-ink:#a3947e;
   }
@@ -46,6 +45,14 @@
     box-shadow:0 2px 6px rgba(0,0,0,.12);transition:opacity .2s;
   }
   #zoomOut.show{opacity:1;pointer-events:auto}
+  .zbtn{
+    position:absolute;right:10px;width:38px;height:38px;z-index:6;padding:0;
+    font-size:20px;line-height:1;border-radius:8px;
+    background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
+  #zin{bottom:98px}
+  #zminus{bottom:54px}
   #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s}
   body.ud #haze{opacity:1}
   .spore{
@@ -64,15 +71,13 @@
   .street.major{stroke-width:13}
   .street.minor{stroke:var(--road2);stroke-width:7}
   .rail{stroke:var(--rail);stroke-width:3;stroke-dasharray:9 7;fill:none}
-  .park{fill:var(--grass)}
-  .water{fill:var(--water)}
-  .woods{fill:var(--woods)}
   .streetname{fill:var(--muted);font-size:11px;opacity:.8;font-family:inherit}
   .green-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.3}
   .cline{stroke:var(--dash);stroke-width:3;stroke-dasharray:15 11;stroke-linecap:round;fill:none}
   /* every block of town coloured in with its own crayon */
   .b0{fill:#ffeaa7}.b1{fill:#ffd6de}.b2{fill:#c9edcb}.b3{fill:#cbe7f8}
   .b4{fill:#ffdfba}.b5{fill:#e4daf8}.b6{fill:#dcf2b0}.b7{fill:#ffe3d2}
+  .b8{fill:#b7e6a6}
   /* vines draw themselves on as the misses pile up */
   .vine{
     fill:none;stroke:#8f1626;stroke-linecap:round;stroke-linejoin:round;opacity:.9;
@@ -199,6 +204,8 @@
   <!-- cropped to the drawn area: the town fills the frame instead of floating in margin -->
   <svg id="map" viewBox="48 48 904 904" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
   <div id="haze"></div>
+  <button id="zin" class="zbtn" aria-label="Zoom in">+</button>
+  <button id="zminus" class="zbtn" aria-label="Zoom out">−</button>
   <button id="zoomOut">⤢ Whole town</button>
 </div>
 
@@ -268,32 +275,26 @@
     { name:'The Parkway', major:true,  x1:944, y1:80,  x2:664, y2:944 }
   ];
 
-  const AREAS = [
-    { cls:'park',  points:'454,454 546,454 546,546 454,546' },          // the green
-    { cls:'woods', points:'706,140 944,118 944,320 768,318 692,238' },  // the pines
-    { cls:'park',  points:'178,238 362,218 382,398 198,418' },          // the old bowl
-    { cls:'water', points:'238,782 342,758 402,830 320,892 240,862' },  // the pond
-    { cls:'park',  points:'640,742 838,752 848,904 652,894' }           // ball fields
-  ];
-
-  // Every block of town coloured in like a crayon map. Corners are nudged a
-  // little off-square on purpose, and the wobble filter does the rest.
+  // Every block of town coloured in like a crayon map — one flat colour per
+  // block, nothing layered on top. Where a block IS a place, the whole block
+  // takes that colour: the pines and ball fields are green, the pond is blue.
+  // Corners are nudged off-square on purpose; the wobble filter does the rest.
   const BLOCKS = [
     { tone:'b3', points:'58,62 224,58 228,270 60,266' },        // NW corner
     { tone:'b1', points:'256,60 484,66 482,268 254,272' },
-    { tone:'b6', points:'516,58 744,64 748,270 514,266' },
-    { tone:'b4', points:'776,64 926,70 866,268 772,272' },      // under the pines
+    { tone:'b5', points:'516,58 744,64 748,270 514,266' },
+    { tone:'b8', points:'776,64 926,70 866,268 772,272' },      // the pines
     { tone:'b0', points:'58,356 226,352 224,486 60,482' },
     { tone:'b5', points:'254,354 486,358 482,484 256,486' },
     { tone:'b7', points:'514,356 746,352 744,486 516,482' },
-    { tone:'b6', points:'774,354 838,358 800,482 774,486' },    // west of the parkway
+    { tone:'b0', points:'774,354 838,358 800,482 774,486' },    // west of the parkway
     { tone:'b2', points:'872,356 944,352 944,638 780,642' },    // east of the parkway
     { tone:'b1', points:'60,516 224,512 226,648 58,644' },
     { tone:'b3', points:'256,514 484,518 482,646 254,644' },
     { tone:'b0', points:'516,516 744,514 746,644 514,648' },
-    { tone:'b6', points:'58,676 226,672 224,936 62,938' },      // pond block
+    { tone:'b3', points:'58,676 226,672 224,936 62,938' },      // the pond
     { tone:'b7', points:'254,674 486,678 484,936 256,934' },
-    { tone:'b5', points:'516,676 744,672 746,934 514,936' },    // ball-field block
+    { tone:'b8', points:'516,676 744,672 746,934 514,936' },    // ball fields
     { tone:'b1', points:'770,676 944,672 944,936 684,938' }     // SE, past the parkway
   ];
 
@@ -475,7 +476,6 @@
     svg.appendChild(ground);
 
     BLOCKS.forEach(function(b){ ground.appendChild(node('polygon', { points:b.points, class:'blk ' + b.tone })); });
-    AREAS.forEach(function(a){ ground.appendChild(node('polygon', { points:a.points, class:a.cls })); });
 
     // the railway runs east to west, just above Depot St
     ground.appendChild(node('line', { x1:60, y1:286, x2:940, y2:286, class:'rail' }));
@@ -561,6 +561,8 @@
   function applyView(){
     svg.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + view.w + ' ' + view.h);
     el('zoomOut').classList.toggle('show', view.w < BASE.w - 1);
+    el('zin').disabled = view.w <= BASE.w / MAX_ZOOM + 0.5;
+    el('zminus').disabled = view.w >= BASE.w - 0.5;
   }
 
   function resetView(){
@@ -648,6 +650,9 @@
   }, { passive:false });
 
   el('zoomOut').onclick = resetView;
+  const viewCentre = () => ({ x:view.x + view.w / 2, y:view.y + view.h / 2 });
+  el('zin').onclick = function(){ zoomAt(viewCentre(), 1.5); };
+  el('zminus').onclick = function(){ zoomAt(viewCentre(), 1 / 1.5); };
 
   function pick(id){
     if (done || id === 'town') return;                             // the green is the ruler, not a hiding place
