@@ -248,25 +248,33 @@
   button.ghost:hover{color:var(--accent);border-color:var(--accent)}
   .hint{color:var(--muted);font-size:11.5px;text-align:center;margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  /* --- laptop: clues down the left, buttons down the right, taller map --- */
+  /* --- desktop: the map fills the whole window and the panel floats over it,
+     clues top-right and buttons bottom-left, so nothing takes space from the
+     town. --header-h is measured in JS, since the header grows with the
+     safe-area inset. --- */
   @media (min-width:820px){
-    #mapWrap{height:min(72vh,calc(100vh - 190px))}
-    .panel{flex-direction:row;gap:20px;align-items:stretch;padding:12px 18px}
-    .panel-scroll{flex:1 1 auto;padding-right:6px}
+    body{position:relative}
+    #mapWrap{flex:1 1 auto;height:auto;min-height:0}
+    .panel{
+      position:absolute;left:0;right:0;bottom:0;top:var(--header-h,56px);
+      background:none;border-top:0;padding:0;display:block;pointer-events:none;z-index:7;
+    }
+    .panel-scroll{
+      position:absolute;top:18px;right:18px;width:360px;max-height:calc(100% - 36px);
+      background:var(--panel);border:1px solid var(--line);border-radius:14px;
+      padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.16);
+      pointer-events:auto;
+    }
     .panel-foot{
-      flex:0 0 300px;display:flex;flex-direction:column;justify-content:flex-end;
-      gap:8px;padding-top:0;border-left:1px solid var(--line);padding-left:20px;
+      position:absolute;left:18px;bottom:18px;width:330px;
+      display:flex;flex-direction:column;gap:8px;
+      padding:0;border:0;pointer-events:auto;
     }
-    .panel-foot #guessBtn,.panel-foot #resetBtn{flex:0 0 auto;width:100%;margin:0}
+    .panel-foot #guessBtn,.panel-foot #resetBtn{
+      flex:0 0 auto;width:100%;margin:0;box-shadow:0 8px 24px rgba(0,0,0,.18);
+    }
+    .panel-foot #resetBtn{background:var(--panel)}
     .hint{text-align:left}
-    /* two columns of clues, so a long ladder does not run off the bottom */
-    #clues{columns:2;column-gap:14px}
-    .clue{break-inside:avoid}
-  }
-  @supports (height:100dvh){
-    @media (min-width:820px){
-      #mapWrap{height:min(72dvh,calc(100dvh - 190px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))}
-    }
   }
   .result{text-align:center;padding:4px 0 10px}
   .result h2{margin:0 0 4px;font-size:20px;font-weight:700}
@@ -680,10 +688,21 @@
     return aspect >= BASE.h / BASE.w ? BASE.w : BASE.h / aspect;
   }
 
+  // On a desktop the clue card floats over the right of the map, so when the
+  // town is centred, bias it left by half of what the card covers. Otherwise
+  // the places under the card cannot be seen — or tapped.
+  function centreShift(v){
+    if (window.innerWidth < 820) return 0;
+    const card = document.querySelector('.panel-scroll');
+    if (!card) return 0;
+    const covered = Math.max(0, v.rect.right - card.getBoundingClientRect().left);
+    return (covered / 2) * (v.w / v.rect.width);
+  }
+
   function applyView(){
     const v = viewSize();
     // on whichever axis shows more than the whole town, centre it
-    viewCx = v.w >= BASE.w ? BASE.x + BASE.w / 2
+    viewCx = v.w >= BASE.w ? BASE.x + BASE.w / 2 + centreShift(v)
            : clamp(viewCx, BASE.x + v.w / 2, BASE.x + BASE.w - v.w / 2);
     viewCy = v.h >= BASE.h ? BASE.y + BASE.h / 2
            : clamp(viewCy, BASE.y + v.h / 2, BASE.y + BASE.h - v.h / 2);
@@ -728,7 +747,14 @@
   }
 
   // the map area changes shape when the phone turns
+  function measureHeader(){
+    document.documentElement.style.setProperty(
+      '--header-h', document.querySelector('header').offsetHeight + 'px');
+  }
+  measureHeader();
+
   window.addEventListener('resize', function(){
+    measureHeader();
     zoomW = Math.min(zoomW, fullZoomW());
     applyView();
   });

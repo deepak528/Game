@@ -17,9 +17,11 @@ The map takes 55% of the screen. The panel below it keeps the guess and New
 hunt buttons pinned on one row so they are always in reach, scrolls the clues
 above them, and scrolls the newest clue into view each time a miss buys one.
 
-On a laptop the panel becomes two columns — clues down the left, the guess and
-New hunt buttons down the right — and the map takes 72% of the window instead
-of 55%.
+On a desktop the map fills the whole window and the panel floats over it —
+clues in a card at the top right, the buttons at the bottom left — so nothing
+takes space away from the town. The resting view is biased left by half of what
+the clue card covers, so every place stays visible and clickable rather than
+hiding underneath it.
 
 It is built for a phone. A tap counts for the nearest place within 70 map
 units, so the targets are finger-sized (about 60px on an iPhone) without any
