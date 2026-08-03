@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Findr — daily hide &amp; seek on a real map</title>
+<style>/*__LEAFLET_CSS__*/</style>
+<style>
+  :root{
+    --bg:#101418; --panel:#181e25; --line:#2a333d; --ink:#e8edf2;
+    --muted:#95a3b1; --accent:#ffc73a; --good:#3ddc97; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  header{
+    padding:10px 14px; border-bottom:1px solid var(--line);
+    display:flex; align-items:baseline; gap:10px; flex:0 0 auto;
+  }
+  header h1{font-size:17px;margin:0;letter-spacing:.5px}
+  header h1 span{color:var(--accent)}
+  header .date{color:var(--muted);font-size:12px;margin-left:auto}
+  #map{flex:1 1 auto;min-height:0;background:#0b0e11;cursor:crosshair}
+  .panel{
+    flex:0 0 auto; background:var(--panel); border-top:1px solid var(--line);
+    padding:12px 14px; max-height:46vh; overflow-y:auto;
+  }
+  .status{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .status .pill{
+    background:#222b34;border:1px solid var(--line);border-radius:999px;
+    padding:3px 10px;font-size:12px;color:var(--muted)
+  }
+  .status .pill b{color:var(--ink)}
+  .clue{
+    border-left:3px solid var(--accent); background:#1e252d;
+    padding:8px 12px; margin:0 0 8px; border-radius:0 6px 6px 0;
+  }
+  .clue .n{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
+  .clue p{margin:2px 0 0}
+  .guess-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:6px 10px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;
+    font-variant-numeric:tabular-nums;
+  }
+  .guess-row .dist{color:var(--muted)}
+  .guess-row .arrow{font-size:18px}
+  button{
+    font:inherit;font-weight:600;border:0;border-radius:8px;padding:11px 16px;
+    background:var(--accent);color:#141821;cursor:pointer;width:100%;
+  }
+  button:disabled{background:#2a333d;color:#6c7a88;cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .hint{color:var(--muted);font-size:12.5px;text-align:center;margin:8px 0 0}
+  .result{text-align:center;padding:4px 0 10px}
+  .result h2{margin:0 0 4px;font-size:20px}
+  .result .who{color:var(--accent)}
+  .share{
+    white-space:pre-wrap;background:#12181e;border:1px solid var(--line);
+    border-radius:8px;padding:10px;margin:10px 0;font-size:14px;text-align:center;
+  }
+  .leaflet-container{background:#0b0e11}
+  .pin{
+    width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+    background:var(--accent);border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.5);cursor:grab;
+  }
+  .seeker-dot{
+    width:14px;height:14px;border-radius:50%;background:#4da3ff;
+    border:2px solid #fff;box-shadow:0 0 0 6px rgba(77,163,255,.25)
+  }
+  .overlay{
+    position:fixed;inset:0;background:rgba(10,13,16,.92);z-index:2000;
+    display:flex;align-items:center;justify-content:center;padding:24px;
+  }
+  .card{max-width:380px;text-align:center}
+  .card h2{margin:0 0 8px}
+  .card p{color:var(--muted);margin:0 0 16px}
+  .card button{margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>FIND<span>R</span></h1>
+  <span class="date" id="dateLabel"></span>
+</header>
+
+<div id="map"></div>
+
+<div class="panel" id="panel">
+  <div class="status">
+    <span class="pill">Guesses left <b id="left">5</b></span>
+    <span class="pill" id="targetPill">Hunting…</span>
+  </div>
+  <div id="clues"></div>
+  <div id="guesses"></div>
+  <div id="endBox"></div>
+  <button id="guessBtn" disabled>Drop a pin on the map</button>
+  <p class="hint" id="hint">Tap the map where you think they're hiding.</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card">
+    <h2>Someone is hiding near you.</h2>
+    <p>Findr needs your location to place today's hiding spot in your own neighbourhood. Everyone in the world gets the same character at the same distance and bearing — just from their own doorstep.</p>
+    <button id="useGps">Use my location</button>
+    <button id="useDemo" class="ghost">Play the demo (San Francisco)</button>
+  </div>
+</div>
+
+<script>/*__LEAFLET_JS__*/</script>
+<script>
+(function(){
+  'use strict';
+
+  const MAX_GUESSES = 5;
+  const WIN_RADIUS  = 100;   // metres — inside this and you've found them
+  const DEMO = { lat: 37.7749, lng: -122.4194, label: 'San Francisco' };
+
+  const CAST = [
+    { name: 'Marguerite the Cartographer', emoji: '🧭', flavor: 'She only ever hides somewhere she could draw from memory.' },
+    { name: 'Otto the Night Baker',         emoji: '🥐', flavor: 'He left at 4am and the trail smells faintly of butter.' },
+    { name: 'Priya the Birdwatcher',        emoji: '🦜', flavor: 'Wherever she is, she has a clear view of the sky.' },
+    { name: 'Sal the Busker',               emoji: '🎻', flavor: 'He picks spots where footsteps echo.' },
+    { name: 'Ines the Locksmith',           emoji: '🔑', flavor: 'She never hides behind anything she could open.' },
+    { name: 'Kofi the Courier',             emoji: '🚲', flavor: 'He measures the city in minutes, not metres.' },
+    { name: 'Wren the Archivist',           emoji: '📻', flavor: 'She dislikes daylight and loves a good corner.' },
+    { name: 'Tomas the Gardener',           emoji: '🌱', flavor: 'Something is growing where he stopped.' }
+  ];
+
+  const COMPASS = ['north','north-east','east','south-east','south','south-west','west','north-west'];
+  const ARROWS  = ['⬆️','↗️','➡️','↘️','⬇️','↙️','⬅️','↖️'];
+
+  /* ---------- deterministic daily seed ---------- */
+
+  function todayKey(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function hash(str){
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++){
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function mulberry32(a){
+    return function(){
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /* ---------- geodesy ---------- */
+
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const toDeg = r => r * 180 / Math.PI;
+
+  function destination(lat, lng, bearingDeg, dist){
+    const d = dist / R, br = toRad(bearingDeg);
+    const p1 = toRad(lat), l1 = toRad(lng);
+    const p2 = Math.asin(Math.sin(p1)*Math.cos(d) + Math.cos(p1)*Math.sin(d)*Math.cos(br));
+    const l2 = l1 + Math.atan2(Math.sin(br)*Math.sin(d)*Math.cos(p1), Math.cos(d) - Math.sin(p1)*Math.sin(p2));
+    return { lat: toDeg(p2), lng: ((toDeg(l2) + 540) % 360) - 180 };
+  }
+
+  function haversine(a, b){
+    const dp = toRad(b.lat - a.lat), dl = toRad(b.lng - a.lng);
+    const s = Math.sin(dp/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dl/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(s));
+  }
+
+  function bearing(a, b){
+    const p1 = toRad(a.lat), p2 = toRad(b.lat), dl = toRad(b.lng - a.lng);
+    const y = Math.sin(dl) * Math.cos(p2);
+    const x = Math.cos(p1)*Math.sin(p2) - Math.sin(p1)*Math.cos(p2)*Math.cos(dl);
+    return (toDeg(Math.atan2(y, x)) + 360) % 360;
+  }
+
+  const octant = deg => Math.round(deg / 45) % 8;
+
+  function fmtDist(m){
+    return m < 1000 ? Math.round(m) + ' m' : (m/1000).toFixed(m < 10000 ? 2 : 1) + ' km';
+  }
+
+  /* ---------- puzzle ---------- */
+
+  const key = todayKey();
+  const rnd = mulberry32(hash('findr::' + key));
+  const puzzle = {
+    cast:    CAST[Math.floor(rnd() * CAST.length)],
+    bearing: Math.floor(rnd() * 360),
+    dist:    400 + Math.floor(rnd() * 2100)   // 400 m – 2.5 km from you
+  };
+
+  function clueList(){
+    const b = puzzle.bearing, d = puzzle.dist;
+    const lo = Math.floor(d / 250) * 250, hi = lo + 250;
+    return [
+      puzzle.cast.flavor,
+      'They are somewhere to the <b>' + COMPASS[octant(b)] + '</b> of you.',
+      'The walk is <b>' + fmtDist(lo) + ' to ' + fmtDist(hi) + '</b> as the crow flies.',
+      'Their exact bearing from you is <b>' + b + '°</b>. Now go.'
+    ];
+  }
+
+  /* ---------- state ---------- */
+
+  let origin = null, hidden = null, map = null;
+  let guessMarker = null, pending = null, guesses = [], done = false;
+
+  const saveKey = 'findr::' + key;
+  const el = id => document.getElementById(id);
+
+  function save(){
+    try {
+      localStorage.setItem(saveKey, JSON.stringify({ origin, guesses, done }));
+    } catch(e){ /* private mode — just don't persist */ }
+  }
+
+  function load(){
+    try { return JSON.parse(localStorage.getItem(saveKey) || 'null'); }
+    catch(e){ return null; }
+  }
+
+  /* ---------- rendering ---------- */
+
+  function render(){
+    const used = guesses.length;
+    el('left').textContent = Math.max(0, MAX_GUESSES - used);
+    el('targetPill').innerHTML = puzzle.cast.emoji + ' Looking for <b>' + puzzle.cast.name + '</b>';
+
+    const clues = clueList();
+    const shown = Math.min(used + 1, clues.length);
+    el('clues').innerHTML = clues.slice(0, shown).map(function(c, i){
+      return '<div class="clue"><div class="n">Clue ' + (i+1) + '</div><p>' + c + '</p></div>';
+    }).join('');
+
+    el('guesses').innerHTML = guesses.map(function(g, i){
+      const hit = g.dist <= WIN_RADIUS;
+      return '<div class="guess-row">' +
+               '<span>Guess ' + (i+1) + '</span>' +
+               '<span class="dist" style="color:' + (hit ? 'var(--good)' : 'var(--muted)') + '">' +
+                 (hit ? 'found them!' : fmtDist(g.dist) + ' away') +
+               '</span>' +
+               '<span class="arrow">' + (hit ? '🎯' : ARROWS[octant(g.bearing)]) + '</span>' +
+             '</div>';
+    }).join('');
+
+    const btn = el('guessBtn');
+    if (done){
+      btn.style.display = 'none';
+      el('hint').style.display = 'none';
+    } else {
+      btn.disabled = !pending;
+      btn.textContent = pending ? 'Guess here' : 'Drop a pin on the map';
+    }
+  }
+
+  function finish(won){
+    done = true;
+    save();
+
+    L.marker([hidden.lat, hidden.lng], {
+      icon: L.divIcon({ className:'', html:'<div style="font-size:30px;line-height:1">' + puzzle.cast.emoji + '</div>', iconSize:[30,30], iconAnchor:[15,15] })
+    }).addTo(map);
+    L.circle([hidden.lat, hidden.lng], { radius: WIN_RADIUS, color:'#ffc73a', weight:1, fillOpacity:.12 }).addTo(map);
+    map.fitBounds(L.latLngBounds([[origin.lat, origin.lng], [hidden.lat, hidden.lng]]).pad(0.35));
+
+    const best = guesses.reduce(function(m, g){ return Math.min(m, g.dist); }, Infinity);
+    const share = '🔍 Findr ' + key + '  ' + (won ? guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES) + '\n' +
+      guesses.map(function(g){ return g.dist <= WIN_RADIUS ? '🎯' : ARROWS[octant(g.bearing)]; }).join('') +
+      '\nclosest: ' + fmtDist(best);
+
+    el('endBox').innerHTML =
+      '<div class="result">' +
+        '<h2>' + (won ? 'Found!' : 'They got away.') + '</h2>' +
+        '<p style="margin:0;color:var(--muted)">' + puzzle.cast.emoji +
+          ' <span class="who">' + puzzle.cast.name + '</span> was hiding ' +
+          fmtDist(puzzle.dist) + ' ' + COMPASS[octant(puzzle.bearing)] + ' of you.</p>' +
+      '</div>' +
+      '<div class="share">' + share + '</div>' +
+      '<button id="copyBtn">Copy result</button>' +
+      '<p class="hint">A new character hides every day at midnight.</p>';
+
+    el('copyBtn').onclick = function(){
+      navigator.clipboard.writeText(share).then(function(){
+        el('copyBtn').textContent = 'Copied ✓';
+      }, function(){
+        el('copyBtn').textContent = 'Copy failed — select the text above';
+      });
+    };
+    render();
+  }
+
+  function submitGuess(){
+    if (done || !pending) return;
+    const dist = haversine(pending, hidden);
+    guesses.push({ lat: pending.lat, lng: pending.lng, dist: dist, bearing: bearing(pending, hidden) });
+
+    L.circleMarker([pending.lat, pending.lng], {
+      radius: 5, color: dist <= WIN_RADIUS ? '#3ddc97' : '#ff6b6b', weight: 2, fillOpacity: .7
+    }).addTo(map);
+
+    if (guessMarker){ map.removeLayer(guessMarker); guessMarker = null; }
+    pending = null;
+    save();
+
+    if (dist <= WIN_RADIUS) finish(true);
+    else if (guesses.length >= MAX_GUESSES) finish(false);
+    else render();
+  }
+
+  /* ---------- boot ---------- */
+
+  function start(lat, lng){
+    el('overlay').style.display = 'none';
+    origin = { lat: lat, lng: lng };
+    hidden = destination(lat, lng, puzzle.bearing, puzzle.dist);
+
+    // zoom 14 keeps the whole 2.5 km hiding radius on screen on a phone
+    map = L.map('map', { zoomControl: true }).setView([lat, lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    L.marker([lat, lng], {
+      icon: L.divIcon({ className:'', html:'<div class="seeker-dot"></div>', iconSize:[14,14], iconAnchor:[7,7] })
+    }).addTo(map).bindTooltip('You', { permanent:false });
+
+    map.on('click', function(e){
+      if (done) return;
+      pending = { lat: e.latlng.lat, lng: e.latlng.lng };
+      if (guessMarker) guessMarker.setLatLng(e.latlng);
+      else guessMarker = L.marker(e.latlng, {
+             draggable: true,
+             icon: L.divIcon({ className:'', html:'<div class="pin"></div>', iconSize:[22,22], iconAnchor:[11,22] })
+           }).addTo(map)
+             .on('dragend', function(ev){ pending = ev.target.getLatLng(); });
+      render();
+    });
+
+    el('guessBtn').onclick = submitGuess;
+
+    // The panel grows as clues pile up, which shrinks the map. Leaflet has to be
+    // told, or its idea of where the centre is drifts away from what's on screen.
+    if (window.ResizeObserver){
+      var ro = new ResizeObserver(function(){ map.invalidateSize(); });
+      ro.observe(el('panel'));
+    }
+    window.addEventListener('resize', function(){ map.invalidateSize(); });
+
+    // replay a session already in progress today
+    const saved = load();
+    if (saved && saved.origin &&
+        haversine(saved.origin, origin) < 500 &&        // same neighbourhood
+        Array.isArray(saved.guesses)) {
+      guesses = saved.guesses;
+      guesses.forEach(function(g){
+        L.circleMarker([g.lat, g.lng], {
+          radius: 5, color: g.dist <= WIN_RADIUS ? '#3ddc97' : '#ff6b6b', weight: 2, fillOpacity: .7
+        }).addTo(map);
+      });
+      const won = guesses.some(function(g){ return g.dist <= WIN_RADIUS; });
+      if (won || guesses.length >= MAX_GUESSES){ finish(won); return; }
+    }
+    render();
+  }
+
+  el('dateLabel').textContent = key;
+
+  el('useGps').onclick = function(){
+    this.textContent = 'Locating…';
+    const self = this;
+    if (!navigator.geolocation) { start(DEMO.lat, DEMO.lng); return; }
+    navigator.geolocation.getCurrentPosition(
+      function(p){ start(p.coords.latitude, p.coords.longitude); },
+      function(){ self.textContent = 'Location blocked — use the demo below'; self.disabled = true; },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  el('useDemo').onclick = function(){ start(DEMO.lat, DEMO.lng); };
+})();
+</script>
+</body>
+</html>
