@@ -109,13 +109,18 @@
     box-shadow:0 0 22px -6px var(--glow);
   }
   .banner b{color:var(--accent)}
-  .lights{display:flex;gap:5px;margin:0 0 10px;padding:6px 4px}
-  .bulb{
-    flex:1 1 0;height:13px;border-radius:50%;background:#232b33;
-    border:1px solid rgba(255,255,255,.08);transition:background .35s,box-shadow .35s;
+  .warmth{margin:0 0 12px}
+  .warmth .cap{
+    display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--muted);margin-bottom:5px;
   }
-  .bulb.on{animation:flicker 1.4s infinite alternate}
-  @keyframes flicker{from{filter:brightness(.72)}to{filter:brightness(1.25)}}
+  .warmth .cap b{color:var(--accent);letter-spacing:0}
+  .bar{display:flex;gap:4px}
+  .seg{
+    flex:1 1 0;height:12px;border-radius:2px;background:rgba(255,255,255,.07);
+    transition:background .3s;
+  }
+  .seg.on{background:var(--accent)}
   .clue{
     border-left:3px solid var(--accent);background:rgba(255,255,255,.035);
     padding:8px 12px;margin:0 0 8px;border-radius:0 6px 6px 0;
@@ -165,7 +170,7 @@
     <span class="pill" id="targetPill">Hunting…</span>
   </div>
   <div id="banner"></div>
-  <div class="lights" id="lights"></div>
+  <div class="warmth" id="warmth"></div>
   <div id="clues"></div>
   <div id="guesses"></div>
   <div id="endBox"></div>
@@ -241,7 +246,6 @@
 
   const COMPASS = ['north','north-east','east','south-east','south','south-west','west','north-west'];
   const ARROWS  = ['⬆️','↗️','➡️','↘️','⬇️','↙️','⬅️','↖️'];
-  const BULBS   = ['#ff2d3f','#3ddc97','#ffc73a','#4da3ff','#ff8f3f','#c77dff','#ff2d3f','#3ddc97'];
 
   /* ---------- deterministic daily seed ---------- */
 
@@ -426,19 +430,21 @@
 
   /* ---------- rendering ---------- */
 
-  function renderLights(){
-    const box = el('lights');
+  // Ten blocks, filled by how close the last guess landed. The far corners of
+  // the town are about 7.5 blocks apart, so that is the cold end of the scale.
+  const COLD = 7.5;
+
+  function renderWarmth(){
+    const box = el('warmth');
     if (!guesses.length){ box.innerHTML = ''; return; }
-    const b = guesses[guesses.length - 1].blocks;
-    const steps = [0.01, 1, 1.5, 2, 2.5, 3.5, 4.5];   // blocks off -> bulbs lit
-    let lit = 1;
-    for (let i = 0; i < steps.length; i++) if (b <= steps[i]) { lit = 8 - i; break; }
-    box.innerHTML = BULBS.map(function(c, i){
-      const on = i < lit;
-      return '<div class="bulb' + (on ? ' on' : '') + '" style="' +
-        (on ? 'background:' + c + ';box-shadow:0 0 10px 2px ' + c + ';animation-delay:' + (i * .13) + 's' : '') +
-      '"></div>';
-    }).join('');
+    const g = guesses[guesses.length - 1];
+    const filled = g.hit ? 10 : Math.min(10, Math.max(1, Math.ceil(10 * (1 - g.blocks / COLD))));
+    const word = g.hit ? 'found' : filled >= 9 ? 'boiling' : filled >= 7 ? 'hot'
+               : filled >= 5 ? 'warm' : filled >= 3 ? 'cold' : 'freezing';
+    let segs = '';
+    for (let i = 0; i < 10; i++) segs += '<div class="seg' + (i < filled ? ' on' : '') + '"></div>';
+    box.innerHTML = '<div class="cap"><span>' + word + '</span><b>' + filled + '/10</b></div>' +
+                    '<div class="bar">' + segs + '</div>';
   }
 
   function render(){
@@ -452,7 +458,7 @@
           ? '<div class="banner">🕰️ <b>Vecna is the quarry.</b> He costs you a guess. You get four.</div>'
           : '');
 
-    renderLights();
+    renderWarmth();
 
     const clues = clueList();
     const shown = Math.min(guesses.length + 1, clues.length);

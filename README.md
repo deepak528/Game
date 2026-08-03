@@ -70,10 +70,12 @@ The mirroring is the puzzle. It makes the clue ladder mean something — clue 2
 goes from "walk this way" into a thing you have to flip in your head before you
 trust it.
 
-## Proximity lights
+## Warmth
 
-After each guess, eight bulbs light up like the wall in the Byers' living room —
-one bulb from across town, all eight when you have found them.
+After each guess a ten-block bar fills to show how close you landed — one block
+from the far side of town, ten when you have found them, with a word for it
+(freezing, cold, warm, hot, boiling). The scale is linear against 7.5 blocks,
+which is roughly the widest gap between two places on the map.
 
 ## Prototype notes
 
