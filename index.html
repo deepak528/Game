@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Findr — daily hide &amp; seek on a real map</title>
+<title>Findr — Hawkins on the Hill, Bethpage NY</title>
 <style>/* required styles */
 
 .leaflet-pane,
@@ -670,6 +670,13 @@ svg.leaflet-image-layer.leaflet-interactive path {
   :root{
     --bg:#101418; --panel:#181e25; --line:#2a333d; --ink:#e8edf2;
     --muted:#95a3b1; --accent:#ffc73a; --good:#3ddc97; --bad:#ff6b6b;
+    --glow:rgba(255,199,58,.35);
+  }
+  /* the Upside Down: everything goes cold, red and wrong */
+  body.ud{
+    --bg:#0a0507; --panel:#150a0d; --line:#3a1a20; --ink:#f0dfe2;
+    --muted:#b08b91; --accent:#ff2d3f; --good:#ff2d3f;
+    --glow:rgba(255,45,63,.4);
   }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
@@ -677,27 +684,71 @@ svg.leaflet-image-layer.leaflet-interactive path {
     background:var(--bg); color:var(--ink);
     font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
     display:flex; flex-direction:column; overflow:hidden;
+    transition:background .6s,color .6s;
   }
   header{
     padding:10px 14px; border-bottom:1px solid var(--line);
-    display:flex; align-items:baseline; gap:10px; flex:0 0 auto;
+    display:flex; align-items:baseline; gap:10px; flex:0 0 auto; position:relative; z-index:5;
   }
-  header h1{font-size:17px;margin:0;letter-spacing:.5px}
-  header h1 span{color:var(--accent)}
+  header h1{
+    font-size:17px;margin:0;letter-spacing:.5px;
+    font-family:ui-serif,Georgia,serif;font-weight:700;
+  }
+  header h1 span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
+  /* in the Upside Down even the sign is the wrong way round */
+  body.ud header h1{display:inline-block;transform:scaleX(-1);color:var(--accent);text-shadow:0 0 14px var(--glow)}
   header .date{color:var(--muted);font-size:12px;margin-left:auto}
-  #map{flex:1 1 auto;min-height:0;background:#0b0e11;cursor:crosshair}
+
+  #map{flex:1 1 auto;min-height:0;background:#0b0e11;cursor:crosshair;transition:filter .8s}
+  body.ud #map{filter:invert(1) hue-rotate(190deg) saturate(1.5) contrast(.92) brightness(.85)}
+  #mapWrap{flex:1 1 auto;min-height:0;position:relative;display:flex}
+  /* red haze + drifting spores, above the tiles but under the controls */
+  #haze{
+    position:absolute;inset:0;pointer-events:none;z-index:400;opacity:0;transition:opacity .8s;
+    background:radial-gradient(ellipse at 50% 40%,rgba(120,0,20,.15),rgba(20,0,6,.72) 78%);
+  }
+  body.ud #haze{opacity:1}
+  .spore{
+    position:absolute;width:3px;height:3px;border-radius:50%;
+    background:rgba(255,220,225,.85);box-shadow:0 0 6px 2px rgba(255,90,110,.5);
+    animation:drift linear infinite;
+  }
+  @keyframes drift{
+    0%{transform:translate3d(0,110%,0) scale(.6);opacity:0}
+    12%{opacity:.9}
+    88%{opacity:.7}
+    100%{transform:translate3d(24px,-15%,0) scale(1.15);opacity:0}
+  }
+
   .panel{
     flex:0 0 auto; background:var(--panel); border-top:1px solid var(--line);
-    padding:12px 14px; max-height:46vh; overflow-y:auto;
+    padding:12px 14px; max-height:48vh; overflow-y:auto; position:relative; z-index:5;
   }
-  .status{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .status{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .status .pill{
-    background:#222b34;border:1px solid var(--line);border-radius:999px;
+    background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;
     padding:3px 10px;font-size:12px;color:var(--muted)
   }
   .status .pill b{color:var(--ink)}
+
+  .banner{
+    border:1px solid var(--accent);background:rgba(255,45,63,.09);color:var(--ink);
+    border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13.5px;
+    box-shadow:0 0 22px -6px var(--glow);
+  }
+  .banner b{color:var(--accent)}
+
+  /* the wall of Christmas lights — proximity readout for the last guess */
+  .lights{display:flex;justify-content:space-between;gap:5px;margin:0 0 10px;padding:6px 4px}
+  .bulb{
+    flex:1 1 0;height:13px;border-radius:50%;background:#232b33;
+    border:1px solid rgba(255,255,255,.08);transition:background .35s,box-shadow .35s;
+  }
+  .bulb.on{animation:flicker 1.4s infinite alternate}
+  @keyframes flicker{from{filter:brightness(.72)}to{filter:brightness(1.25)}}
+
   .clue{
-    border-left:3px solid var(--accent); background:#1e252d;
+    border-left:3px solid var(--accent); background:rgba(255,255,255,.035);
     padding:8px 12px; margin:0 0 8px; border-radius:0 6px 6px 0;
   }
   .clue .n{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
@@ -713,14 +764,14 @@ svg.leaflet-image-layer.leaflet-interactive path {
     font:inherit;font-weight:600;border:0;border-radius:8px;padding:11px 16px;
     background:var(--accent);color:#141821;cursor:pointer;width:100%;
   }
+  body.ud button{color:#fff}
   button:disabled{background:#2a333d;color:#6c7a88;cursor:not-allowed}
-  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
   .hint{color:var(--muted);font-size:12.5px;text-align:center;margin:8px 0 0}
   .result{text-align:center;padding:4px 0 10px}
-  .result h2{margin:0 0 4px;font-size:20px}
+  .result h2{margin:0 0 4px;font-size:20px;font-family:ui-serif,Georgia,serif}
   .result .who{color:var(--accent)}
   .share{
-    white-space:pre-wrap;background:#12181e;border:1px solid var(--line);
+    white-space:pre-wrap;background:rgba(0,0,0,.35);border:1px solid var(--line);
     border-radius:8px;padding:10px;margin:10px 0;font-size:14px;text-align:center;
   }
   .leaflet-container{background:#0b0e11}
@@ -732,14 +783,9 @@ svg.leaflet-image-layer.leaflet-interactive path {
     width:14px;height:14px;border-radius:50%;background:#4da3ff;
     border:2px solid #fff;box-shadow:0 0 0 6px rgba(77,163,255,.25)
   }
-  .overlay{
-    position:fixed;inset:0;background:rgba(10,13,16,.92);z-index:2000;
-    display:flex;align-items:center;justify-content:center;padding:24px;
-  }
-  .card{max-width:380px;text-align:center}
-  .card h2{margin:0 0 8px}
-  .card p{color:var(--muted);margin:0 0 16px}
-  .card button{margin-bottom:8px}
+  /* the gate at the reveal */
+  .gate{font-size:30px;line-height:1;filter:drop-shadow(0 0 10px var(--glow));animation:pulse 1.8s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
 </style>
 </head>
 <body>
@@ -749,27 +795,23 @@ svg.leaflet-image-layer.leaflet-interactive path {
   <span class="date" id="dateLabel"></span>
 </header>
 
-<div id="map"></div>
+<div id="mapWrap">
+  <div id="map"></div>
+  <div id="haze"></div>
+</div>
 
 <div class="panel" id="panel">
   <div class="status">
     <span class="pill">Guesses left <b id="left">5</b></span>
     <span class="pill" id="targetPill">Hunting…</span>
   </div>
+  <div id="banner"></div>
+  <div id="lights"></div>
   <div id="clues"></div>
   <div id="guesses"></div>
   <div id="endBox"></div>
   <button id="guessBtn" disabled>Drop a pin on the map</button>
   <p class="hint" id="hint">Tap the map where you think they're hiding.</p>
-</div>
-
-<div class="overlay" id="overlay">
-  <div class="card">
-    <h2>Someone is hiding near you.</h2>
-    <p>Findr needs your location to place today's hiding spot in your own neighbourhood. Everyone in the world gets the same character at the same distance and bearing — just from their own doorstep.</p>
-    <button id="useGps">Use my location</button>
-    <button id="useDemo" class="ghost">Start from the default spot</button>
-  </div>
 </div>
 
 <script>/* @preserve
@@ -782,45 +824,25 @@ svg.leaflet-image-layer.leaflet-interactive path {
 (function(){
   'use strict';
 
-  const MAX_GUESSES = 5;
-  const WIN_RADIUS  = 100;   // metres — inside this and you've found them
-  // Fallback start point when GPS is unavailable or denied. Deliberately the
-  // centre of town, not anyone's doorstep — this file is version controlled.
-  // To start from an exact spot, load the page once with ?at=<lat>,<lng>; it is
-  // remembered in this browser only and never committed.
-  const HOME = { lat: 40.7440, lng: -73.4818, label: 'Bethpage, NY' };
+  // The hunt always starts from the same place: Bethpage, NY.
+  const ORIGIN = { lat: 40.7440, lng: -73.4818, label: 'Bethpage, NY' };
 
-  const AT_KEY = 'findr::home';
-
-  function customHome(){
-    const m = /[?&]at=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(location.search);
-    if (m){
-      const p = { lat: parseFloat(m[1]), lng: parseFloat(m[2]), label: 'your saved spot' };
-      if (Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180){
-        try { localStorage.setItem(AT_KEY, JSON.stringify(p)); } catch(e){}
-        return p;
-      }
-    }
-    try {
-      const s = JSON.parse(localStorage.getItem(AT_KEY) || 'null');
-      if (s && typeof s.lat === 'number' && typeof s.lng === 'number') return s;
-    } catch(e){}
-    return null;
-  }
+  const WIN_RADIUS = 100;   // metres — inside this and you've found them
 
   const CAST = [
-    { name: 'Marguerite the Cartographer', emoji: '🧭', flavor: 'She only ever hides somewhere she could draw from memory.' },
-    { name: 'Otto the Night Baker',         emoji: '🥐', flavor: 'He left at 4am and the trail smells faintly of butter.' },
-    { name: 'Priya the Birdwatcher',        emoji: '🦜', flavor: 'Wherever she is, she has a clear view of the sky.' },
-    { name: 'Sal the Busker',               emoji: '🎻', flavor: 'He picks spots where footsteps echo.' },
-    { name: 'Ines the Locksmith',           emoji: '🔑', flavor: 'She never hides behind anything she could open.' },
-    { name: 'Kofi the Courier',             emoji: '🚲', flavor: 'He measures the city in minutes, not metres.' },
-    { name: 'Wren the Archivist',           emoji: '📻', flavor: 'She dislikes daylight and loves a good corner.' },
-    { name: 'Tomas the Gardener',           emoji: '🌱', flavor: 'Something is growing where he stopped.' }
+    { name: 'Eleven',        emoji: '🧇', flavor: 'A trail of Eggo crumbs runs out here. Every streetlight on the block is dead.' },
+    { name: 'Dustin',        emoji: '🧢', flavor: 'He is still in radio range, so Cerebro says he found the high ground.' },
+    { name: 'Max',           emoji: '🛹', flavor: 'She skated. It is downhill the whole way, and she never takes the long route.' },
+    { name: 'Will',          emoji: '🔦', flavor: 'He has been drawing this place all week. The green crayon is worn to a stub.' },
+    { name: 'Steve',         emoji: '🏒', flavor: 'He drove, so wherever he is, there is somewhere to park the Beemer.' },
+    { name: 'Vecna',         emoji: '🕰️', flavor: 'The clock has chimed twice. He is somewhere quiet, and he already knows where you will look.', boss: true },
+    { name: 'Ayan',          emoji: '🎮', flavor: 'He said he would be home before dinner. He was not home before dinner.' },
+    { name: 'Deepak Smithy', emoji: '🔧', flavor: 'Find the thing that is broken. He will be underneath it.' }
   ];
 
   const COMPASS = ['north','north-east','east','south-east','south','south-west','west','north-west'];
   const ARROWS  = ['⬆️','↗️','➡️','↘️','⬇️','↙️','⬅️','↖️'];
+  const BULBS   = ['#ff2d3f','#3ddc97','#ffc73a','#4da3ff','#ff8f3f','#c77dff','#ff2d3f','#3ddc97'];
 
   /* ---------- deterministic daily seed ---------- */
 
@@ -887,32 +909,38 @@ svg.leaflet-image-layer.leaflet-interactive path {
   const puzzle = {
     cast:    CAST[Math.floor(rnd() * CAST.length)],
     bearing: Math.floor(rnd() * 360),
-    dist:    400 + Math.floor(rnd() * 2100)   // 400 m – 2.5 km from you
+    dist:    400 + Math.floor(rnd() * 2100),   // 400 m – 2.5 km out
+    ud:      rnd() < 0.34                      // roughly one day in three
   };
+  // Vecna takes a guess off you just by being the one you're hunting.
+  const MAX_GUESSES = puzzle.cast.boss ? 4 : 5;
+
+  // In the Upside Down every reading comes back reversed. The clues are
+  // mirrored, and the player is told so — the map is wrong, not unfair.
+  const clueBearing = puzzle.ud ? (puzzle.bearing + 180) % 360 : puzzle.bearing;
 
   function clueList(){
-    const b = puzzle.bearing, d = puzzle.dist;
+    const d = puzzle.dist;
     const lo = Math.floor(d / 250) * 250, hi = lo + 250;
     return [
       puzzle.cast.flavor,
-      'They are somewhere to the <b>' + COMPASS[octant(b)] + '</b> of you.',
+      'The reading points <b>' + COMPASS[octant(clueBearing)] + '</b> of the water tower.',
       'The walk is <b>' + fmtDist(lo) + ' to ' + fmtDist(hi) + '</b> as the crow flies.',
-      'Their exact bearing from you is <b>' + b + '°</b>. Now go.'
+      'The needle settles on <b>' + clueBearing + '°</b>. Now go.'
     ];
   }
 
   /* ---------- state ---------- */
 
-  let origin = null, hidden = null, map = null;
-  let guessMarker = null, pending = null, guesses = [], done = false;
+  const hidden = destination(ORIGIN.lat, ORIGIN.lng, puzzle.bearing, puzzle.dist);
+  let map = null, guessMarker = null, pending = null, guesses = [], done = false;
 
   const saveKey = 'findr::' + key;
   const el = id => document.getElementById(id);
 
   function save(){
-    try {
-      localStorage.setItem(saveKey, JSON.stringify({ origin, guesses, done }));
-    } catch(e){ /* private mode — just don't persist */ }
+    try { localStorage.setItem(saveKey, JSON.stringify({ guesses, done })); }
+    catch(e){ /* private mode — just don't persist */ }
   }
 
   function load(){
@@ -920,12 +948,52 @@ svg.leaflet-image-layer.leaflet-interactive path {
     catch(e){ return null; }
   }
 
+  /* ---------- the Upside Down ---------- */
+
+  function enterUpsideDown(){
+    document.body.classList.add('ud');
+    const haze = el('haze');
+    for (let i = 0; i < 16; i++){
+      const s = document.createElement('div');
+      s.className = 'spore';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.animationDuration = (9 + Math.random() * 11) + 's';
+      s.style.animationDelay = (-Math.random() * 14) + 's';
+      haze.appendChild(s);
+    }
+  }
+
   /* ---------- rendering ---------- */
+
+  // Eight bulbs on the wall, lighting up as the last guess closes in.
+  function renderLights(){
+    const box = el('lights');
+    if (!guesses.length){ box.innerHTML = ''; return; }
+    const d = guesses[guesses.length - 1].dist;
+    const steps = [100, 250, 500, 750, 1000, 1500, 2000];
+    let lit = 1;
+    for (let i = 0; i < steps.length; i++) if (d <= steps[i]) { lit = 8 - i; break; }
+    box.innerHTML = BULBS.map(function(c, i){
+      const on = i < lit;
+      return '<div class="bulb' + (on ? ' on' : '') + '" style="' +
+        (on ? 'background:' + c + ';box-shadow:0 0 10px 2px ' + c + ';animation-delay:' + (i * .13) + 's' : '') +
+        '"></div>';
+    }).join('');
+  }
 
   function render(){
     const used = guesses.length;
     el('left').textContent = Math.max(0, MAX_GUESSES - used);
     el('targetPill').innerHTML = puzzle.cast.emoji + ' Looking for <b>' + puzzle.cast.name + '</b>';
+
+    el('banner').innerHTML = puzzle.ud
+      ? '<div class="banner">🙃 <b>The gate is open.</b> Every clue reading comes back ' +
+        '<b>mirrored</b> — flip it end for end. Your own guesses still read true.</div>'
+      : (puzzle.cast.boss
+          ? '<div class="banner">🕰️ <b>Vecna is the quarry.</b> He costs you a guess. You get four.</div>'
+          : '');
+
+    renderLights();
 
     const clues = clueList();
     const shown = Math.min(used + 1, clues.length);
@@ -959,26 +1027,30 @@ svg.leaflet-image-layer.leaflet-interactive path {
     save();
 
     L.marker([hidden.lat, hidden.lng], {
-      icon: L.divIcon({ className:'', html:'<div style="font-size:30px;line-height:1">' + puzzle.cast.emoji + '</div>', iconSize:[30,30], iconAnchor:[15,15] })
+      icon: L.divIcon({ className:'', html:'<div class="gate">' + (puzzle.ud ? '🌀' : puzzle.cast.emoji) + '</div>', iconSize:[30,30], iconAnchor:[15,15] })
     }).addTo(map);
-    L.circle([hidden.lat, hidden.lng], { radius: WIN_RADIUS, color:'#ffc73a', weight:1, fillOpacity:.12 }).addTo(map);
-    map.fitBounds(L.latLngBounds([[origin.lat, origin.lng], [hidden.lat, hidden.lng]]).pad(0.35));
+    L.circle([hidden.lat, hidden.lng], {
+      radius: WIN_RADIUS, color: puzzle.ud ? '#ff2d3f' : '#ffc73a', weight:1, fillOpacity:.12
+    }).addTo(map);
+    map.fitBounds(L.latLngBounds([[ORIGIN.lat, ORIGIN.lng], [hidden.lat, hidden.lng]]).pad(0.35));
 
     const best = guesses.reduce(function(m, g){ return Math.min(m, g.dist); }, Infinity);
-    const share = '🔍 Findr ' + key + '  ' + (won ? guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES) + '\n' +
+    const share = (puzzle.ud ? '🙃' : '🔦') + ' Findr ' + key + '  ' +
+      (won ? guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES) + '\n' +
       guesses.map(function(g){ return g.dist <= WIN_RADIUS ? '🎯' : ARROWS[octant(g.bearing)]; }).join('') +
       '\nclosest: ' + fmtDist(best);
 
     el('endBox').innerHTML =
       '<div class="result">' +
-        '<h2>' + (won ? 'Found!' : 'They got away.') + '</h2>' +
+        '<h2>' + (won ? 'Found them.' : (puzzle.ud ? 'The gate closed.' : 'They got away.')) + '</h2>' +
         '<p style="margin:0;color:var(--muted)">' + puzzle.cast.emoji +
           ' <span class="who">' + puzzle.cast.name + '</span> was hiding ' +
-          fmtDist(puzzle.dist) + ' ' + COMPASS[octant(puzzle.bearing)] + ' of you.</p>' +
+          fmtDist(puzzle.dist) + ' ' + COMPASS[octant(puzzle.bearing)] +
+          ' of the water tower.</p>' +
       '</div>' +
       '<div class="share">' + share + '</div>' +
       '<button id="copyBtn">Copy result</button>' +
-      '<p class="hint">A new character hides every day at midnight.</p>';
+      '<p class="hint">Someone new hides every day at midnight.</p>';
 
     el('copyBtn').onclick = function(){
       navigator.clipboard.writeText(share).then(function(){
@@ -990,14 +1062,18 @@ svg.leaflet-image-layer.leaflet-interactive path {
     render();
   }
 
+  function markGuess(g){
+    L.circleMarker([g.lat, g.lng], {
+      radius: 5, color: g.dist <= WIN_RADIUS ? '#3ddc97' : '#ff6b6b', weight: 2, fillOpacity: .7
+    }).addTo(map);
+  }
+
   function submitGuess(){
     if (done || !pending) return;
     const dist = haversine(pending, hidden);
-    guesses.push({ lat: pending.lat, lng: pending.lng, dist: dist, bearing: bearing(pending, hidden) });
-
-    L.circleMarker([pending.lat, pending.lng], {
-      radius: 5, color: dist <= WIN_RADIUS ? '#3ddc97' : '#ff6b6b', weight: 2, fillOpacity: .7
-    }).addTo(map);
+    const g = { lat: pending.lat, lng: pending.lng, dist: dist, bearing: bearing(pending, hidden) };
+    guesses.push(g);
+    markGuess(g);
 
     if (guessMarker){ map.removeLayer(guessMarker); guessMarker = null; }
     pending = null;
@@ -1010,20 +1086,18 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
   /* ---------- boot ---------- */
 
-  function start(lat, lng){
-    el('overlay').style.display = 'none';
-    origin = { lat: lat, lng: lng };
-    hidden = destination(lat, lng, puzzle.bearing, puzzle.dist);
+  function start(){
+    if (puzzle.ud) enterUpsideDown();
 
     // zoom 14 keeps the whole 2.5 km hiding radius on screen on a phone
-    map = L.map('map', { zoomControl: true }).setView([lat, lng], 14);
+    map = L.map('map', { zoomControl: true }).setView([ORIGIN.lat, ORIGIN.lng], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    L.marker([lat, lng], {
+    L.marker([ORIGIN.lat, ORIGIN.lng], {
       icon: L.divIcon({ className:'', html:'<div class="seeker-dot"></div>', iconSize:[14,14], iconAnchor:[7,7] })
-    }).addTo(map).bindTooltip('You', { permanent:false });
+    }).addTo(map).bindTooltip(ORIGIN.label, { permanent:false });
 
     map.on('click', function(e){
       if (done) return;
@@ -1049,38 +1123,17 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
     // replay a session already in progress today
     const saved = load();
-    if (saved && saved.origin &&
-        haversine(saved.origin, origin) < 500 &&        // same neighbourhood
-        Array.isArray(saved.guesses)) {
+    if (saved && Array.isArray(saved.guesses) && saved.guesses.length){
       guesses = saved.guesses;
-      guesses.forEach(function(g){
-        L.circleMarker([g.lat, g.lng], {
-          radius: 5, color: g.dist <= WIN_RADIUS ? '#3ddc97' : '#ff6b6b', weight: 2, fillOpacity: .7
-        }).addTo(map);
-      });
+      guesses.forEach(markGuess);
       const won = guesses.some(function(g){ return g.dist <= WIN_RADIUS; });
       if (won || guesses.length >= MAX_GUESSES){ finish(won); return; }
     }
     render();
   }
 
-  el('dateLabel').textContent = key;
-
-  const fallback = customHome() || HOME;
-  el('useDemo').textContent = 'Start from ' + fallback.label;
-
-  el('useGps').onclick = function(){
-    this.textContent = 'Locating…';
-    const self = this;
-    if (!navigator.geolocation) { start(fallback.lat, fallback.lng); return; }
-    navigator.geolocation.getCurrentPosition(
-      function(p){ start(p.coords.latitude, p.coords.longitude); },
-      function(){ self.textContent = 'Location blocked — use the option below'; self.disabled = true; },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
-
-  el('useDemo').onclick = function(){ start(fallback.lat, fallback.lng); };
+  el('dateLabel').textContent = key + ' · ' + ORIGIN.label;
+  start();
 })();
 </script>
 </body>
