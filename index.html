@@ -67,13 +67,13 @@
      room to work on a short landscape screen. */
   #mapWrap{
     flex:0 0 auto;position:relative;background:var(--paper);transition:background .6s;
-    height:min(70vh,calc(100vh - 250px));
+    height:min(62vh,calc(100vh - 250px));
   }
   /* the notch and the home indicator come out of the map's share, so the
      buttons below never get squeezed off the bottom of the screen */
   @supports (height:100dvh){
     #mapWrap{
-      height:min(70dvh,calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+      height:min(62dvh,calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
     }
   }
   /* touch-action:none turns off the browser's own double-tap zoom, so the
@@ -175,7 +175,13 @@
     flex:1 1 auto;min-height:0;overflow-y:auto;position:relative;
     -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
   }
-  .panel-foot{flex:0 0 auto;padding-top:8px}
+  /* both actions on one row, the guess taking the lion's share */
+  .panel-foot{flex:0 0 auto;padding-top:8px;display:flex;gap:8px;align-items:stretch}
+  .panel-foot #guessBtn{flex:2.4 1 0}
+  .panel-foot #resetBtn{flex:1 1 0}
+  .panel-foot button{
+    width:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
   .status{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
   .status .pill{
     background:var(--card);border:1px solid var(--line);border-radius:999px;
@@ -235,7 +241,7 @@
   button:disabled{background:var(--dis-bg);color:var(--dis-ink);cursor:not-allowed}
   button.ghost{
     background:transparent;color:var(--muted);border:1px solid var(--line);
-    margin-top:6px;padding:6px 16px;min-height:40px;font-size:13.5px;
+    padding:6px 10px;min-height:44px;font-size:13.5px;
   }
   button.ghost:hover{color:var(--accent);border-color:var(--accent)}
   .hint{color:var(--muted);font-size:11.5px;text-align:center;margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -275,7 +281,7 @@
     <div id="clues"></div>
     <div id="guesses"></div>
     <div id="endBox"></div>
-    <p class="hint" id="hint">Double-tap the map to zoom · drag to move</p>
+    <p class="hint" id="hint">Pinch or double-tap the map to zoom · drag to move</p>
   </div>
   <div class="panel-foot">
     <button id="guessBtn" disabled>Pick a place on the map</button>
@@ -696,8 +702,53 @@
   svg.addEventListener('pointerdown', function(e){
     pointers.add(e.pointerId);
     moved = 0;
-    // one finger drags the map; a second finger means the browser is zooming
+    // a fresh gesture starts trusted; a drag or a pinch can revoke that below
+    if (pointers.size === 1) suppressClick = false;
+    // one finger drags the map; two fingers is a pinch, handled on touch events
     panFrom = pointers.size === 1 ? { x:e.clientX, y:e.clientY } : null;
+  });
+
+  /* ---------- pinch, on touch events ----------
+     Pointer events cannot call this off: preventDefault on a pointermove does
+     not stop Safari running its own page zoom, which is why the pointer-based
+     pinch did nothing on an iPhone. preventDefault on a two-finger touchmove
+     does, and it is how every map library gets pinch working on iOS. */
+
+  let pinchDist = 0, pinching = false;
+
+  const twoFingerGap = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const twoFingerMid = t => toMap((t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2);
+
+  svg.addEventListener('touchstart', function(e){
+    if (e.touches.length === 2){
+      e.preventDefault();
+      pinching = true;
+      pinchDist = twoFingerGap(e.touches);
+      panFrom = null;              // no longer a drag
+      suppressClick = true;
+    }
+  }, { passive:false });
+
+  svg.addEventListener('touchmove', function(e){
+    if (!pinching || e.touches.length !== 2) return;
+    e.preventDefault();            // this is what keeps the page from zooming
+    const d = twoFingerGap(e.touches);
+    // fingers this close are not a readable gesture, and dividing by a
+    // near-zero gap would fling the zoom across its whole range in one frame
+    if (pinchDist > 24 && d > 24) zoomAt(twoFingerMid(e.touches), clamp(d / pinchDist, 0.5, 2));
+    pinchDist = d;
+    suppressClick = true;
+  }, { passive:false });
+
+  function endTouch(e){
+    if (e.touches.length < 2){ pinching = false; pinchDist = 0; }
+  }
+  svg.addEventListener('touchend', endTouch);
+  svg.addEventListener('touchcancel', endTouch);
+
+  // Safari raises its own gesture events too; refusing them stops the page zoom
+  ['gesturestart','gesturechange','gestureend'].forEach(function(t){
+    svg.addEventListener(t, function(e){ e.preventDefault(); }, { passive:false });
   });
 
   svg.addEventListener('pointermove', function(e){
