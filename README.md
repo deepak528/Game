@@ -106,8 +106,8 @@ of five, and the panel warns you up front.
 
 ## The clock
 
-You go out at **5:00 PM** and an hour passes every thirty seconds, so a whole
-evening runs in two minutes.
+You go out at **5:00 PM** and an hour passes every fifteen seconds, so a whole
+evening runs in one minute.
 
 - **7:30 PM** — the light starts to go, and the vines start coming through.
   The town dims steadily from here and the clock turns red.

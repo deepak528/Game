@@ -884,14 +884,14 @@
   }
 
   /* ---------- the clock ----------
-     Tea time to bedtime in two minutes. An hour goes by every thirty seconds:
+     Tea time to bedtime in one minute. An hour goes by every fifteen seconds:
      out at five, the light starts going at half seven, and whoever is still
      out there at nine is not coming home. */
 
   const CLOCK_START = 17 * 60;        // 5:00 pm, in minutes
   const DUSK_AT     = 19 * 60 + 30;   // 7:30 pm — the light goes, the vines come
   const NIGHT_AT    = 21 * 60;        // 9:00 pm — time is up
-  const MIN_PER_SEC = 2;              // one hour every thirty seconds
+  const MIN_PER_SEC = 4;              // one hour every fifteen seconds
 
   let clockFrom = 0, clockTimer = null;
 
