@@ -24,6 +24,12 @@ many blocks off you were and which way to go, and unlocks another clue:
 
 The Town itself is the ruler, not a hiding place, so it can't be searched.
 
+**New hunt** starts another round immediately, without waiting for tomorrow. It
+always changes both the person and the place, so a reset never looks like it did
+nothing. Rounds are seeded off the day (`#1`, `#2`, …) rather than picked at
+random, so a hunt survives a reload and stays reproducible. Round 0 is the daily
+everyone shares.
+
 ## The map
 
 Eighteen locations, one block = 100 units:

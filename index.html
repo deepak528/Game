@@ -93,6 +93,10 @@
     flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);
     padding:12px 14px;max-height:46vh;overflow-y:auto;position:relative;z-index:5;
   }
+  /* Portrait: the map is limited by width, so panel height costs it nothing —
+     give the clues the room. Landscape: the map is limited by height, so take
+     it back. */
+  @media (orientation:landscape){ .panel{max-height:38vh} }
   .status{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
   .status .pill{
     background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;
@@ -130,6 +134,8 @@
   }
   body.ud button{color:#fff}
   button:disabled{background:#2a333d;color:#6c7a88;cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);margin-top:8px}
+  button.ghost:hover{color:var(--accent);border-color:var(--accent)}
   .hint{color:var(--muted);font-size:12.5px;text-align:center;margin:8px 0 0}
   .result{text-align:center;padding:4px 0 10px}
   .result h2{margin:0 0 4px;font:700 20px/1.3 ui-serif,Georgia,serif}
@@ -148,7 +154,8 @@
 </header>
 
 <div id="mapWrap">
-  <svg id="map" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
+  <!-- cropped to the drawn area: the town fills the frame instead of floating in margin -->
+  <svg id="map" viewBox="48 48 904 904" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
   <div id="haze"></div>
 </div>
 
@@ -163,6 +170,7 @@
   <div id="guesses"></div>
   <div id="endBox"></div>
   <button id="guessBtn" disabled>Pick a place on the map</button>
+  <button id="resetBtn" class="ghost">🔄 New hunt — someone else, somewhere else</button>
   <p class="hint" id="hint">Tap a location. Everything is measured from The Town.</p>
 </div>
 
@@ -272,22 +280,44 @@
   /* ---------- puzzle ---------- */
 
   const key = todayKey();
-  const rnd = mulberry32(hash('findr::town::' + key));
   // The Town is the reference point, never the hiding place.
   const HIDEABLE = PLACES.filter(function(p){ return p.id !== 'town'; });
-  const puzzle = {
-    cast:  CAST[Math.floor(rnd() * CAST.length)],
-    place: HIDEABLE[Math.floor(rnd() * HIDEABLE.length)],
-    ud:    rnd() < 0.34                        // roughly one day in three
-  };
-  // Vecna takes a guess off you just by being the one you are hunting.
-  const MAX_GUESSES = puzzle.cast.boss ? 4 : 5;
 
-  const trueBearing = bearing(TOWN, puzzle.place);
-  const trueBlocks  = blocksBetween(TOWN, puzzle.place);
-  // In the Upside Down every reading comes back reversed. The clues are
-  // mirrored and the player is told so — the map is wrong, not unfair.
-  const clueBearing = puzzle.ud ? (trueBearing + 180) % 360 : trueBearing;
+  // Round 0 is the daily everyone shares. "New hunt" walks the rounds forward
+  // from there, so the seed stays reproducible instead of going random.
+  function puzzleFor(round){
+    const rnd = mulberry32(hash('findr::town::' + key + (round ? '#' + round : '')));
+    return {
+      cast:  CAST[Math.floor(rnd() * CAST.length)],
+      place: HIDEABLE[Math.floor(rnd() * HIDEABLE.length)],
+      ud:    rnd() < 0.34                        // roughly one day in three
+    };
+  }
+
+  let round = 0, puzzle, MAX_GUESSES, trueBearing, trueBlocks, clueBearing;
+
+  function setRound(r){
+    round = r;
+    puzzle = puzzleFor(r);
+    // Vecna takes a guess off you just by being the one you are hunting.
+    MAX_GUESSES = puzzle.cast.boss ? 4 : 5;
+    trueBearing = bearing(TOWN, puzzle.place);
+    trueBlocks  = blocksBetween(TOWN, puzzle.place);
+    // In the Upside Down every reading comes back reversed. The clues are
+    // mirrored and the player is told so — the map is wrong, not unfair.
+    clueBearing = puzzle.ud ? (trueBearing + 180) % 360 : trueBearing;
+  }
+
+  // Walk forward to the next round that changes both the person and the place,
+  // so a reset never feels like it did nothing.
+  function nextRound(){
+    const wasCast = puzzle.cast.name, wasPlace = puzzle.place.id;
+    for (let r = round + 1; r <= round + 60; r++){
+      const cand = puzzleFor(r);
+      if (cand.cast.name !== wasCast && cand.place.id !== wasPlace) return r;
+    }
+    return round + 1;   // unreachable in practice, but never loop forever
+  }
 
   function clueList(){
     const lo = Math.floor(trueBlocks * 2) / 2;
@@ -302,18 +332,28 @@
   /* ---------- state ---------- */
 
   let selected = null, guesses = [], done = false;
-  const saveKey = 'findr::town::' + key;
   const el = id => document.getElementById(id);
   const svg = el('map');
   const SVGNS = 'http://www.w3.org/2000/svg';
 
+  const saveKey  = () => 'findr::town::' + key + (round ? '#' + round : '');
+  const ROUND_KEY = 'findr::town::round::' + key;
+
   function save(){
-    try { localStorage.setItem(saveKey, JSON.stringify({ guesses, done })); }
-    catch(e){ /* private mode — just don't persist */ }
+    try {
+      localStorage.setItem(saveKey(), JSON.stringify({ guesses, done }));
+      localStorage.setItem(ROUND_KEY, String(round));
+    } catch(e){ /* private mode — just don't persist */ }
   }
   function load(){
-    try { return JSON.parse(localStorage.getItem(saveKey) || 'null'); }
+    try { return JSON.parse(localStorage.getItem(saveKey()) || 'null'); }
     catch(e){ return null; }
+  }
+  function loadRound(){
+    try {
+      const r = parseInt(localStorage.getItem(ROUND_KEY) || '0', 10);
+      return isFinite(r) && r >= 0 ? r : 0;
+    } catch(e){ return 0; }
   }
 
   /* ---------- drawing the map ---------- */
@@ -369,9 +409,11 @@
 
   /* ---------- the Upside Down ---------- */
 
-  function enterUpsideDown(){
-    document.body.classList.add('ud');
+  function applyTheme(){
     const haze = el('haze');
+    document.body.classList.toggle('ud', puzzle.ud);
+    haze.innerHTML = '';
+    if (!puzzle.ud) return;
     for (let i = 0; i < 16; i++){
       const s = document.createElement('div');
       s.className = 'spore';
@@ -508,20 +550,41 @@
 
   /* ---------- boot ---------- */
 
-  el('dateLabel').textContent = key + ' · The Town';
-  if (puzzle.ud) enterUpsideDown();
-  drawMap();
-  el('guessBtn').onclick = submitGuess;
+  // Draw a round from scratch: fresh map, fresh theme, fresh panel.
+  function startRound(r, resume){
+    setRound(r);
+    selected = null;
+    guesses = [];
+    done = false;
 
-  // pick up a game already in progress today
-  const saved = load();
-  if (saved && Array.isArray(saved.guesses) && saved.guesses.length){
-    guesses = saved.guesses.filter(function(g){ return byId(g.id); });
-    guesses.forEach(markSpent);
-    const won = guesses.some(function(g){ return g.hit; });
-    if (won || guesses.length >= MAX_GUESSES){ finish(won); }
+    applyTheme();
+    svg.textContent = '';
+    drawMap();
+
+    el('endBox').innerHTML = '';
+    el('guessBtn').style.display = '';
+    el('hint').style.display = '';
+    el('dateLabel').textContent = key + ' · The Town' + (round ? ' · hunt ' + (round + 1) : '');
+
+    if (resume){
+      const saved = load();
+      if (saved && Array.isArray(saved.guesses) && saved.guesses.length){
+        guesses = saved.guesses.filter(function(g){ return byId(g.id); });
+        guesses.forEach(markSpent);
+        const won = guesses.some(function(g){ return g.hit; });
+        if (won || guesses.length >= MAX_GUESSES){ finish(won); return; }
+      }
+    } else {
+      save();
+    }
+    render();
   }
-  render();
+
+  el('guessBtn').onclick = submitGuess;
+  el('resetBtn').onclick = function(){ startRound(nextRound(), false); };
+
+  setRound(loadRound());          // so nextRound() has a puzzle to differ from
+  startRound(round, true);        // pick up a hunt already in progress
 })();
 </script>
 </body>
