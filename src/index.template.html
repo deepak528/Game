@@ -107,7 +107,7 @@
     <h2>Someone is hiding near you.</h2>
     <p>Findr needs your location to place today's hiding spot in your own neighbourhood. Everyone in the world gets the same character at the same distance and bearing — just from their own doorstep.</p>
     <button id="useGps">Use my location</button>
-    <button id="useDemo" class="ghost">Play the demo (San Francisco)</button>
+    <button id="useDemo" class="ghost">Start from the default spot</button>
   </div>
 </div>
 
@@ -118,7 +118,29 @@
 
   const MAX_GUESSES = 5;
   const WIN_RADIUS  = 100;   // metres — inside this and you've found them
-  const DEMO = { lat: 37.7749, lng: -122.4194, label: 'San Francisco' };
+  // Fallback start point when GPS is unavailable or denied. Deliberately the
+  // centre of town, not anyone's doorstep — this file is version controlled.
+  // To start from an exact spot, load the page once with ?at=<lat>,<lng>; it is
+  // remembered in this browser only and never committed.
+  const HOME = { lat: 40.7440, lng: -73.4818, label: 'Bethpage, NY' };
+
+  const AT_KEY = 'findr::home';
+
+  function customHome(){
+    const m = /[?&]at=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(location.search);
+    if (m){
+      const p = { lat: parseFloat(m[1]), lng: parseFloat(m[2]), label: 'your saved spot' };
+      if (Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180){
+        try { localStorage.setItem(AT_KEY, JSON.stringify(p)); } catch(e){}
+        return p;
+      }
+    }
+    try {
+      const s = JSON.parse(localStorage.getItem(AT_KEY) || 'null');
+      if (s && typeof s.lat === 'number' && typeof s.lng === 'number') return s;
+    } catch(e){}
+    return null;
+  }
 
   const CAST = [
     { name: 'Marguerite the Cartographer', emoji: '🧭', flavor: 'She only ever hides somewhere she could draw from memory.' },
@@ -378,18 +400,21 @@
 
   el('dateLabel').textContent = key;
 
+  const fallback = customHome() || HOME;
+  el('useDemo').textContent = 'Start from ' + fallback.label;
+
   el('useGps').onclick = function(){
     this.textContent = 'Locating…';
     const self = this;
-    if (!navigator.geolocation) { start(DEMO.lat, DEMO.lng); return; }
+    if (!navigator.geolocation) { start(fallback.lat, fallback.lng); return; }
     navigator.geolocation.getCurrentPosition(
       function(p){ start(p.coords.latitude, p.coords.longitude); },
-      function(){ self.textContent = 'Location blocked — use the demo below'; self.disabled = true; },
+      function(){ self.textContent = 'Location blocked — use the option below'; self.disabled = true; },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  el('useDemo').onclick = function(){ start(DEMO.lat, DEMO.lng); };
+  el('useDemo').onclick = function(){ start(fallback.lat, fallback.lng); };
 })();
 </script>
 </body>

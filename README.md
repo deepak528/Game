@@ -20,8 +20,18 @@ needs no server, no accounts, and no database.
 Open `index.html` in a browser. That's the whole thing — Leaflet is inlined, so
 the only network it needs is OpenStreetMap map tiles.
 
-Allow location access to play on your own streets, or hit **Play the demo** to
-use San Francisco.
+Allow location access to play on your own streets, or use the fallback start
+point — Bethpage, NY town centre.
+
+To start from an exact spot instead, load the page once with coordinates:
+
+```
+index.html?at=40.7512,-73.4795
+```
+
+They're saved in that browser's `localStorage` and reused on later visits, so a
+precise home location never has to be committed to the repo. Grab the numbers by
+right-clicking the spot in Google Maps and copying the lat/lng it offers.
 
 - **Clue 1** — a character hint, available immediately
 - **Clue 2** — the compass sector they're in
