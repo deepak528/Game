@@ -27,6 +27,11 @@ many blocks off you were and which way to go, and unlocks another clue:
 
 The Town itself is the ruler, not a hiding place, so it can't be searched.
 
+**Pinch the map with two fingers to zoom in**, drag to move around, and press
+**⤢ Whole town** to come back out. The page itself never zooms — the map takes
+the gesture. A mouse wheel zooms too. A drag that moves is a pan, not a tap, so
+panning never picks a place by accident.
+
 **New hunt** starts another round immediately, without waiting for tomorrow. It
 always changes both the person and the place, so a reset never looks like it did
 nothing. Rounds are seeded off the day (`#1`, `#2`, …) rather than picked at
@@ -72,10 +77,12 @@ of five, and the panel warns you up front.
 Roughly one day in three the gate is open. When it is, the town keeps its
 daylight crayon colours — the gate shows up as growth, not darkness:
 
-- **Red vines creep in from the edges of the drawing**, over blocks and
-  streets, and the longest one reaches the green and stops. Spores drift up
-  over the map, the smiling sun goes dark and loses its face, and the sign
-  over the door reads backwards.
+- **Red vines grow with every miss.** Two creep in at the start; each wrong
+  guess draws the next wave on over blocks and streets, sprouting buds, until
+  by the last guess the town is overgrown and one vine has crossed it to stop
+  at the edge of the green. Finding them — or running out — opens the gate
+  fully. Spores drift up over the map, the smiling sun goes dark and loses its
+  face, and the sign over the door reads backwards.
 - The panel, clues and buttons never change — only the map crosses over, and
   every place stays exactly as readable as on a normal day.
 - **Every clue reading comes back mirrored.** Clue 2 says north-east, so look

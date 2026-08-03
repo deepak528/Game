@@ -36,7 +36,15 @@
   header .date{color:var(--muted);font-size:12px;margin-left:auto}
 
   #mapWrap{flex:1 1 auto;min-height:0;position:relative;background:var(--paper);transition:background .6s}
-  svg#map{width:100%;height:100%;display:block;touch-action:manipulation}
+  /* touch-action:none so two fingers zoom the map instead of the page */
+  svg#map{width:100%;height:100%;display:block;touch-action:none;user-select:none}
+  #zoomOut{
+    position:absolute;right:10px;bottom:10px;width:auto;z-index:6;
+    padding:7px 12px;font-size:13px;border-radius:8px;opacity:0;pointer-events:none;
+    background:var(--panel);color:var(--ink);border:1px solid var(--line);
+    box-shadow:0 2px 6px rgba(0,0,0,.12);transition:opacity .2s;
+  }
+  #zoomOut.show{opacity:1;pointer-events:auto}
   #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s}
   body.ud #haze{opacity:1}
   .spore{
@@ -64,9 +72,18 @@
   /* every block of town coloured in with its own crayon */
   .b0{fill:#ffeaa7}.b1{fill:#ffd6de}.b2{fill:#c9edcb}.b3{fill:#cbe7f8}
   .b4{fill:#ffdfba}.b5{fill:#e4daf8}.b6{fill:#dcf2b0}.b7{fill:#ffe3d2}
-  .vine{fill:none;stroke:#8f1626;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+  /* vines draw themselves on as the misses pile up */
+  .vine{
+    fill:none;stroke:#8f1626;stroke-linecap:round;stroke-linejoin:round;opacity:.9;
+    stroke-dashoffset:var(--len);transition:stroke-dashoffset 1s ease-out;
+  }
   .vine.alt{stroke:#ab2136}
-  .bud{fill:#8f1626;opacity:.9}
+  .vine.grown{stroke-dashoffset:0}
+  .bud{
+    fill:#8f1626;opacity:0;transform:scale(0);transform-box:fill-box;transform-origin:center;
+    transition:opacity .45s .55s ease-out,transform .45s .55s ease-out;
+  }
+  .bud.grown{opacity:.9;transform:scale(1)}
   .sun-disc{fill:#ffd43b;stroke:#f2a71b;stroke-width:2.5}
   .sun-ray{stroke:#f2a71b;stroke-width:4;stroke-linecap:round}
   .sun-eye{fill:#8a5a00}
@@ -181,6 +198,7 @@
   <!-- cropped to the drawn area: the town fills the frame instead of floating in margin -->
   <svg id="map" viewBox="48 48 904 904" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
   <div id="haze"></div>
+  <button id="zoomOut">⤢ Whole town</button>
 </div>
 
 <div class="panel" id="panel">
@@ -278,24 +296,31 @@
     { tone:'b1', points:'770,676 944,672 944,936 684,938' }     // SE, past the parkway
   ];
 
-  // Red growth for the days the gate is open. Vines creep in from the edges
-  // of the drawing; the longest one reaches the green and stops.
+  // Red growth for the days the gate is open. Vines creep in from the edges of
+  // the drawing, and `stage` is how many misses it takes for each to appear —
+  // by the last guess the town is overgrown and one vine has reached the green.
   const VINES = [
-    { d:'M52,60 C90,140 40,240 88,330 S60,480 96,560', w:7 },
-    { d:'M88,330 q40,-16 74,-6', w:4, alt:true },
-    { d:'M96,560 q34,18 44,52', w:4, alt:true },
-    { d:'M420,52 C400,120 460,170 430,240 q-18,40 8,84', w:5 },
-    { d:'M430,240 q-40,10 -66,-6', w:3.5, alt:true },
-    { d:'M948,180 C880,220 840,190 780,240 S730,330 742,400 q6,30 -6,50', w:6 },
-    { d:'M780,240 q-30,-30 -60,-36', w:4, alt:true },
-    { d:'M250,948 C280,880 240,820 280,760 S330,690 320,640', w:6 },
-    { d:'M280,760 q40,6 62,30', w:4, alt:true },
-    { d:'M948,900 C880,870 850,900 800,860 S740,800 720,750', w:5 },
-    { d:'M700,52 q30,60 -6,110', w:4 },
-    { d:'M948,520 C860,540 800,500 720,530 S620,540 585,515', w:5, alt:true },
-    { d:'M720,530 q-20,30 -54,34', w:3.5 }
+    { d:'M52,60 C90,140 40,240 88,330 S60,480 96,560', w:7, stage:0 },
+    { d:'M948,180 C880,220 840,190 780,240 S730,330 742,400 q6,30 -6,50', w:6, stage:0 },
+    { d:'M88,330 q40,-16 74,-6', w:4, alt:true, stage:1 },
+    { d:'M250,948 C280,880 240,820 280,760 S330,690 320,640', w:6, stage:1 },
+    { d:'M780,240 q-30,-30 -60,-36', w:4, alt:true, stage:1 },
+    { d:'M96,560 q34,18 44,52', w:4, alt:true, stage:2 },
+    { d:'M420,52 C400,120 460,170 430,240 q-18,40 8,84', w:5, stage:2 },
+    { d:'M948,900 C880,870 850,900 800,860 S740,800 720,750', w:5, stage:2 },
+    { d:'M430,240 q-40,10 -66,-6', w:3.5, alt:true, stage:3 },
+    { d:'M280,760 q40,6 62,30', w:4, alt:true, stage:3 },
+    { d:'M700,52 q30,60 -6,110', w:4, stage:3 },
+    // the last one crosses the town and stops at the edge of the green
+    { d:'M948,520 C860,540 800,500 720,530 S620,540 585,515', w:5, alt:true, stage:4 },
+    { d:'M720,530 q-20,30 -54,34', w:3.5, stage:4 }
   ];
-  const BUDS = [[96,560,4],[438,324,3.5],[736,450,4],[320,640,3.5],[720,750,3.5],[694,162,3],[585,515,4.5],[162,324,3]];
+  const BUDS = [
+    { x:96,  y:560, r:4,   stage:2 }, { x:438, y:324, r:3.5, stage:3 },
+    { x:736, y:450, r:4,   stage:1 }, { x:320, y:640, r:3.5, stage:2 },
+    { x:720, y:750, r:3.5, stage:3 }, { x:694, y:162, r:3,   stage:4 },
+    { x:585, y:515, r:4.5, stage:4 }, { x:162, y:324, r:3,   stage:2 }
+  ];
 
   /* ---------- cast ---------- */
 
@@ -480,10 +505,15 @@
     if (puzzle.ud){
       const vines = node('g', { filter:'url(#wobble)' });
       VINES.forEach(function(v){
-        vines.appendChild(node('path', { d:v.d, class:'vine' + (v.alt ? ' alt' : ''), 'stroke-width':v.w }));
+        const path = node('path', { d:v.d, class:'vine' + (v.alt ? ' alt' : ''), 'stroke-width':v.w, 'data-stage':v.stage });
+        vines.appendChild(path);
+        // dash the path by its own length so it can draw itself on
+        const len = path.getTotalLength();
+        path.style.setProperty('--len', len);
+        path.style.strokeDasharray = len;
       });
       BUDS.forEach(function(b){
-        vines.appendChild(node('circle', { cx:b[0], cy:b[1], r:b[2], class:'bud' }));
+        vines.appendChild(node('circle', { cx:b.x, cy:b.y, r:b.r, class:'bud', 'data-stage':b.stage }));
       });
       svg.appendChild(vines);
     }
@@ -513,6 +543,117 @@
   }
 
   const gfx = id => svg.querySelector('.loc[data-id="' + id + '"]');
+
+  /* ---------- pinch to zoom the map (not the page) ---------- */
+
+  const BASE = { x:48, y:48, w:904, h:904 };
+  const MAX_ZOOM = 4;
+  let view = { x:BASE.x, y:BASE.y, w:BASE.w, h:BASE.h };
+  const pointers = new Map();
+  let pinchDist = 0, panFrom = null, moved = 0, suppressClick = false;
+
+  function applyView(){
+    svg.setAttribute('viewBox', view.x + ' ' + view.y + ' ' + view.w + ' ' + view.h);
+    el('zoomOut').classList.toggle('show', view.w < BASE.w - 1);
+  }
+
+  function resetView(){
+    view = { x:BASE.x, y:BASE.y, w:BASE.w, h:BASE.h };
+    applyView();
+  }
+
+  // client pixels -> map units, allowing for the letterboxing of xMidYMid meet
+  function toMap(cx, cy){
+    const r = svg.getBoundingClientRect();
+    const k = Math.min(r.width / view.w, r.height / view.h);
+    return {
+      x: view.x + (cx - r.left - (r.width  - view.w * k) / 2) / k,
+      y: view.y + (cy - r.top  - (r.height - view.h * k) / 2) / k
+    };
+  }
+
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+  // zoom by `factor` while keeping the map point under the fingers put
+  function zoomAt(focus, factor){
+    const w = clamp(view.w / factor, BASE.w / MAX_ZOOM, BASE.w);
+    const rx = (focus.x - view.x) / view.w, ry = (focus.y - view.y) / view.h;
+    view.w = view.h = w;
+    view.x = clamp(focus.x - rx * w, BASE.x, BASE.x + BASE.w - w);
+    view.y = clamp(focus.y - ry * w, BASE.y, BASE.y + BASE.h - w);
+    applyView();
+  }
+
+  function panBy(dxUnits, dyUnits){
+    view.x = clamp(view.x - dxUnits, BASE.x, BASE.x + BASE.w - view.w);
+    view.y = clamp(view.y - dyUnits, BASE.y, BASE.y + BASE.h - view.h);
+    applyView();
+  }
+
+  const spread = () => {
+    const [a, b] = [...pointers.values()];
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  };
+  const centre = () => {
+    const [a, b] = [...pointers.values()];
+    return toMap((a.x + b.x) / 2, (a.y + b.y) / 2);
+  };
+
+  svg.addEventListener('pointerdown', function(e){
+    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    moved = 0;
+    if (pointers.size === 2){ pinchDist = spread(); panFrom = null; }
+    else if (pointers.size === 1){ panFrom = { x:e.clientX, y:e.clientY }; }
+  });
+
+  svg.addEventListener('pointermove', function(e){
+    if (!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId);
+    moved += Math.hypot(e.clientX - prev.x, e.clientY - prev.y);
+    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+
+    if (pointers.size === 2){
+      e.preventDefault();
+      const d = spread();
+      // Fingers closer together than this are not a readable gesture, and
+      // dividing by a near-zero spread would snap the zoom across its whole
+      // range in one frame. Cap the per-move step for the same reason.
+      if (pinchDist > 24 && d > 24) zoomAt(centre(), clamp(d / pinchDist, 0.5, 2));
+      pinchDist = d;
+      suppressClick = true;
+    } else if (pointers.size === 1 && panFrom && view.w < BASE.w){
+      const r = svg.getBoundingClientRect();
+      const k = Math.min(r.width / view.w, r.height / view.h);
+      panBy((e.clientX - panFrom.x) / k, (e.clientY - panFrom.y) / k);
+      panFrom = { x:e.clientX, y:e.clientY };
+      if (moved > 8) suppressClick = true;
+    }
+  });
+
+  function endPointer(e){
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinchDist = 0;
+    if (pointers.size === 0) panFrom = null;
+  }
+  svg.addEventListener('pointerup', endPointer);
+  svg.addEventListener('pointercancel', endPointer);
+
+  // a drag that moved is not a tap on a place
+  svg.addEventListener('click', function(e){
+    if (suppressClick){ e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+  }, true);
+
+  svg.addEventListener('wheel', function(e){
+    e.preventDefault();
+    zoomAt(toMap(e.clientX, e.clientY), e.deltaY < 0 ? 1.18 : 1 / 1.18);
+  }, { passive:false });
+
+  // iOS pinches the page unless the gesture events are refused outright
+  ['gesturestart','gesturechange','gestureend'].forEach(function(t){
+    svg.addEventListener(t, function(e){ e.preventDefault(); });
+  });
+
+  el('zoomOut').onclick = resetView;
 
   function pick(id){
     if (done || id === 'town') return;                             // the green is the ruler, not a hiding place
@@ -558,7 +699,17 @@
                     '<div class="bar">' + segs + '</div>';
   }
 
+  // Each miss lets the next wave of growth in; the reveal opens the gate fully.
+  function renderVines(all){
+    if (!puzzle.ud) return;
+    const reached = all ? Infinity : guesses.length;
+    svg.querySelectorAll('.vine,.bud').forEach(function(n){
+      n.classList.toggle('grown', +n.getAttribute('data-stage') <= reached);
+    });
+  }
+
   function render(){
+    renderVines(false);
     el('left').textContent = Math.max(0, MAX_GUESSES - guesses.length);
     el('targetPill').innerHTML =
       '<div class="p-top">HAVE YOU SEEN</div>' +
@@ -613,6 +764,7 @@
       pic.classList.add('gate');
     }
     PLACES.forEach(function(p){ gfx(p.id).classList.remove('sel'); });
+    renderVines(true);
 
     const best = guesses.reduce(function(m, x){ return Math.min(m, x.blocks); }, Infinity);
     const share = (puzzle.ud ? '🙃' : '🔦') + ' Home Before Dinner ' + key + '  ' +
@@ -678,6 +830,7 @@
 
     applyTheme();
     svg.textContent = '';
+    resetView();
     drawMap();
 
     el('endBox').innerHTML = '';
