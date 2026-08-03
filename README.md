@@ -36,6 +36,9 @@ many blocks off you were and which way to go, and unlocks another clue:
 - **Clue 3** — a half-block distance band
 - **Clue 4** — why they picked the place they picked
 
+Clues are listed newest first, so the one a miss just bought is at the top of
+the panel and never needs scrolling to.
+
 The Town itself is the ruler, not a hiding place, so it can't be searched.
 
 **Pinch the map with two fingers to zoom**, double-tap to zoom toward a spot,
@@ -105,31 +108,14 @@ evening runs in two minutes.
   still out there is not coming home. The hunt ends whatever guesses you had
   left.
 
-Vines follow the clock rather than your guesses, and on every day, not only
-gate days — night is night. The clock stops the moment the hunt ends, and New
-hunt puts it back to five o'clock. It runs per round rather than being stored,
-so a reload starts the evening over.
+Night falls on the map alone — the panel, clues and buttons stay in daylight
+the whole way through, so everything stays readable while the town goes dark.
+Along with the dimming and the vines, spores drift up over the map and the
+smiling sun in the corner goes out and loses its face.
 
-## The Upside Down
-
-Roughly one day in three the gate is open. When it is, the town keeps its
-daylight crayon colours — the gate shows up as growth, not darkness:
-
-- Spores drift up over the map, the smiling sun goes dark and loses its face,
-  and the sign over the door reads backwards. The vines are on the clock now
-  (see above), and the reveal opens the gate the rest of the way.
-- The panel, clues and buttons never change — only the map crosses over, and
-  every place stays exactly as readable as on a normal day.
-- **Every clue reading comes back mirrored.** Clue 2 says north-east, so look
-  south-west. The banner tells you this — the map is wrong, not the game.
-- Your own guesses still read true. The blocks and the arrow after each guess
-  are honest; only the clues are reversed.
-- The reveal tears a gate (🌀) open where they were hiding, and the shared
-  result is stamped 🙃 rather than 🔦.
-
-The mirroring is the puzzle. It makes the clue ladder mean something — clue 2
-goes from "walk this way" into a thing you have to flip in your head before you
-trust it.
+The clock stops the moment the hunt ends, and New hunt puts it back to five
+o'clock. It runs per round rather than being stored, so a reload starts the
+evening over.
 
 ## Warmth
 

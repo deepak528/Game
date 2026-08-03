@@ -21,9 +21,8 @@
     --card:rgba(0,0,0,.05); --seg:rgba(0,0,0,.1); --sharebg:rgba(0,0,0,.05);
     --dash:#ffdf7e; --dis-bg:#ece1cb; --dis-ink:#a3947e;
   }
-  /* When the gate is open, only the map crosses over: red vines grow across
-     the town, spores drift, the sun goes dark. The UI stays in daylight, and
-     the crayon colours stay readable. */
+  /* Night falls on the map alone: it dims, vines come through, spores drift
+     and the sun goes out. The UI stays in daylight throughout. */
   *{box-sizing:border-box}
   html,body{height:100%;margin:0}
   body{
@@ -50,8 +49,6 @@
   }
   header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.5px;white-space:nowrap}
   header h1 span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
-  /* in the Upside Down even the sign is the wrong way round */
-  body.ud header h1{display:inline-block;transform:scaleX(-1);color:#c41f30}
   header .date{
     color:var(--muted);font-size:12px;margin-left:auto;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -103,7 +100,6 @@
   }
   header .date.late{color:#8f1626;font-weight:700}
   #haze{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .8s;z-index:4}
-  body.ud #haze{opacity:1}
   .spore{
     position:absolute;width:3px;height:3px;border-radius:50%;
     background:rgba(190,26,48,.8);box-shadow:0 0 6px 2px rgba(220,50,70,.45);
@@ -127,7 +123,7 @@
   .b0{fill:#ffeaa7}.b1{fill:#ffd6de}.b2{fill:#c9edcb}.b3{fill:#cbe7f8}
   .b4{fill:#ffdfba}.b5{fill:#e4daf8}.b6{fill:#dcf2b0}.b7{fill:#ffe3d2}
   .b8{fill:#b7e6a6}
-  /* vines draw themselves on as the misses pile up */
+  /* vines draw themselves on as the night comes down */
   .vine{
     fill:none;stroke:#8f1626;stroke-linecap:round;stroke-linejoin:round;opacity:.9;
     stroke-dashoffset:var(--len);transition:stroke-dashoffset 1s ease-out;
@@ -143,10 +139,11 @@
   .sun-ray{stroke:#f2a71b;stroke-width:4;stroke-linecap:round}
   .sun-eye{fill:#8a5a00}
   .sun-mouth{fill:none;stroke:#8a5a00;stroke-width:2.5;stroke-linecap:round}
-  /* in the Upside Down the sun goes out */
-  body.ud .sun-disc{fill:#30070d;stroke:#571620}
-  body.ud .sun-ray{stroke:#571620}
-  body.ud .sun-eye,body.ud .sun-mouth{display:none}
+  /* the sun goes out as the light goes */
+  .sun-disc,.sun-ray{transition:fill .8s,stroke .8s}
+  body.night .sun-disc{fill:#3b3556;stroke:#2b2740}
+  body.night .sun-ray{stroke:#2b2740}
+  body.night .sun-eye,body.night .sun-mouth{display:none}
 
   .loc{cursor:pointer}
   .loc .halo{fill:transparent}
@@ -211,9 +208,7 @@
   }
   .poster .p-top{font-size:9px;letter-spacing:1.5px;color:var(--muted);white-space:nowrap}
   .poster .p-name{font-size:14px;font-weight:700;line-height:1.15;white-space:nowrap}
-  body.ud .poster{border-color:#c41f30}
-  .banner.open{border-color:#c41f30}
-  .banner.open b{color:#c41f30}
+
   .warmth{margin:0 0 8px}
   .warmth:empty{display:none}          /* no bar, no gap, before the first guess */
   .warmth .cap{
@@ -371,9 +366,9 @@
     { tone:'b1', points:'770,676 944,672 944,936 684,938' }     // SE, past the parkway
   ];
 
-  // Red growth for the days the gate is open. Vines creep in from the edges of
-  // the drawing, and `stage` is how many misses it takes for each to appear —
-  // by the last guess the town is overgrown and one vine has reached the green.
+  // Red growth for after dark. Vines creep in from the edges of the drawing,
+  // and `stage` is how far into the night each one appears — by nine the town
+  // is overgrown and one vine has reached the green.
   const VINES = [
     { d:'M52,60 C90,140 40,240 88,330 S60,480 96,560', w:7, stage:0 },
     { d:'M948,180 C880,220 840,190 780,240 S730,330 742,400 q6,30 -6,50', w:6, stage:0 },
@@ -459,12 +454,11 @@
     const rnd = mulberry32(hash('findr::town::' + key + (round ? '#' + round : '')));
     return {
       cast:  CAST[Math.floor(rnd() * CAST.length)],
-      place: HIDEABLE[Math.floor(rnd() * HIDEABLE.length)],
-      ud:    rnd() < 0.34                        // roughly one day in three
+      place: HIDEABLE[Math.floor(rnd() * HIDEABLE.length)]
     };
   }
 
-  let round = 0, puzzle, MAX_GUESSES, trueBearing, trueBlocks, clueBearing;
+  let round = 0, puzzle, MAX_GUESSES, trueBearing, trueBlocks;
 
   function setRound(r){
     round = r;
@@ -473,9 +467,6 @@
     MAX_GUESSES = puzzle.cast.boss ? 4 : 5;
     trueBearing = bearing(TOWN, puzzle.place);
     trueBlocks  = blocksBetween(TOWN, puzzle.place);
-    // In the Upside Down every reading comes back reversed. The clues are
-    // mirrored and the player is told so — the map is wrong, not unfair.
-    clueBearing = puzzle.ud ? (trueBearing + 180) % 360 : trueBearing;
   }
 
   // Walk forward to the next round that changes both the person and the place,
@@ -493,7 +484,7 @@
     const lo = Math.floor(trueBlocks * 2) / 2;
     return [
       puzzle.cast.flavor,
-      'The reading points <b>' + COMPASS[octant(clueBearing)] + '</b> of The Town.',
+      'The reading points <b>' + COMPASS[octant(trueBearing)] + '</b> of The Town.',
       'It is <b>' + lo.toFixed(1) + ' to ' + (lo + 0.5).toFixed(1) + ' blocks</b> from the green.',
       'They picked it because <b>' + puzzle.place.hint + '</b>.'
     ];
@@ -823,11 +814,11 @@
 
   /* ---------- the Upside Down ---------- */
 
-  function applyTheme(){
+  // Spores exist from the start but only show once the light goes; tick()
+  // fades them in with the dusk.
+  function makeSpores(){
     const haze = el('haze');
-    document.body.classList.toggle('ud', puzzle.ud);
     haze.innerHTML = '';
-    if (!puzzle.ud) return;
     for (let i = 0; i < 16; i++){
       const s = document.createElement('div');
       s.className = 'spore';
@@ -883,6 +874,8 @@
     el('clock').textContent = fmtClock(mins) + (round ? ' · hunt ' + (round + 1) : '');
     el('clock').classList.toggle('late', dusk > 0);
     el('dusk').style.opacity = dusk;
+    el('haze').style.opacity = dusk;
+    document.body.classList.toggle('night', dusk > 0.45);
     renderVines(false);
     if (!done && clockNow() >= NIGHT_AT) finish(false, true);
   }
@@ -915,20 +908,18 @@
       '<span class="p-top">HAVE YOU SEEN</span>' +
       '<span class="p-name">' + puzzle.cast.pic + ' ' + puzzle.cast.name + '</span>';
 
-    el('banner').innerHTML = puzzle.ud
-      ? '<div class="banner open">🙃 <b>The gate is open.</b> Every clue reading comes back ' +
-        '<b>mirrored</b> — flip it end for end. Your own guesses still read true.</div>'
-      : (puzzle.cast.boss
-          ? '<div class="banner">🕰️ <b>Vecna is the quarry.</b> He costs you a guess. You get four.</div>'
-          : '');
+    el('banner').innerHTML = puzzle.cast.boss
+      ? '<div class="banner">🕰️ <b>Vecna is the quarry.</b> He costs you a guess. You get four.</div>'
+      : '';
 
     renderWarmth();
 
     const clues = clueList();
     const shown = Math.min(guesses.length + 1, clues.length);
+    // newest clue on top, so the one that matters needs no scrolling
     el('clues').innerHTML = clues.slice(0, shown).map(function(c, i){
       return '<div class="clue"><p><span class="n">Clue ' + (i+1) + '</span>' + c + '</p></div>';
-    }).join('');
+    }).reverse().join('');
 
     el('guesses').innerHTML = guesses.map(function(g){
       const p = byId(g.id);
@@ -961,23 +952,19 @@
     const g = gfx(puzzle.place.id);
     g.classList.add('hit');
     g.classList.remove('spent');
-    if (puzzle.ud){
-      const pic = g.querySelector('.pic');
-      pic.textContent = '🌀';
-      pic.classList.add('gate');
-    }
+    g.querySelector('.pic').classList.add('gate');
     PLACES.forEach(function(p){ gfx(p.id).classList.remove('sel'); });
     renderVines(true);
 
     const best = guesses.reduce(function(m, x){ return Math.min(m, x.blocks); }, Infinity);
-    const share = (puzzle.ud ? '🙃' : '🔦') + ' Home Before Dinner ' + key + '  ' +
+    const share = '🔦 Home Before Dinner ' + key + '  ' +
       (won ? guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES) + '\n' +
       guesses.map(function(x){ return x.hit ? '🎯' : ARROWS[octant(x.bearing)]; }).join('') +
       '\nclosest: ' + fmtBlocks(best);
 
     el('endBox').innerHTML =
       '<div class="result">' +
-        '<h2>' + (won ? 'Found them.' : ranOut ? 'Nine o&rsquo;clock.' : (puzzle.ud ? 'The gate closed.' : 'They got away.')) + '</h2>' +
+        '<h2>' + (won ? 'Found them.' : ranOut ? 'Nine o&rsquo;clock.' : 'They got away.') + '</h2>' +
         '<p style="margin:0;color:var(--muted)">' + puzzle.cast.pic +
           ' <span class="who">' + puzzle.cast.name + '</span> was hiding at ' +
           puzzle.place.pic + ' <b>' + puzzle.place.name + '</b> — ' +
@@ -1025,12 +1012,10 @@
     else { render(); showNewestClue(); }
   }
 
-  // The panel is short by design — bring the clue a miss just bought into view.
+  // The newest clue is at the top of the list, so this is just a trip home.
   function showNewestClue(){
     const box = document.querySelector('.panel-scroll');
-    const list = el('clues').querySelectorAll('.clue');
-    const last = list[list.length - 1];
-    if (box && last) box.scrollTo({ top:Math.max(0, last.offsetTop - 6), behavior:'smooth' });
+    if (box) box.scrollTo({ top:0, behavior:'smooth' });
   }
 
   /* ---------- boot ---------- */
@@ -1042,7 +1027,7 @@
     guesses = [];
     done = false;
 
-    applyTheme();
+    makeSpores();
     svg.textContent = '';
     resetView();
     drawMap();
@@ -1051,6 +1036,8 @@
     el('guessBtn').style.display = '';
     el('hint').style.display = '';
     el('dusk').style.opacity = 0;
+    el('haze').style.opacity = 0;
+    document.body.classList.remove('night');
     startClock();
 
     if (resume){
