@@ -17,6 +17,10 @@ The map takes 55% of the screen. The panel below it keeps the guess and New
 hunt buttons pinned on one row so they are always in reach, scrolls the clues
 above them, and scrolls the newest clue into view each time a miss buys one.
 
+On a laptop the panel becomes two columns — clues down the left, the guess and
+New hunt buttons down the right — and the map takes 72% of the window instead
+of 55%.
+
 It is built for a phone. A tap counts for the nearest place within 70 map
 units, so the targets are finger-sized (about 60px on an iPhone) without any
 overlapping circles drawn on the map. Safe-area insets keep the controls clear
@@ -91,8 +95,11 @@ with an `x`, a `y` and a `hint`; the clue system picks it up automatically.
 
 ## Who hides
 
-Eleven, Dustin, Max, Will, Steve and Vecna — plus Ayan and Deepak Smithy, who
-are not from Hawkins but hide just as well.
+Eleven, Dustin, Max, Will, Steve and Vecna — plus Ayan, Deepak and Smriti, who
+are not from Hawkins but hide just as well. Nine in all.
+
+The three of them are written with they/them, since their pronouns have never
+been stated. Set them in the `CAST` array whenever you like.
 
 **Vecna costs you a guess.** On the days he is the quarry you get four instead
 of five, and the panel warns you up front.

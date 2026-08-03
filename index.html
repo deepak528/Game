@@ -247,6 +247,27 @@
   }
   button.ghost:hover{color:var(--accent);border-color:var(--accent)}
   .hint{color:var(--muted);font-size:11.5px;text-align:center;margin:6px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* --- laptop: clues down the left, buttons down the right, taller map --- */
+  @media (min-width:820px){
+    #mapWrap{height:min(72vh,calc(100vh - 190px))}
+    .panel{flex-direction:row;gap:20px;align-items:stretch;padding:12px 18px}
+    .panel-scroll{flex:1 1 auto;padding-right:6px}
+    .panel-foot{
+      flex:0 0 300px;display:flex;flex-direction:column;justify-content:flex-end;
+      gap:8px;padding-top:0;border-left:1px solid var(--line);padding-left:20px;
+    }
+    .panel-foot #guessBtn,.panel-foot #resetBtn{flex:0 0 auto;width:100%;margin:0}
+    .hint{text-align:left}
+    /* two columns of clues, so a long ladder does not run off the bottom */
+    #clues{columns:2;column-gap:14px}
+    .clue{break-inside:avoid}
+  }
+  @supports (height:100dvh){
+    @media (min-width:820px){
+      #mapWrap{height:min(72dvh,calc(100dvh - 190px - env(safe-area-inset-top) - env(safe-area-inset-bottom)))}
+    }
+  }
   .result{text-align:center;padding:4px 0 10px}
   .result h2{margin:0 0 4px;font-size:20px;font-weight:700}
   .result .who{color:var(--accent)}
@@ -401,8 +422,9 @@
     { name:'Will',          pic:'🔦', flavor:'He has been drawing this place all week. The green crayon is worn to a stub.' },
     { name:'Steve',         pic:'🏒', flavor:'He drove, so wherever he is, there is somewhere to park the Beemer.' },
     { name:'Vecna',         pic:'🕰️', flavor:'The clock has chimed twice. He is somewhere quiet, and he already knows where you will look.', boss:true },
-    { name:'Ayan',          pic:'🎮', flavor:'He said he would be home before dinner. He was not home before dinner.' },
-    { name:'Deepak Smithy', pic:'🔧', flavor:'Find the thing that is broken. He will be underneath it.' }
+    { name:'Ayan',          pic:'🎮', flavor:'They said they would be home before dinner. They were not home before dinner.' },
+    { name:'Deepak',        pic:'🔧', flavor:'Find the thing in this town that is broken. They will be underneath it.' },
+    { name:'Smriti',        pic:'🎨', flavor:'They went wherever the light is best, and have not looked up from the sketchbook since.' }
   ];
 
   const COMPASS = ['north','north-east','east','south-east','south','south-west','west','north-west'];
@@ -649,6 +671,15 @@
     return { w:zoomW, h:zoomW * (rect.width > 0 ? rect.height / rect.width : 1), rect:rect };
   }
 
+  // How wide the view is when fully zoomed out. On a tall phone that is the
+  // width of the town; on a wide laptop the town is limited by its height, so
+  // the view has to be wider than the town to show all of it.
+  function fullZoomW(){
+    const rect = svg.getBoundingClientRect();
+    const aspect = rect.width > 0 ? rect.height / rect.width : 1;
+    return aspect >= BASE.h / BASE.w ? BASE.w : BASE.h / aspect;
+  }
+
   function applyView(){
     const v = viewSize();
     // on whichever axis shows more than the whole town, centre it
@@ -658,13 +689,14 @@
            : clamp(viewCy, BASE.y + v.h / 2, BASE.y + BASE.h - v.h / 2);
     svg.setAttribute('viewBox',
       (viewCx - v.w / 2) + ' ' + (viewCy - v.h / 2) + ' ' + v.w + ' ' + v.h);
-    el('zoomOut').classList.toggle('show', zoomW < BASE.w - 1);
+    const full = fullZoomW();
+    el('zoomOut').classList.toggle('show', zoomW < full - 1);
     el('zin').disabled = zoomW <= BASE.w / MAX_ZOOM + 0.5;
-    el('zminus').disabled = zoomW >= BASE.w - 0.5;
+    el('zminus').disabled = zoomW >= full - 0.5;
   }
 
   function resetView(){
-    zoomW = BASE.w;
+    zoomW = fullZoomW();
     viewCx = BASE.x + BASE.w / 2;
     viewCy = BASE.y + BASE.h / 2;
     applyView();
@@ -681,7 +713,7 @@
 
   // zoom by `factor`, leaving the map point under the cursor where it is
   function zoomAt(focus, factor){
-    const w = clamp(zoomW / factor, BASE.w / MAX_ZOOM, BASE.w);
+    const w = clamp(zoomW / factor, BASE.w / MAX_ZOOM, fullZoomW());
     const k = w / zoomW;
     viewCx = focus.x + (viewCx - focus.x) * k;
     viewCy = focus.y + (viewCy - focus.y) * k;
@@ -696,7 +728,10 @@
   }
 
   // the map area changes shape when the phone turns
-  window.addEventListener('resize', applyView);
+  window.addEventListener('resize', function(){
+    zoomW = Math.min(zoomW, fullZoomW());
+    applyView();
+  });
 
   svg.addEventListener('pointerdown', function(e){
     pointers.add(e.pointerId);
@@ -753,7 +788,7 @@
   svg.addEventListener('pointermove', function(e){
     if (!panFrom || pointers.size !== 1) return;
     moved += Math.hypot(e.clientX - panFrom.x, e.clientY - panFrom.y);
-    if (zoomW < BASE.w){
+    if (zoomW < fullZoomW()){
       const v = viewSize();
       const perPixel = v.w / v.rect.width;
       panBy((e.clientX - panFrom.x) * perPixel, (e.clientY - panFrom.y) * perPixel);
@@ -781,7 +816,7 @@
     const t = performance.now(), pt = { x:e.clientX, y:e.clientY };
     if (t - lastTapAt < 350 && lastTapPt && Math.hypot(pt.x - lastTapPt.x, pt.y - lastTapPt.y) < 32){
       lastTapAt = -1e9;
-      if (zoomW < BASE.w - 1) resetView();           // second double-tap comes back out
+      if (zoomW < fullZoomW() - 1) resetView();      // second double-tap comes back out
       else zoomAt(toMap(pt.x, pt.y), TAP_ZOOM);      // otherwise zoom toward the tap
     } else {
       lastTapAt = t;
