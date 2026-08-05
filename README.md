@@ -122,6 +122,21 @@ Streets, blocks and the railway are all drawn from the `STREETS`, `BLOCKS` and
 redraws. Adding a location means adding one entry
 with an `x`, a `y` and a `hint`; the clue system picks it up automatically.
 
+## Admin mode
+
+Add `?admin` to the URL — `index.html?admin` — and every place becomes
+draggable. A panel appears with:
+
+- a **live overlap check** using the same rule the map is held to: no marker on
+  a marker, no label on a label, no label on a neighbouring marker
+- **Copy map**, which puts the whole layout on the clipboard as pasteable
+  `PLACES` lines
+- **Reset**, which throws the edits away
+
+Moves are kept in `localStorage` for that browser only, so the published game
+always shows the committed layout. Paste the copied lines back into `PLACES` to
+make a new arrangement permanent.
+
 ## Who hides
 
 Eleven, Dustin, Max, Will, Steve and Vecna — plus Ayan, Deepak and Smriti, who

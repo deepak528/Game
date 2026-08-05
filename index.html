@@ -101,6 +101,28 @@
     background:var(--panel);color:var(--ink);border:1px solid var(--line);
     box-shadow:0 2px 6px rgba(0,0,0,.12);
   }
+  #admin{
+    position:absolute;left:12px;top:12px;z-index:8;width:296px;display:none;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:10px 12px;box-shadow:0 8px 26px rgba(0,0,0,.18);font-size:12px;
+  }
+  body.admin #admin{display:block}
+  #admin .ahead{font-weight:700;margin-bottom:6px}
+  #admin .arow{display:flex;gap:8px;align-items:center;margin-bottom:8px;color:var(--muted)}
+  #admin .abtn{
+    width:auto;flex:1 1 0;min-height:34px;padding:6px 10px;font-size:12.5px;border-radius:8px;
+    background:var(--accent);color:#fff;box-shadow:none;
+  }
+  #admin .abtn.ghosty{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  #admin textarea{
+    width:100%;height:104px;font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+    border:1px solid var(--line);border-radius:8px;padding:6px;resize:vertical;
+    background:rgba(0,0,0,.04);color:var(--ink);
+  }
+  #admin .warn{color:#c0392b;font-weight:700}
+  #admin .ok{color:#2e9e63;font-weight:700}
+  body.admin .loc{cursor:grab}
+  body.admin .loc.dragging{cursor:grabbing}
   #zin{bottom:114px}
   #zminus{bottom:62px}
   /* night coming down over the town, from half seven onwards */
@@ -377,6 +399,15 @@
   <svg id="map" viewBox="48 48 904 904" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
   <div id="dusk"></div>
   <div id="haze"></div>
+  <div id="admin">
+    <div class="ahead">&#128296; Admin &mdash; drag any place to move it</div>
+    <div class="arow"><span id="aOverlap">checking&hellip;</span></div>
+    <div class="arow">
+      <button id="aCopy" class="abtn">Copy map</button>
+      <button id="aReset" class="abtn ghosty">Reset</button>
+    </div>
+    <textarea id="aOut" readonly spellcheck="false"></textarea>
+  </div>
   <button id="zin" class="zbtn" aria-label="Zoom in">+</button>
   <button id="zminus" class="zbtn" aria-label="Zoom out">−</button>
   <button id="zoomOut">⤢ Whole town</button>
@@ -989,11 +1020,107 @@
       g.appendChild(marker);
       g.appendChild(node('text',   { x:p.x, y:p.y + 46, class:'label' }, p.name));
       g.addEventListener('click', function(){ pick(p.id); });
+      if (p.ox === undefined){ p.ox = p.x; p.oy = p.y; }
+      placeMarker(p);
+      if (ADMIN) adminDraggable(g, p);
       svg.appendChild(g);
     });
   }
 
   const gfx = id => svg.querySelector('.loc[data-id="' + id + '"]');
+
+  /* ---------- admin: drag the town into shape ----------
+     ?admin in the URL turns every place into something you can drag. Moves are
+     kept in localStorage for this browser only — the published game always
+     shows the committed layout — and Copy map hands the coordinates back. */
+
+  const ADMIN = /[?&]admin\b/.test(location.search);
+  const ADMIN_KEY = 'findr::admin::places';
+  let adminDragging = null;
+
+  function loadAdminMoves(){
+    if (!ADMIN) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(ADMIN_KEY) || '{}');
+      PLACES.forEach(function(p){
+        if (saved[p.id]){ p.x = saved[p.id][0]; p.y = saved[p.id][1]; }
+      });
+    } catch(e){}
+  }
+
+  function saveAdminMoves(){
+    const out = {};
+    PLACES.forEach(function(p){ out[p.id] = [Math.round(p.x), Math.round(p.y)]; });
+    try { localStorage.setItem(ADMIN_KEY, JSON.stringify(out)); } catch(e){}
+  }
+
+  // the same rule the map is judged by: markers, labels, and labels on markers
+  function adminOverlaps(){
+    const rects = PLACES.map(function(p){
+      const g = gfx(p.id);
+      const art = g.querySelector('.art') || g.querySelector('.dot');
+      return { id:p.id, art:art.getBoundingClientRect(), lab:g.querySelector('.label').getBoundingClientRect() };
+    });
+    const hit = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+                          Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+    const bad = [];
+    for (let i = 0; i < rects.length; i++){
+      for (let j = i + 1; j < rects.length; j++){
+        const A = rects[i], B = rects[j];
+        if (hit(A.art, B.art) > 4)  bad.push(A.id + ' x ' + B.id);
+        if (hit(A.lab, B.lab) > 4)  bad.push(A.id + ' label x ' + B.id + ' label');
+        if (hit(A.art, B.lab) > 30) bad.push(B.id + ' label over ' + A.id);
+        if (hit(B.art, A.lab) > 30) bad.push(A.id + ' label over ' + B.id);
+      }
+    }
+    return bad;
+  }
+
+  function adminReport(){
+    if (!ADMIN) return;
+    const bad = adminOverlaps();
+    const tag = el('aOverlap');
+    tag.className = bad.length ? 'warn' : 'ok';
+    tag.textContent = bad.length
+      ? '\u26a0 ' + bad.length + ' overlap' + (bad.length > 1 ? 's' : '') + ': ' + bad.slice(0, 2).join(', ')
+      : '\u2713 nothing overlaps';
+    el('aOut').value = PLACES.map(function(p){
+      return "{ id:'" + p.id + "', x:" + Math.round(p.x) + ", y:" + Math.round(p.y) + " },";
+    }).join('\n');
+  }
+
+  // markers are drawn at their original spot and shifted, so a move is one attribute
+  function placeMarker(p){
+    const g = gfx(p.id);
+    if (g) g.setAttribute('transform', 'translate(' + (p.x - p.ox) + ',' + (p.y - p.oy) + ')');
+  }
+
+  function adminDraggable(g, p){
+    g.addEventListener('pointerdown', function(e){
+      e.stopPropagation();                 // the map must not pan underneath
+      adminDragging = p;
+      g.classList.add('dragging');
+      try { g.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    g.addEventListener('pointermove', function(e){
+      if (adminDragging !== p) return;
+      const m = toMap(e.clientX, e.clientY);
+      p.x = Math.round(m.x);
+      p.y = Math.round(m.y);
+      placeMarker(p);
+      suppressClick = true;                // a drag is not a tap
+    });
+    function done(e){
+      if (adminDragging !== p) return;
+      g.classList.remove('dragging');
+      try { g.releasePointerCapture(e.pointerId); } catch(err){}
+      adminDragging = null;
+      saveAdminMoves();
+      adminReport();
+    }
+    g.addEventListener('pointerup', done);
+    g.addEventListener('pointercancel', done);
+  }
 
   /* ---------- movers ----------
      A vehicle crosses, rests a few seconds, then comes back from a random
@@ -1505,6 +1632,8 @@
     document.body.classList.remove('night');
     startClock();
 
+    if (ADMIN) setTimeout(adminReport, 60);
+
     if (resume){
       const saved = load();
       if (saved && Array.isArray(saved.guesses) && saved.guesses.length){
@@ -1517,6 +1646,25 @@
       save();
     }
     render();
+  }
+
+  if (ADMIN){
+    document.body.classList.add('admin');
+    loadAdminMoves();
+    el('aCopy').onclick = function(){
+      const txt = el('aOut').value;
+      el('aOut').select();
+      navigator.clipboard.writeText(txt).then(function(){
+        el('aCopy').textContent = 'Copied \u2713';
+        setTimeout(function(){ el('aCopy').textContent = 'Copy map'; }, 1400);
+      }, function(){
+        el('aCopy').textContent = 'Select + copy above';
+      });
+    };
+    el('aReset').onclick = function(){
+      try { localStorage.removeItem(ADMIN_KEY); } catch(e){}
+      location.reload();
+    };
   }
 
   el('guessBtn').onclick = submitGuess;
