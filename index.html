@@ -466,30 +466,27 @@
 
   const PLACES = [
     { id:'town',    name:'The Town',          pic:'🏛️', x:500, y:500, hint:'the middle of everything' },
-    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:602, y:434, hint:'the whole block smells of oregano after four' },
-    { id:'library', name:'Public Library',    pic:'📚', x:400, y:434, hint:'you need a card to get in, and quiet to stay' },
-    { id:'middle',  name:'Middle School',     pic:'🎒', x:1217, y:650, hint:'the bell still rings at 2:40, even in summer' },
+    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:332, y:369, hint:'the whole block smells of oregano after four' },
+    { id:'library', name:'Public Library',    pic:'📚', x:321, y:662, hint:'you need a card to get in, and quiet to stay' },
+    { id:'middle',  name:'Middle School',     pic:'🎒', x:1047, y:655, hint:'the bell still rings at 2:40, even in summer' },
     { id:'high',    name:'High School',       pic:'🏫', x:672, y:672, hint:'the field lights come on Friday nights' },
-    { id:'tower',   name:'Water Tower',       pic:'🗼', x:-146, y:589, hint:'you can see the whole grid from the catwalk' },
-    { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:135, y:758, hint:'it is open late and the jukebox eats quarters' },
-    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:568, y:652, hint:'it is loud, and nobody looks up from the cabinets' },
-    { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:752, y:462, hint:'you can walk in as yourself and walk out as somebody else' },
+    { id:'tower',   name:'Water Tower',       pic:'🗼', x:-165, y:663, hint:'you can see the whole grid from the catwalk' },
+    { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:96, y:765, hint:'it is open late and the jukebox eats quarters' },
+    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:-25, y:423, hint:'it is loud, and nobody looks up from the cabinets' , noLabel:true },
+    { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:53, y:553, hint:'you can walk in as yourself and walk out as somebody else' },
     { id:'station', name:'Train Station',     pic:'🚂', x:500, y:246, hint:'the freight goes through hard enough to rattle windows' },
-    { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:266, y:314, hint:'the town gave up on that quarry and the kids did not' },
-    { id:'pool',    name:'Community Pool',    pic:'🏊', x:357, y:828, hint:'it is closed for the season and the fence is easy enough' },
-    { id:'field',   name:'Baseball Field',    pic:'⚾', x:720, y:806, hint:'the dugout stays dry when nothing else does' },
+    { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:-7, y:224, hint:'the town gave up on that quarry and the kids did not' },
+    { id:'pool',    name:'Community Pool',    pic:'🏊', x:609, y:786, hint:'it is closed for the season and the fence is easy enough' },
+    { id:'field',   name:'Baseball Field',    pic:'⚾', x:1419, y:651, hint:'the dugout stays dry when nothing else does' },
     { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:668, y:330, hint:'it is the only place in town selling a decent antenna' },
-    { id:'grove',   name:'Old Grove',         pic:'🪦', x:232, y:518, hint:'the oldest stones there predate the parkway' },
     { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:633, y:144, hint:'if a thing in this town is broken, the part is there' },
-    { id:'woods',   name:'The Pines',         pic:'🌲', x:820, y:232, hint:'the trees swallow a flashlight ten feet in' },
-    { id:'trailer', name:'Cherry Lane',       pic:'🚐', x:874, y:642, hint:'the walls are thin and everyone hears everything' },
-    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:329, y:654, hint:'the ovens run before sunrise and the line asks no questions' },
-    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:1050, y:102, hint:'the milk steamer hisses loud enough to cover any conversation' },
-    { id:'campagne',name:'Campagne House',    pic:'🥂', x:884, y:448, hint:'there is always a wedding on and nobody counts the guests' },
+    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:498, y:738, hint:'the ovens run before sunrise and the line asks no questions' },
+    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:1088, y:215, hint:'the milk steamer hisses loud enough to cover any conversation' },
+    { id:'campagne',name:'Campagne House',    pic:'🥂', x:496, y:865, hint:'there is always a wedding on and nobody counts the guests' },
     { id:'video',   name:'Family Video',      pic:'📼', x:360, y:150, hint:'the horror aisle cannot be seen from the register' },
-    { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:892, y:148, hint:'the fence says keep out and the gate was left open' },
-    { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:896, y:788, hint:'it is brand new and nobody looks twice at a stranger' },
-    { id:'scoops',  name:'Scoops Ahoy',       pic:'🍦', x:1243, y:403, hint:'the back room has one door, no windows and free ice cream' }
+    { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:839, y:114, hint:'the fence says keep out and the gate was left open' },
+    { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:1474, y:400, hint:'it is brand new and nobody looks twice at a stranger' },
+    { id:'cookies', name:'Crumbl Cookies',   pic:'🍪', x:1243, y:403, hint:'the queue goes out of the door on a Friday and the boxes are pink' }
   ];
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
@@ -574,27 +571,38 @@
       g.appendChild(node('rect', { x:x-5, y:y, width:10, height:10, fill:'#1d1440' }));
       g.appendChild(node('rect', { x:x-5, y:y, width:10, height:2.5, fill:'#ff7ad9' }));
     },
-    scoops: function(g, x, y){
+    cookies: function(g, x, y){
       g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:24, ry:5, class:'shadow' }));
-      g.appendChild(node('path', { d:'M'+(x-22)+','+(y-2)+' L'+(x+22)+','+(y-2)+' L'+(x+16)+','+(y+10)+' L'+(x-16)+','+(y+10)+' Z', fill:'#3e5f8a', stroke:'#2c4666', 'stroke-width':1 }));
-      g.appendChild(node('rect', { x:x-22, y:y-4, width:44, height:3, fill:'#d95555' }));
-      g.appendChild(node('rect', { x:x-13, y:y-14, width:26, height:10, rx:2, fill:'#f4e8d0', stroke:'#c9b98f', 'stroke-width':1 }));
-      for (let i = 0; i < 4; i++){
-        g.appendChild(node('rect', { x:x-12+i*6, y:y-21, width:6, height:7, fill:i%2 ? '#fff' : '#7ec3ea' }));
+      box(g, x-19, y+10, 38, 17, 7, '#f6d9e4', '#dcb3c6', '#fdeef4');
+      // a scalloped awning over the counter
+      for (let i = 0; i < 5; i++){
+        g.appendChild(node('path', { d:'M'+(x-19+i*7.6)+','+(y-7)+' q3.8,5 7.6,0', fill:i%2 ? '#e0648f' : '#fff1f6', stroke:'#c9527a', 'stroke-width':0.6 }));
       }
-      g.appendChild(node('line', { x1:x, y1:y-21, x2:x, y2:y-28, class:'strut' }));
-      g.appendChild(node('polygon', { points:x+','+(y-28)+' '+(x+9)+','+(y-25.5)+' '+x+','+(y-23), fill:'#d95555' }));
-      g.appendChild(node('circle', { cx:x+18, cy:y-8, r:3, fill:'#f7d9e8', stroke:'#d8a5c0', 'stroke-width':1 }));
+      g.appendChild(node('rect', { x:x-14, y:y-19, width:28, height:10, rx:2, fill:'#fff', stroke:'#e0648f', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y-11.5, 'font-size':6.5, 'text-anchor':'middle', fill:'#c9527a', class:'blab' }, 'CRUMBL'));
+      // the cookie itself, on the roof where everyone can see it
+      g.appendChild(node('circle', { cx:x, cy:y-27, r:7, fill:'#e8b878', stroke:'#c08f52', 'stroke-width':1 }));
+      [[-2.5,-29],[2,-26],[-1,-24],[3.5,-30]].forEach(function(c){
+        g.appendChild(node('circle', { cx:x+c[0], cy:y+c[1]+2, r:1.4, fill:'#6b4423' }));
+      });
+      g.appendChild(node('rect', { x:x-5, y:y, width:10, height:10, fill:'#c9527a' }));
     },
-    trailer: function(g, x, y){
-      g.appendChild(node('ellipse', { cx:x, cy:y+12, rx:24, ry:5, class:'shadow' }));
-      g.appendChild(node('path', { d:'M'+(x-22)+','+(y+8)+' L'+(x-22)+','+(y-6)+' Q'+(x-22)+','+(y-12)+' '+(x-14)+','+(y-12)+' L'+(x+18)+','+(y-12)+' Q'+(x+22)+','+(y-12)+' '+(x+22)+','+(y-4)+' L'+(x+22)+','+(y+8)+' Z', fill:'#e8e2d4', stroke:'#b8b0a0', 'stroke-width':1.2 }));
-      g.appendChild(node('rect', { x:x-22, y:y-1, width:44, height:3, fill:'#c96a5a' }));
-      g.appendChild(node('rect', { x:x-15, y:y-8, width:9, height:6, fill:'#9fd3ef', stroke:'#7ba8c4', 'stroke-width':0.8 }));
-      g.appendChild(node('rect', { x:x+3, y:y-8, width:9, height:6, fill:'#9fd3ef', stroke:'#7ba8c4', 'stroke-width':0.8 }));
-      g.appendChild(node('rect', { x:x-6, y:y-2, width:8, height:10, fill:'#7c6a55' }));
-      g.appendChild(node('circle', { cx:x-12, cy:y+9, r:3.5, class:'twheel' }));
-      g.appendChild(node('circle', { cx:x+12, cy:y+9, r:3.5, class:'twheel' }));
+    campagne: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:26, ry:5, class:'shadow' }));
+      box(g, x-21, y+10, 42, 20, 8, '#d8c49a', '#b7a074', '#efdfbc');
+      // a striped awning along the terrace
+      for (let i = 0; i < 6; i++){
+        g.appendChild(node('rect', { x:x-21+i*7, y:y-11, width:7, height:5, fill:i%2 ? '#2e7d5b' : '#f3ead4' }));
+      }
+      // warm windows, a door, and a hanging sign with a glass on it
+      [[-15,-3],[-4,-3],[7,-3]].forEach(function(w){
+        g.appendChild(node('rect', { x:x+w[0], y:y+w[1], width:8, height:6, fill:'#ffd98a', stroke:'#b08a3e', 'stroke-width':0.7 }));
+      });
+      g.appendChild(node('rect', { x:x-4, y:y+2, width:9, height:8, fill:'#6b4a2e' }));
+      g.appendChild(node('line', { x1:x+18, y1:y-14, x2:x+18, y2:y-24, class:'strut' }));
+      g.appendChild(node('rect', { x:x+11, y:y-24, width:15, height:9, rx:1.5, fill:'#2e7d5b', stroke:'#1f5b42', 'stroke-width':1 }));
+      g.appendChild(node('path', { d:'M'+(x+15.5)+','+(y-21.5)+' l3,3.5 l3,-3.5 z', fill:'#ffe9a8' }));
+      g.appendChild(node('line', { x1:x+18.5, y1:y-18, x2:x+18.5, y2:y-16.5, stroke:'#ffe9a8', 'stroke-width':1 }));
     },
     field: function(g, x, y){
       g.appendChild(node('path', { d:'M'+(x-22)+','+(y+12)+' A26,26 0 0 1 '+(x+22)+','+(y+12)+' Z', fill:'#9fd98a' }));
@@ -1040,7 +1048,8 @@
       }
       marker.appendChild(bob);
       g.appendChild(marker);
-      g.appendChild(node('text',   { x:p.x, y:p.y + 46, class:'label' }, p.name));
+      // a build with its own signage does not need a label underneath it too
+      if (!p.noLabel) g.appendChild(node('text', { x:p.x, y:p.y + 46, class:'label' }, p.name));
       g.addEventListener('click', function(){ pick(p.id); });
       if (p.ox === undefined){ p.ox = p.x; p.oy = p.y; }
       placeMarker(p);
@@ -1105,7 +1114,10 @@
     const rects = PLACES.map(function(p){
       const g = gfx(p.id);
       const art = g.querySelector('.art') || g.querySelector('.dot');
-      return { id:p.id, art:art.getBoundingClientRect(), lab:g.querySelector('.label').getBoundingClientRect() };
+      // Some places are drawn without a name (noLabel), so there may be
+      // nothing to measure for the label checks.
+      const lab = g.querySelector('.label');
+      return { id:p.id, art:art.getBoundingClientRect(), lab:lab ? lab.getBoundingClientRect() : null };
     });
     const bad = [];
     // A place under a floating panel cannot be clicked at all, which is the
@@ -1122,9 +1134,9 @@
       for (let j = i + 1; j < rects.length; j++){
         const A = rects[i], B = rects[j];
         if (hit(A.art, B.art) > 4)  bad.push(A.id + ' x ' + B.id);
-        if (hit(A.lab, B.lab) > 4)  bad.push(A.id + ' label x ' + B.id + ' label');
-        if (hit(A.art, B.lab) > 30) bad.push(B.id + ' label over ' + A.id);
-        if (hit(B.art, A.lab) > 30) bad.push(A.id + ' label over ' + B.id);
+        if (A.lab && B.lab && hit(A.lab, B.lab) > 4)  bad.push(A.id + ' label x ' + B.id + ' label');
+        if (B.lab && hit(A.art, B.lab) > 30) bad.push(B.id + ' label over ' + A.id);
+        if (A.lab && hit(B.art, A.lab) > 30) bad.push(A.id + ' label over ' + B.id);
       }
     }
     return bad;
@@ -1246,8 +1258,10 @@
      A double-tap is a plain tap twice — every browser delivers it. */
 
   // The frame is whatever the places need, not a fixed square — move a place
-  // to the edge of the county and the map grows to include it.
+  // to the edge of the county and the map grows to include it. COLD is the cold
+  // end of the warmth bar: the widest gap on the map, recomputed alongside it.
   let BASE = { x:48, y:48, w:904, h:904 };
+  let COLD = 9;
 
   function recomputeBounds(){
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -1257,6 +1271,7 @@
     });
     const m = 130;                       // room for the labels and the taller builds
     BASE = { x:x0 - m, y:y0 - m, w:(x1 - x0) + m*2, h:(y1 - y0) + m*2 };
+    if (typeof recomputeScale === 'function') recomputeScale();
   }
   recomputeBounds();
   const MAX_ZOOM = 4;
@@ -1495,9 +1510,17 @@
 
   /* ---------- rendering ---------- */
 
-  // Ten blocks, filled by how close the last guess landed. The far corners of
-  // the town are about 9 blocks apart, so that is the cold end of the scale.
-  const COLD = 9;
+  // Ten blocks, filled by how close the last guess landed; COLD is declared with
+  // the frame above, since recomputeBounds sets it before this point is reached.
+  function recomputeScale(){
+    let far = 0;
+    for (let i = 0; i < PLACES.length; i++){
+      for (let j = i + 1; j < PLACES.length; j++){
+        far = Math.max(far, blocksBetween(PLACES[i], PLACES[j]));
+      }
+    }
+    COLD = Math.max(1, far);
+  }
 
   function renderWarmth(){
     const box = el('warmth');

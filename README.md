@@ -2,7 +2,7 @@
 
 A daily hide-and-seek game played on a small fictional town, loosely shaped
 after the middle of Bethpage, NY. Someone from Hawkins is hiding at one of
-twenty-four places, and they were supposed to be home before dinner. You get
+twenty-two places, and they were supposed to be home before dinner. You get
 clues, you search a place, and the town tells you how far off you were.
 
 A crooked missing poster at the top of the panel says who you are looking for:
@@ -74,19 +74,18 @@ everyone shares.
 
 ## The map
 
-Twenty-five locations, one block = 100 units:
+Twenty-two locations, one block = 100 units:
 
 🏛️ The Town · 🍕 Pappardelle's Pizzeria · 📚 Public Library · 🎒 Middle School ·
 🏫 High School · 🗼 Water Tower · 🥤 The Grand Diner · 👾 Palace Arcade ·
 💈 Lucky Salon · 🚂 Train Station · ⛰️ The Old Bowl · 🏊 Community Pool ·
-⚾ Baseball Field · 📻 Sparks Radio · 🪦 Old Grove · 🔧 Smithy's Hardware ·
-🌲 The Pines · 🚐 Cherry Lane · 🥯 Stuff a Bagel · ☕ Mongo's Coffee ·
-🥂 Campagne House · 📼 Family Video · 🧪 Hawkins Lab · 🛍️ Starcourt Mall ·
-🍦 Scoops Ahoy
+⚾ Baseball Field · 📻 Sparks Radio · 🔧 Smithy's Hardware · 🥯 Stuff a Bagel ·
+☕ Mongo's Coffee · 🥂 Campagne House · 📼 Family Video · 🧪 Hawkins Lab ·
+🛍️ Starcourt Mall · 🍪 Crumbl Cookies
 
-Palace Arcade, Family Video, Hawkins Lab, Starcourt Mall and Scoops Ahoy are
-on loan from Hawkins; the bagels, the salon, the coffee and Campagne House are
-pure Bethpage.
+Palace Arcade, Family Video, Hawkins Lab and Starcourt Mall are on loan from
+Hawkins; the bagels, the salon, the coffee, the cookies and Campagne House are
+pure Bethpage. The arcade goes unlabelled — the neon on the front says enough.
 
 The town is drawn like a crayon map: cream paper, every block coloured in with
 its own pastel, dashed yellow centrelines down the big streets, a smiling sun in
@@ -99,13 +98,14 @@ fields are green, the pond block is blue.
 
 Thirteen places are built rather than lettered — the Mall, Hawkins Lab, the
 Pool, the Baseball Field, the Water Tower, the Train Station, the Grand Diner,
-the High School, the Pizzeria, the Library, Palace Arcade, Scoops Ahoy and
-Cherry Lane — little models in perspective with a lit face, a shaded side and a
+the High School, the Pizzeria, the Library, Palace Arcade, Crumbl Cookies and
+Campagne House — little models in perspective with a lit face, a shaded side and a
 roof, so they stand up off the paper.
 
 Nothing crowds anything else: no two markers overlap, no two labels overlap,
-and no label sits on a neighbouring marker. The closest two places are 100
-units apart, comfortably clear of the 46-unit tap radius.
+and no label sits on a neighbouring marker. The closest two places — the
+Community Pool and Stuff a Bagel — are 121 units apart, comfortably clear of
+the 70-unit tap radius.
 
 The town has surroundings, seen when a wide screen looks past it: a meadow and
 an orchard to the west, and to the east a lake with a duck, fields with a
@@ -186,15 +186,16 @@ evening over.
 
 After each guess a ten-block bar fills to show how close you landed — one block
 from the far side of town, ten when you have found them, with a word for it
-(freezing, cold, warm, hot, boiling). The scale is linear against 9 blocks,
-which is roughly the widest gap between two places on the map.
+(freezing, cold, warm, hot, boiling). The scale is linear against the widest
+gap between any two places, measured from `PLACES` when the page loads, so
+moving the town around rescales the bar automatically.
 
 ## Prototype notes
 
 - The puzzle is computed client-side, so the answer is visible to anyone who
   reads the source. Fine for a solo daily; it would need a server to be
   competitive.
-- With twenty-four hideable places and five guesses, the clues carry the game.
+- With twenty-one hideable places and five guesses, the clues carry the game.
   Clue 4 is close to a giveaway on purpose — it is the reward for surviving
   three misses.
 - Fan-made, for personal use. The Stranger Things characters belong to their
