@@ -97,10 +97,15 @@ Shading is one flat colour per block — nothing is layered on top. Where a
 block is a place, the whole block takes its colour: the pines and the ball
 fields are green, the pond block is blue.
 
-Ten places are built rather than lettered — the Mall, Hawkins Lab, the Pool,
-the Baseball Field, the Water Tower, the Train Station, the Grand Diner, the
-High School, the Pizzeria and the Library — little models in perspective with a
-lit face, a shaded side and a roof, so they stand up off the paper.
+Thirteen places are built rather than lettered — the Mall, Hawkins Lab, the
+Pool, the Baseball Field, the Water Tower, the Train Station, the Grand Diner,
+the High School, the Pizzeria, the Library, Palace Arcade, Scoops Ahoy and
+Cherry Lane — little models in perspective with a lit face, a shaded side and a
+roof, so they stand up off the paper.
+
+Nothing crowds anything else: no two markers overlap, no two labels overlap,
+and no label sits on a neighbouring marker. The closest two places are 100
+units apart, comfortably clear of the 46-unit tap radius.
 
 The town has surroundings, seen when a wide screen looks past it: a meadow and
 an orchard to the west, and to the east a lake with a duck, fields with a
@@ -145,6 +150,9 @@ Night falls on the map alone — the panel, clues and buttons stay in daylight
 the whole way through, so everything stays readable while the town goes dark.
 Along with the dimming and the vines, spores drift up over the map and the
 smiling sun in the corner goes out and loses its face.
+
+Six street lamps stand along the main roads. At **8:00 PM** they come on, and
+their pools of light are the last warm thing left as the town goes dark.
 
 The clock stops the moment the hunt ends, and New hunt puts it back to five
 o'clock. It runs per round rather than being stored, so a reload starts the

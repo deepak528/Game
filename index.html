@@ -217,6 +217,11 @@
   }
   .blab{font-family:inherit;font-weight:700;letter-spacing:.5px}
   .strut{stroke:#7e93a6;stroke-width:2.5;stroke-linecap:round}
+  .lamppost{stroke:#6a6156;stroke-width:2.5;stroke-linecap:round;fill:none}
+  .lamphead{fill:#dfd7c6;stroke:#6a6156;stroke-width:1}
+  .lampglow{fill:#ffd769;opacity:0;transition:opacity 1.2s}
+  body.lamps .lampglow{opacity:.6}
+  body.lamps .lamphead{fill:#ffe9a4}
   /* --- life around the town --- */
   .lake{fill:#a4d9f2}
   .scene{font-family:inherit;text-anchor:middle;pointer-events:none;user-select:none}
@@ -408,21 +413,21 @@
 
   const PLACES = [
     { id:'town',    name:'The Town',          pic:'🏛️', x:500, y:500, hint:'the middle of everything' },
-    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:596, y:430, hint:'the whole block smells of oregano after four' },
+    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:620, y:418, hint:'the whole block smells of oregano after four' },
     { id:'library', name:'Public Library',    pic:'📚', x:400, y:434, hint:'you need a card to get in, and quiet to stay' },
     { id:'middle',  name:'Middle School',     pic:'🎒', x:348, y:646, hint:'the bell still rings at 2:40, even in summer' },
     { id:'high',    name:'High School',       pic:'🏫', x:672, y:672, hint:'the field lights come on Friday nights' },
-    { id:'tower',   name:'Water Tower',       pic:'🗼', x:500, y:342, hint:'you can see the whole grid from the catwalk' },
+    { id:'tower',   name:'Water Tower',       pic:'🗼', x:496, y:372, hint:'you can see the whole grid from the catwalk' },
     { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:634, y:556, hint:'it is open late and the jukebox eats quarters' },
-    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:544, y:610, hint:'it is loud, and nobody looks up from the cabinets' },
+    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:568, y:652, hint:'it is loud, and nobody looks up from the cabinets' },
     { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:752, y:462, hint:'you can walk in as yourself and walk out as somebody else' },
     { id:'station', name:'Train Station',     pic:'🚂', x:500, y:246, hint:'the freight goes through hard enough to rattle windows' },
     { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:266, y:314, hint:'the town gave up on that quarry and the kids did not' },
     { id:'pool',    name:'Community Pool',    pic:'🏊', x:316, y:768, hint:'it is closed for the season and the fence is easy enough' },
     { id:'field',   name:'Baseball Field',    pic:'⚾', x:720, y:806, hint:'the dugout stays dry when nothing else does' },
-    { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:652, y:350, hint:'it is the only place in town selling a decent antenna' },
+    { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:668, y:330, hint:'it is the only place in town selling a decent antenna' },
     { id:'grove',   name:'Old Grove',         pic:'🪦', x:232, y:518, hint:'the oldest stones there predate the parkway' },
-    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:448, y:588, hint:'if a thing in this town is broken, the part is there' },
+    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:448, y:592, hint:'if a thing in this town is broken, the part is there' },
     { id:'woods',   name:'The Pines',         pic:'🌲', x:820, y:232, hint:'the trees swallow a flashlight ten feet in' },
     { id:'trailer', name:'Cherry Lane',       pic:'🚐', x:826, y:640, hint:'the walls are thin and everyone hears everything' },
     { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:118, y:436, hint:'the ovens run before sunrise and the line asks no questions' },
@@ -431,7 +436,7 @@
     { id:'video',   name:'Family Video',      pic:'📼', x:360, y:150, hint:'the horror aisle cannot be seen from the register' },
     { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:892, y:148, hint:'the fence says keep out and the gate was left open' },
     { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:896, y:788, hint:'it is brand new and nobody looks twice at a stranger' },
-    { id:'scoops',  name:'Scoops Ahoy',       pic:'🍦', x:900, y:884, hint:'the back room has one door, no windows and free ice cream' }
+    { id:'scoops',  name:'Scoops Ahoy',       pic:'🍦', x:898, y:892, hint:'the back room has one door, no windows and free ice cream' }
   ];
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
@@ -505,6 +510,38 @@
       [-13,-4.5,4,12.5].forEach(function(cx){
         g.appendChild(node('rect', { x:x+cx, y:y-6, width:3.5, height:16, fill:'#fbf6ea', stroke:'#b3a482', 'stroke-width':0.8 }));
       });
+    },
+    arcade: function(g, x, y){
+      box(g, x-18, y+10, 36, 18, 6, '#6d5a9e', '#55467e', '#8a76bd');
+      g.appendChild(node('rect', { x:x-21, y:y-16, width:42, height:9, rx:2, fill:'#2f2350', stroke:'#8a76bd', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y-9, 'font-size':7, 'text-anchor':'middle', fill:'#ff7ad9', class:'blab' }, 'ARCADE'));
+      [-17,-8,1,10,17].forEach(function(bx, i){
+        g.appendChild(node('circle', { cx:x+bx, cy:y-18.5, r:1.3, fill:i%2 ? '#7ef3ff' : '#ffd34e' }));
+      });
+      g.appendChild(node('rect', { x:x-5, y:y, width:10, height:10, fill:'#1d1440' }));
+      g.appendChild(node('rect', { x:x-5, y:y, width:10, height:2.5, fill:'#ff7ad9' }));
+    },
+    scoops: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:24, ry:5, class:'shadow' }));
+      g.appendChild(node('path', { d:'M'+(x-22)+','+(y-2)+' L'+(x+22)+','+(y-2)+' L'+(x+16)+','+(y+10)+' L'+(x-16)+','+(y+10)+' Z', fill:'#3e5f8a', stroke:'#2c4666', 'stroke-width':1 }));
+      g.appendChild(node('rect', { x:x-22, y:y-4, width:44, height:3, fill:'#d95555' }));
+      g.appendChild(node('rect', { x:x-13, y:y-14, width:26, height:10, rx:2, fill:'#f4e8d0', stroke:'#c9b98f', 'stroke-width':1 }));
+      for (let i = 0; i < 4; i++){
+        g.appendChild(node('rect', { x:x-12+i*6, y:y-21, width:6, height:7, fill:i%2 ? '#fff' : '#7ec3ea' }));
+      }
+      g.appendChild(node('line', { x1:x, y1:y-21, x2:x, y2:y-28, class:'strut' }));
+      g.appendChild(node('polygon', { points:x+','+(y-28)+' '+(x+9)+','+(y-25.5)+' '+x+','+(y-23), fill:'#d95555' }));
+      g.appendChild(node('circle', { cx:x+18, cy:y-8, r:3, fill:'#f7d9e8', stroke:'#d8a5c0', 'stroke-width':1 }));
+    },
+    trailer: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+12, rx:24, ry:5, class:'shadow' }));
+      g.appendChild(node('path', { d:'M'+(x-22)+','+(y+8)+' L'+(x-22)+','+(y-6)+' Q'+(x-22)+','+(y-12)+' '+(x-14)+','+(y-12)+' L'+(x+18)+','+(y-12)+' Q'+(x+22)+','+(y-12)+' '+(x+22)+','+(y-4)+' L'+(x+22)+','+(y+8)+' Z', fill:'#e8e2d4', stroke:'#b8b0a0', 'stroke-width':1.2 }));
+      g.appendChild(node('rect', { x:x-22, y:y-1, width:44, height:3, fill:'#c96a5a' }));
+      g.appendChild(node('rect', { x:x-15, y:y-8, width:9, height:6, fill:'#9fd3ef', stroke:'#7ba8c4', 'stroke-width':0.8 }));
+      g.appendChild(node('rect', { x:x+3, y:y-8, width:9, height:6, fill:'#9fd3ef', stroke:'#7ba8c4', 'stroke-width':0.8 }));
+      g.appendChild(node('rect', { x:x-6, y:y-2, width:8, height:10, fill:'#7c6a55' }));
+      g.appendChild(node('circle', { cx:x-12, cy:y+9, r:3.5, class:'twheel' }));
+      g.appendChild(node('circle', { cx:x+12, cy:y+9, r:3.5, class:'twheel' }));
     },
     field: function(g, x, y){
       g.appendChild(node('path', { d:'M'+(x-22)+','+(y+12)+' A26,26 0 0 1 '+(x+22)+','+(y+12)+' Z', fill:'#9fd98a' }));
@@ -852,6 +889,16 @@
     live.appendChild(node('line', { x1:1300, y1:792, x2:1300, y2:858, class:'pline' }));
     live.appendChild(node('text', { x:1240, y:892, 'font-size':24, class:'scene pball' }, '⚽'));
     live.appendChild(node('text', { x:1210, y:930, class:'streetname', 'text-anchor':'middle' }, 'Playground'));
+    // street lamps along the big roads; they come on after eight
+    [[302,481],[700,481],[-140,481],[1046,481],[524,714],[556,300]].forEach(function(L){
+      const lampG = node('g', { class:'lamp' });
+      lampG.appendChild(node('circle', { cx:L[0]+7, cy:L[1]-26, r:14, class:'lampglow' }));
+      lampG.appendChild(node('line', { x1:L[0], y1:L[1], x2:L[0], y2:L[1]-24, class:'lamppost' }));
+      lampG.appendChild(node('path', { d:'M'+L[0]+','+(L[1]-24)+' Q'+L[0]+','+(L[1]-30)+' '+(L[0]+7)+','+(L[1]-30)+' L'+(L[0]+7)+','+(L[1]-28), class:'lamppost' }));
+      lampG.appendChild(node('circle', { cx:L[0]+7, cy:L[1]-26, r:3, class:'lamphead' }));
+      live.appendChild(lampG);
+    });
+
     // the cyclist and the freight cross, rest, and return from a random side
     const rider = node('g', { class:'rider' });
     const riderGlyph = node('text', { x:0, y:506, 'font-size':28, class:'scene' }, '🚴');
@@ -1294,6 +1341,7 @@
     const dusk = duskAmount(mins);
     el('clock').textContent = fmtClock(mins) + (round ? ' · hunt ' + (round + 1) : '');
     el('clock').classList.toggle('late', dusk > 0);
+    document.body.classList.toggle('lamps', mins >= 20 * 60);   // eight o'clock
     el('dusk').style.opacity = dusk;
     el('haze').style.opacity = dusk;
     document.body.classList.toggle('night', dusk > 0.45);
