@@ -90,6 +90,14 @@ Shading is one flat colour per block — nothing is layered on top. Where a
 block is a place, the whole block takes its colour: the pines and the ball
 fields are green, the pond block is blue.
 
+The town has surroundings, seen when a wide screen looks past it: a meadow and
+an orchard to the west, and to the east a lake with a duck, fields with a
+tractor, and a playground where a kid swings and a ball bounces. A cyclist
+rides Central Ave and a freight train crosses the rail line. Markers idle with
+a gentle bob and grow a fifth larger under the mouse; by nightfall the kids
+and the cyclist have gone home, though the freight has not. All of it stands
+still for players who prefer reduced motion.
+
 Streets, blocks and the railway are all drawn from the `STREETS`, `BLOCKS` and
 `PLACES` arrays at the top of the script — move a coordinate and the town
 redraws. Adding a location means adding one entry
@@ -108,8 +116,10 @@ of five, and the panel warns you up front.
 
 ## The clock
 
-You go out at **5:00 PM** and an hour passes every fifteen seconds, so a whole
-evening runs in one minute.
+You go out at **5:00 PM**. A toggle in the top corner sets the pace: **Fast**
+runs an hour every fifteen seconds (the whole evening in one minute), **Slow**
+gives you twice that. Switching mid-hunt keeps the clock where it stands, and
+the choice is remembered.
 
 - **7:30 PM** — the light starts to go, and the vines start coming through.
   The town dims steadily from here and the clock turns red.

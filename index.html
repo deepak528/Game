@@ -50,9 +50,20 @@
   header h1{font-size:18px;font-weight:700;margin:0;letter-spacing:.5px;white-space:nowrap}
   header h1 span{color:var(--accent);text-shadow:0 0 12px var(--glow)}
   header .date{
-    color:var(--muted);font-size:12px;margin-left:auto;
+    color:var(--muted);font-size:12px;margin-left:10px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
+  /* the pace toggle: how fast the evening runs */
+  #paceCtl{
+    margin-left:auto;display:flex;gap:2px;align-self:center;
+    border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--card);
+  }
+  .pace{
+    width:auto;min-height:26px;padding:2px 9px;font-size:11.5px;font-weight:600;
+    background:transparent;color:var(--muted);border-radius:999px;box-shadow:none;
+  }
+  .pace.on{background:var(--accent);color:#fff}
+  @media (max-width:480px){ .pace .lbl{display:none} .pace{padding:2px 7px} }
   /* a narrow phone must not wrap the title onto a second line */
   @media (max-width:410px){
     header{padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
@@ -154,6 +165,22 @@
     font-family:inherit;pointer-events:none;
   }
   .loc .pic{font-size:29px;text-anchor:middle;pointer-events:none}
+  /* markers idle with a gentle bob; hover grows them a fifth. The two live on
+     nested groups so the transforms never fight over one element. */
+  .marker{transform-box:fill-box;transform-origin:center;transition:transform .18s ease-out}
+  .bob{transform-box:fill-box;transform-origin:center;animation:bob 3.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3.5px)}}
+  .loc.spent .bob{animation:none}
+  .loc.sel .marker{transform:scale(1.18)}
+  @media (hover:hover){
+    .loc:not(.town):not(.spent):hover .marker{transform:scale(1.2)}
+  }
+  /* desktop: bigger markers to match the bigger map; hover stays +20% */
+  @media (min-width:820px){
+    .marker{transform:scale(1.15)}
+    .loc.sel .marker{transform:scale(1.32)}
+    .loc:not(.town):not(.spent):hover .marker{transform:scale(1.38)}
+  }
   .loc:hover .dot{stroke:var(--accent)}
   .loc.sel .dot{stroke:var(--accent);fill:var(--accent);stroke-width:3}
   .loc.sel .label{fill:var(--accent)}
@@ -164,6 +191,26 @@
   .loc.town .dot{stroke:var(--accent);stroke-width:3}
   .loc.town .label{fill:var(--accent);font-size:18px;letter-spacing:.5px}
   .gate{animation:pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  /* --- life around the town --- */
+  .lake{fill:#a4d9f2}
+  .scene{font-family:inherit;text-anchor:middle;pointer-events:none;user-select:none}
+  .pline{stroke:#8a6f4d;stroke-width:5;stroke-linecap:round;fill:none}
+  .chain{stroke:#8a6f4d;stroke-width:3;stroke-linecap:round}
+  .slide{stroke:#d0873f;stroke-width:7;stroke-linecap:round}
+  .swing-arm{transform-box:fill-box;transform-origin:top center;animation:sway 2.4s ease-in-out infinite alternate}
+  @keyframes sway{from{transform:rotate(22deg)}to{transform:rotate(-22deg)}}
+  .pball{animation:bounce 1.7s ease-in-out infinite}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
+  .rider{animation:ride 26s linear infinite}
+  @keyframes ride{from{transform:translateX(1700px)}to{transform:translateX(-750px)}}
+  .train{animation:chug 30s linear infinite}
+  @keyframes chug{0%{transform:translateX(1800px)}55%{transform:translateX(-950px)}100%{transform:translateX(-950px)}}
+  /* by nightfall the kids and the cyclist have gone home; the freight has not */
+  .swing-arm,.pball,.rider{transition:opacity 1.5s}
+  body.night .swing-arm,body.night .pball,body.night .rider{opacity:0}
+  @media (prefers-reduced-motion:reduce){
+    .bob,.swing-arm,.pball,.rider,.train,.gate{animation:none}
+  }
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 
   /* --- panel --- */
@@ -289,6 +336,10 @@
 
 <header>
   <h1>HOME BEFORE <span>DINNER</span></h1>
+  <div id="paceCtl" role="group" aria-label="Clock speed">
+    <button id="paceSlow" class="pace">🐢<span class="lbl"> Slow</span></button>
+    <button id="paceFast" class="pace on">🐇<span class="lbl"> Fast</span></button>
+  </div>
   <span class="date" id="clock">5:00 PM</span>
 </header>
 
@@ -364,11 +415,11 @@
   // Roads are drawn from data, so the town stays easy to redraw.
   const STREETS = [
     { name:'Broadway',    major:true,  x1:500, y1:60,  x2:500, y2:940 },
-    { name:'Central Ave', major:true,  x1:60,  y1:500, x2:940, y2:500 },
+    { name:'Central Ave', major:true,  x1:-560, y1:500, x2:1560, y2:500 },
     { name:'Grove St',    major:false, x1:240, y1:120, x2:240, y2:880 },
     { name:'Cherry Ln',   major:false, x1:760, y1:120, x2:760, y2:880 },
-    { name:'School St',   major:false, x1:120, y1:660, x2:880, y2:660 },
-    { name:'Depot St',    major:false, x1:120, y1:340, x2:880, y2:340 },
+    { name:'School St',   major:false, x1:-460, y1:660, x2:1460, y2:660 },
+    { name:'Depot St',    major:false, x1:-460, y1:340, x2:1460, y2:340 },
     { name:'The Parkway', major:true,  x1:944, y1:80,  x2:664, y2:944 }
   ];
 
@@ -392,8 +443,28 @@
     { tone:'b3', points:'58,676 226,672 224,936 62,938' },      // the pond
     { tone:'b7', points:'254,674 486,678 484,936 256,934' },
     { tone:'b8', points:'516,676 744,672 746,934 514,936' },    // ball fields
-    { tone:'b1', points:'770,676 944,672 944,936 684,938' }     // SE, past the parkway
+    { tone:'b1', points:'770,676 944,672 944,936 684,938' },    // SE, past the parkway
+    // The countryside, seen when a wide screen looks past the town. The
+    // desktop view is biased east away from the clue card, so the east side
+    // gets the destinations and the west stays light.
+    { tone:'b8', points:'-560,62 40,58 42,468 -556,464' },      // the meadow
+    { tone:'b7', points:'-556,476 42,472 40,704 -552,708' },
+    { tone:'b6', points:'-552,716 40,712 42,938 -548,934' },    // the orchard
+    { tone:'b4', points:'958,62 1560,66 1556,330 962,326' },    // the lake
+    { tone:'b5', points:'962,338 1556,334 1560,656 958,652' },  // the fields
+    { tone:'b6', points:'958,664 1560,660 1556,936 954,932' }   // the playground
   ];
+
+  // Life outside the town lines: trees, the duck on the lake, a cow, a
+  // tractor in the fields.
+  const TREES = [
+    [-200,150,'🌳',36],[-90,240,'🌲',32],[-140,392,'🐄',26],
+    [-170,792,'🌳',34],[-80,852,'🌳',30],
+    [1050,180,'🌲',34],[1540,120,'🌳',30],[1320,180,'🦆',22],
+    [1180,568,'🚜',30],[1360,452,'🌾',28],[1520,590,'🌳',30],
+    [1490,720,'🌳',30],[1060,924,'🌳',28],[1470,884,'🌳',30]
+  ];
+  const LAKE = '1160,120 1380,100 1500,170 1440,258 1220,266 1140,200';
 
   // Red growth for after dark. Vines creep in from the edges of the drawing,
   // and `stage` is how far into the night each one appears — by nine the town
@@ -570,9 +641,10 @@
     svg.appendChild(ground);
 
     BLOCKS.forEach(function(b){ ground.appendChild(node('polygon', { points:b.points, class:'blk ' + b.tone })); });
+    ground.appendChild(node('polygon', { points:LAKE, class:'lake' }));
 
     // the railway runs east to west, just above Depot St
-    ground.appendChild(node('line', { x1:60, y1:286, x2:940, y2:286, class:'rail' }));
+    ground.appendChild(node('line', { x1:-700, y1:286, x2:1700, y2:286, class:'rail' }));
 
     STREETS.forEach(function(s){
       ground.appendChild(node('line', {
@@ -613,6 +685,30 @@
       svg.appendChild(vines);
     }
 
+    // the living layer: crisp (no wobble filter), under the labels and markers
+    const live = node('g', { class:'live' });
+    TREES.forEach(function(t){
+      live.appendChild(node('text', { x:t[0], y:t[1], 'font-size':t[3], class:'scene' }, t[2]));
+    });
+    // the playground: swing frame, a swinging kid, a slide, a bouncing ball
+    live.appendChild(node('line', { x1:1060, y1:762, x2:1180, y2:762, class:'pline' }));
+    live.appendChild(node('line', { x1:1060, y1:762, x2:1044, y2:842, class:'pline' }));
+    live.appendChild(node('line', { x1:1180, y1:762, x2:1196, y2:842, class:'pline' }));
+    const swingAt = node('g', { transform:'translate(1120,764)' });   // pivot on the bar
+    const arm = node('g', { class:'swing-arm' });
+    arm.appendChild(node('line', { x1:0, y1:0, x2:0, y2:46, class:'chain' }));
+    arm.appendChild(node('text', { x:0, y:64, 'font-size':24, class:'scene' }, '🧒'));
+    swingAt.appendChild(arm);
+    live.appendChild(swingAt);
+    live.appendChild(node('line', { x1:1300, y1:792, x2:1362, y2:858, class:'slide' }));
+    live.appendChild(node('line', { x1:1300, y1:792, x2:1300, y2:858, class:'pline' }));
+    live.appendChild(node('text', { x:1240, y:892, 'font-size':24, class:'scene pball' }, '⚽'));
+    live.appendChild(node('text', { x:1210, y:930, class:'streetname', 'text-anchor':'middle' }, 'Playground'));
+    // riders: a cyclist on Central Ave, the evening freight on the rail
+    live.appendChild(node('text', { x:0, y:506, 'font-size':28, class:'scene rider' }, '🚴'));
+    live.appendChild(node('text', { x:0, y:296, 'font-size':26, class:'scene train' }, '🚂🚃🚃'));
+    svg.appendChild(live);
+
     STREETS.forEach(function(s){
       const horiz = Math.abs(s.y2 - s.y1) < Math.abs(s.x2 - s.x1);
       const lx = Math.min(s.x1 + 9, 934);   // keep the Parkway's name inside the crop
@@ -626,13 +722,20 @@
 
     svg.appendChild(node('circle', { cx:TOWN.x, cy:TOWN.y, r:80, class:'green-ring' }));
 
-    PLACES.forEach(function(p){
+    PLACES.forEach(function(p, i){
       const g = node('g', { class:'loc' + (p.id === 'town' ? ' town' : ''), 'data-id':p.id });
       // fat tap target: 46 units is as wide as it goes before the two closest
       // places (the water tower and the station, 96 apart) start overlapping
       g.appendChild(node('circle', { cx:p.x, cy:p.y, r:46, class:'halo' }));
-      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:24, class:'dot' }));
-      g.appendChild(node('text',   { x:p.x, y:p.y + 10, class:'pic' }, p.pic));
+      // marker takes the hover/selection scale; bob idles inside it, so the
+      // two transforms never fight over the same element
+      const marker = node('g', { class:'marker' });
+      const bob = node('g', { class:'bob' });
+      bob.style.animationDelay = (-(i * 0.47) % 3.2).toFixed(2) + 's';
+      bob.appendChild(node('circle', { cx:p.x, cy:p.y, r:24, class:'dot' }));
+      bob.appendChild(node('text',   { x:p.x, y:p.y + 10, class:'pic' }, p.pic));
+      marker.appendChild(bob);
+      g.appendChild(marker);
       g.appendChild(node('text',   { x:p.x, y:p.y + 46, class:'label' }, p.name));
       g.addEventListener('click', function(){ pick(p.id); });
       svg.appendChild(g);
@@ -917,11 +1020,29 @@
   const CLOCK_START = 17 * 60;        // 5:00 pm, in minutes
   const DUSK_AT     = 19 * 60 + 30;   // 7:30 pm — the light goes, the vines come
   const NIGHT_AT    = 21 * 60;        // 9:00 pm — time is up
-  const MIN_PER_SEC = 4;              // one hour every fifteen seconds
+  const PACE = { fast:4, slow:2 };    // minutes per second: an hour per 15s or 30s
+  const PACE_KEY = 'findr::pace';
 
-  let clockFrom = 0, clockTimer = null;
+  let minPerSec = PACE.fast, clockFrom = 0, clockTimer = null;
 
-  const clockNow = () => CLOCK_START + (performance.now() - clockFrom) / 1000 * MIN_PER_SEC;
+  const clockNow = () => CLOCK_START + (performance.now() - clockFrom) / 1000 * minPerSec;
+
+  // Switching pace mid-hunt keeps the clock where it stands — only the rate
+  // from here on changes.
+  function setPace(mode, persist){
+    const rate = PACE[mode] || PACE.fast;
+    if (clockTimer && rate !== minPerSec){
+      const held = Math.min(clockNow(), NIGHT_AT);
+      minPerSec = rate;
+      clockFrom = performance.now() - (held - CLOCK_START) / rate * 1000;
+    } else {
+      minPerSec = rate;
+    }
+    el('paceSlow').classList.toggle('on', mode === 'slow');
+    el('paceFast').classList.toggle('on', mode !== 'slow');
+    if (persist){ try { localStorage.setItem(PACE_KEY, mode); } catch(e){} }
+    if (clockTimer) tick();
+  }
   const duskAmount = m => clamp((m - DUSK_AT) / (NIGHT_AT - DUSK_AT), 0, 1);
 
   function fmtClock(mins){
@@ -1032,19 +1153,10 @@
           fmtBlocks(trueBlocks) + ' ' + COMPASS[octant(trueBearing)] + ' of The Town.</p>' +
       '</div>' +
       '<div class="share">' + share + '</div>' +
-      '<button id="copyBtn">Copy result</button>' +
       '<p class="hint">Someone new misses dinner every day at midnight.</p>';
 
     const box = document.querySelector('.panel-scroll');
     if (box) box.scrollTo({ top:box.scrollHeight, behavior:'smooth' });
-
-    el('copyBtn').onclick = function(){
-      navigator.clipboard.writeText(share).then(function(){
-        el('copyBtn').textContent = 'Copied ✓';
-      }, function(){
-        el('copyBtn').textContent = 'Copy failed — select the text above';
-      });
-    };
     render();
   }
 
@@ -1117,6 +1229,9 @@
 
   el('guessBtn').onclick = submitGuess;
   el('resetBtn').onclick = function(){ startRound(nextRound(), false); };
+  el('paceSlow').onclick = function(){ setPace('slow', true); };
+  el('paceFast').onclick = function(){ setPace('fast', true); };
+  try { setPace(localStorage.getItem(PACE_KEY) === 'slow' ? 'slow' : 'fast', false); } catch(e){}
 
   setRound(loadRound());          // so nextRound() has a puzzle to differ from
   startRound(round, true);        // pick up a hunt already in progress
