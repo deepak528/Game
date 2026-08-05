@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080a14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23080a14%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%277%27 fill=%27%237fe9ff%27/%3E%3C/svg%3E">
+<title>Gate Runner — a 3D arena</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#080a14;overflow:hidden}
+  body{
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:#dfe7ff; -webkit-font-smoothing:antialiased;
+  }
+  canvas{display:block}
+
+  /* ---------- heads-up display ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+  .panel{
+    position:absolute;background:rgba(12,16,32,.62);border:1px solid rgba(120,160,255,.22);
+    border-radius:12px;padding:10px 14px;backdrop-filter:blur(6px);
+  }
+  #stats{top:16px;left:16px;min-width:190px}
+  #stats .row{display:flex;justify-content:space-between;gap:18px;font-variant-numeric:tabular-nums}
+  #stats .k{color:#8fa3d4;letter-spacing:.06em;font-size:11px;text-transform:uppercase}
+  #stats .v{font-weight:700}
+  #shield{height:7px;border-radius:99px;background:rgba(255,255,255,.1);margin-top:9px;overflow:hidden}
+  #shieldFill{height:100%;width:100%;background:linear-gradient(90deg,#3de8c8,#4da3ff);transition:width .18s}
+  body.hurt #shieldFill{background:linear-gradient(90deg,#ff5f6d,#ff9c47)}
+
+  #help{bottom:16px;left:16px;font-size:12px;color:#9db0dd;line-height:1.9}
+  #help b{color:#dfe7ff;background:rgba(255,255,255,.08);border-radius:5px;padding:1px 6px;font-weight:600}
+  #wave{top:16px;left:50%;transform:translateX(-50%);text-align:center;letter-spacing:.14em;
+        text-transform:uppercase;font-size:12px;color:#8fa3d4}
+  #wave b{display:block;font-size:19px;letter-spacing:.04em;color:#fff;text-transform:none}
+
+  /* crosshair */
+  #dot{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;
+       background:#7fe9ff;box-shadow:0 0 10px #7fe9ff;opacity:.9}
+  body:not(.playing) #dot{display:none}
+
+  /* ---------- overlays ---------- */
+  #overlay{
+    position:fixed;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 40%,rgba(30,40,90,.55),rgba(4,6,14,.92));
+    text-align:center;padding:24px;
+  }
+  #overlay.hidden{display:none}
+  .card{max-width:520px}
+  .card h1{
+    margin:0 0 6px;font-size:40px;letter-spacing:.02em;
+    background:linear-gradient(90deg,#7fe9ff,#b78cff 55%,#ff8fd0);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .card .sub{color:#9db0dd;margin:0 0 20px}
+  .card p{color:#c3cfef;margin:0 0 18px}
+  .keys{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+  .keys span{
+    border:1px solid rgba(120,160,255,.28);border-radius:9px;padding:8px 12px;font-size:12.5px;
+    background:rgba(12,16,32,.6);color:#c3cfef;
+  }
+  .keys span b{color:#7fe9ff}
+  button{
+    font:inherit;font-weight:700;letter-spacing:.03em;border:0;border-radius:11px;padding:13px 30px;
+    background:linear-gradient(90deg,#4da3ff,#8b7bff);color:#fff;cursor:pointer;pointer-events:auto;
+    box-shadow:0 10px 30px rgba(77,163,255,.28);
+  }
+  button:hover{filter:brightness(1.1)}
+  .score-line{font-size:15px;color:#dfe7ff;margin-bottom:20px}
+  .score-line b{color:#7fe9ff;font-size:26px;display:block;margin-top:2px}
+  @media (prefers-reduced-motion:reduce){#shieldFill{transition:none}}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div id="dot"></div>
+  <div class="panel" id="stats">
+    <div class="row"><span class="k">Score</span><span class="v" id="score">0</span></div>
+    <div class="row"><span class="k">Cores</span><span class="v" id="cores">0</span></div>
+    <div id="shield"><div id="shieldFill"></div></div>
+  </div>
+  <div class="panel" id="wave">Wave <b id="waveNum">1</b></div>
+  <div class="panel" id="help">
+    <b>W A S D</b> / arrows move · <b>Space</b> jump · <b>Click</b> fire · <b>Shift</b> boost · <b>Esc</b> release mouse
+  </div>
+</div>
+
+<div id="overlay">
+  <div class="card" id="card">
+    <h1>Gate Runner</h1>
+    <p class="sub">Something came through. Collect the cores, hold the arena.</p>
+    <div class="keys">
+      <span><b>W A S D</b> move</span>
+      <span><b>Mouse</b> look</span>
+      <span><b>Space</b> jump</span>
+      <span><b>Click</b> fire</span>
+      <span><b>Shift</b> boost</span>
+    </div>
+    <button id="go">Enter the arena</button>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ================= constants ================= */
+const ARENA      = 46;      // half-width of the floor
+const GRAVITY    = -34;
+const MAX_SPEED  = 15;
+const BOOST      = 1.7;
+const GRIP_GROUND= 13;      // how fast we reach the speed we asked for
+const GRIP_AIR   = 3.6;     // far less authority in mid-air
+const JUMP_V     = 13.2;
+const COYOTE     = 0.12;    // grace period after leaving an edge
+const PLAYER_R   = 0.62;
+const SHOT_SPEED = 46;
+const FIRE_GAP   = 0.16;
+
+const COL = {
+  bg:0x080a14, fog:0x0b1022, floor:0x161c33, grid:0x2f4d8f,
+  player:0x7fe9ff, core:0xffd76a, drone:0xff5f8d, shot:0xa9f0ff, pillar:0x1d2445
+};
+
+/* ================= renderer, scene, camera ================= */
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(COL.bg);
+scene.fog = new THREE.Fog(COL.fog, 34, 118);
+
+const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.1, 400);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ================= lighting ================= */
+scene.add(new THREE.HemisphereLight(0x4a5fa8, 0x0a0d18, 0.55));
+
+const moon = new THREE.DirectionalLight(0xbcd0ff, 1.5);
+moon.position.set(26, 44, 18);
+moon.castShadow = true;
+moon.shadow.mapSize.set(2048, 2048);
+moon.shadow.camera.near = 1;
+moon.shadow.camera.far = 160;
+const SH = 62;
+Object.assign(moon.shadow.camera, { left:-SH, right:SH, top:SH, bottom:-SH });
+moon.shadow.camera.updateProjectionMatrix();
+moon.shadow.bias = -0.0006;
+scene.add(moon);
+scene.add(moon.target);
+
+// Only three lights in the whole scene: the moon, the player's glow and a
+// single muzzle flash that is reused. Everything else glows by emission.
+const playerGlow = new THREE.PointLight(COL.player, 26, 22, 2);
+scene.add(playerGlow);
+const muzzle = new THREE.PointLight(COL.shot, 0, 9, 2);
+scene.add(muzzle);
+let muzzleUntil = -1;
+
+/* ================= arena ================= */
+const boxes = [];      // { min, max }: what the player collides with
+const solids = [];     // the same geometry, for keeping the camera out of walls
+
+const floor = new THREE.Mesh(
+  new THREE.BoxGeometry(ARENA*2, 1, ARENA*2),
+  new THREE.MeshStandardMaterial({ color:COL.floor, roughness:.92, metalness:.05 })
+);
+floor.position.y = -0.5;
+floor.receiveShadow = true;
+scene.add(floor);
+solids.push(floor);
+
+const grid = new THREE.GridHelper(ARENA*2, 46, COL.grid, COL.grid);
+grid.position.y = 0.02;
+grid.material.transparent = true;
+grid.material.opacity = 0.3;
+scene.add(grid);
+
+// glowing rim so the edge of the world is unmistakable
+const rim = new THREE.Mesh(
+  new THREE.TorusGeometry(ARENA*1.42, 0.16, 8, 96),
+  new THREE.MeshBasicMaterial({ color:0x3b6ad4 })
+);
+rim.rotation.x = -Math.PI/2;
+rim.position.y = 0.05;
+scene.add(rim);
+
+// stars
+{
+  const g = new THREE.BufferGeometry();
+  const n = 900, pos = new Float32Array(n*3);
+  for (let i = 0; i < n; i++){
+    const r = 150 + Math.random()*120, th = Math.random()*Math.PI*2, ph = Math.random()*Math.PI*0.5;
+    pos[i*3]   = Math.cos(th)*Math.sin(ph)*r;
+    pos[i*3+1] = Math.abs(Math.cos(ph))*r*0.8 + 12;
+    pos[i*3+2] = Math.sin(th)*Math.sin(ph)*r;
+  }
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color:0x9fb6ff, size:0.7, sizeAttenuation:true })));
+}
+
+/* --- platforms: every one is an axis-aligned box the player can stand on --- */
+function platform(x, y, z, w, h, d, hue){
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    new THREE.MeshStandardMaterial({ color:hue, roughness:.7, metalness:.15 })
+  );
+  mesh.position.set(x, y + h/2, z);
+  mesh.castShadow = mesh.receiveShadow = true;
+  scene.add(mesh);
+  solids.push(mesh);
+  // A neon outline around the top, so heights read at a glance. It has to be
+  // an edge, not a slab — a filled box here paints the whole platform top cyan.
+  const lip = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(w + 0.06, 0.05, d + 0.06)),
+    new THREE.LineBasicMaterial({ color:0x6ad8ff })
+  );
+  lip.position.set(x, y + h + 0.03, z);
+  scene.add(lip);
+  boxes.push({
+    min:new THREE.Vector3(x-w/2, y, z-d/2),
+    max:new THREE.Vector3(x+w/2, y+h, z+d/2)
+  });
+  return mesh;
+}
+
+platform(  0, 0,-16, 12, 1.6, 12, COL.pillar);
+platform(-19, 0,  6, 10, 3.0,  9, COL.pillar);
+platform( 20, 0,  4,  9, 4.4,  9, COL.pillar);
+platform(  2, 0, 20, 14, 2.2,  8, COL.pillar);
+platform(-13, 0,-27,  8, 6.0,  8, COL.pillar);
+platform( 15, 0,-28,  7, 8.0,  7, COL.pillar);
+platform( -4, 3,  2,  6, 1.2,  6, 0x25305c);
+platform( 30, 0, -8,  8, 2.4, 12, COL.pillar);
+platform(-30, 0,-10,  8, 5.0, 10, COL.pillar);
+
+// decorative light columns
+for (let i = 0; i < 10; i++){
+  const a = i/10 * Math.PI*2, r = ARENA*1.3;
+  const col = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.5, 26, 10),
+    new THREE.MeshStandardMaterial({ color:0x121a36, roughness:.6,
+      emissive:new THREE.Color(i%2 ? 0x2a4bb0 : 0x6a2ab0), emissiveIntensity:.55 })
+  );
+  col.position.set(Math.cos(a)*r, 13, Math.sin(a)*r);
+  scene.add(col);
+}
+
+/* ================= player ================= */
+const player = new THREE.Group();
+const body = new THREE.Mesh(
+  new THREE.CapsuleGeometry(PLAYER_R, 0.62, 6, 16),
+  new THREE.MeshStandardMaterial({ color:0x2b3a6b, roughness:.35, metalness:.5,
+    emissive:new THREE.Color(COL.player), emissiveIntensity:.28 })
+);
+body.castShadow = true;
+player.add(body);
+const visor = new THREE.Mesh(
+  new THREE.SphereGeometry(0.3, 18, 12),
+  new THREE.MeshBasicMaterial({ color:COL.player })
+);
+visor.position.set(0, 0.42, 0.4);
+player.add(visor);
+const ringA = new THREE.Mesh(
+  new THREE.TorusGeometry(0.86, 0.055, 8, 30),
+  new THREE.MeshBasicMaterial({ color:0x5ad2ff })
+);
+ringA.rotation.x = Math.PI/2;
+player.add(ringA);
+scene.add(player);
+
+const pos = new THREE.Vector3(0, 6, 26);
+const vel = new THREE.Vector3();
+let grounded = false, lastGround = -9, health = 100, score = 0, cores = 0, wave = 1;
+let alive = true, playing = false;
+
+/* ================= camera rig ================= */
+let yaw = Math.PI, pitch = 0.28, camDist = 9.2;
+const camGoal = new THREE.Vector3();
+const camRay = new THREE.Raycaster();
+const camDir = new THREE.Vector3();
+const head = new THREE.Vector3();
+const lift = new THREE.Vector3();
+let bodyFaded = false;
+
+// Back the camera off whatever is between it and the player, so putting your
+// back to a wall never buries the view inside it.
+function unblockCamera(){
+  head.set(pos.x, pos.y + 1.1, pos.z);
+  camDir.subVectors(camGoal, head);
+  const want = camDir.length();
+  if (want < 0.001) return;
+  camDir.divideScalar(want);
+  camRay.set(head, camDir);
+  camRay.far = want;
+  const hit = camRay.intersectObjects(solids, false)[0];
+
+  if (hit){
+    // Something is in the way. Coming straight in would bury the camera in the
+    // wall — or in the player — so climb over the obstruction instead, then
+    // check that the higher spot is itself clear.
+    const room = Math.max(1.3, hit.distance - 0.45);
+    camGoal.copy(head).addScaledVector(camDir, room);
+    camGoal.y += Math.min(7, (want - room) * 0.95);
+    lift.subVectors(camGoal, head);
+    const lifted = lift.length();
+    lift.divideScalar(lifted);
+    camRay.set(head, lift);
+    camRay.far = lifted;
+    const again = camRay.intersectObjects(solids, false)[0];
+    if (again) camGoal.copy(head).addScaledVector(lift, Math.max(1.5, again.distance - 0.4));
+  } else {
+    camGoal.copy(head).addScaledVector(camDir, want);
+  }
+  camGoal.y = Math.max(camGoal.y, 0.9);
+
+  // whatever we settled on, fade the player if the camera ended up on top of it
+  const close = camGoal.distanceTo(head) < 4.2;
+  if (close !== bodyFaded){
+    bodyFaded = close;
+    body.material.transparent = close;
+    body.material.opacity = close ? 0.2 : 1;
+    body.material.needsUpdate = true;
+  }
+}
+
+/* ================= input ================= */
+const keys = Object.create(null);
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
+  if (e.code === 'KeyR' && !alive) restart();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+const canvas = renderer.domElement;
+canvas.addEventListener('click', () => {
+  if (!playing) return;
+  if (document.pointerLockElement !== canvas){
+    const r = canvas.requestPointerLock();
+    if (r && r.catch) r.catch(function(){});   // refused: mouse-look simply stays off
+  } else fire();
+});
+addEventListener('mousemove', e => {
+  if (document.pointerLockElement !== canvas) return;
+  yaw   -= e.movementX * 0.0024;
+  pitch -= e.movementY * 0.0021;
+  pitch = Math.max(-0.42, Math.min(1.05, pitch));
+});
+document.addEventListener('pointerlockchange', () => {
+  document.body.classList.toggle('playing', document.pointerLockElement === canvas);
+});
+
+/* ================= projectiles ================= */
+const shots = [];
+const shotGeo = new THREE.SphereGeometry(0.17, 10, 8);
+const shotMat = new THREE.MeshBasicMaterial({ color:COL.shot });
+let fireCooldown = 0;
+
+function fire(){
+  if (!alive || fireCooldown > 0) return;
+  fireCooldown = FIRE_GAP;
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  const m = new THREE.Mesh(shotGeo, shotMat);
+  m.position.copy(pos).addScaledVector(dir, 1.1);
+  scene.add(m);
+  muzzle.position.copy(m.position);
+  muzzleUntil = clock.elapsedTime + 0.06;
+  shots.push({ mesh:m, vel:dir.clone().multiplyScalar(SHOT_SPEED), life:2.1 });
+}
+
+/* ================= drones ================= */
+const drones = [];
+const droneGeo = new THREE.IcosahedronGeometry(0.62, 0);
+function spawnDrone(){
+  const mat = new THREE.MeshStandardMaterial({
+    color:0x3a1030, roughness:.4, metalness:.3,
+    emissive:new THREE.Color(COL.drone), emissiveIntensity:.85
+  });
+  const m = new THREE.Mesh(droneGeo, mat);
+  const a = Math.random()*Math.PI*2, r = 26 + Math.random()*14;
+  m.position.set(Math.cos(a)*r, 2.4 + Math.random()*4, Math.sin(a)*r);
+  m.castShadow = true;
+  const halo = new THREE.Mesh(
+    new THREE.TorusGeometry(0.95, 0.045, 6, 22),
+    new THREE.MeshBasicMaterial({ color:COL.drone })
+  );
+  halo.rotation.x = Math.PI/2;
+  m.add(halo);
+  scene.add(m);
+  drones.push({ mesh:m, vel:new THREE.Vector3(), phase:Math.random()*6.28, hp:1 });
+}
+
+/* ================= cores ================= */
+const coreList = [];
+const coreGeo = new THREE.OctahedronGeometry(0.5, 0);
+function spawnCore(){
+  const m = new THREE.Mesh(coreGeo, new THREE.MeshStandardMaterial({
+    color:0x6b5316, roughness:.25, metalness:.6,
+    emissive:new THREE.Color(COL.core), emissiveIntensity:1.1
+  }));
+  const a = Math.random()*Math.PI*2, r = 6 + Math.random()*32;
+  m.position.set(Math.cos(a)*r, 1.15 + Math.random()*1.9, Math.sin(a)*r);
+  scene.add(m);
+  coreList.push(m);
+}
+
+/* ================= particles ================= */
+const bits = [];
+const bitGeo = new THREE.SphereGeometry(0.11, 6, 5);
+const bitMats = {};
+function burst(at, color, n){
+  const mat = bitMats[color] || (bitMats[color] = new THREE.MeshBasicMaterial({ color }));
+  for (let i = 0; i < n; i++){
+    const m = new THREE.Mesh(bitGeo, mat);
+    m.position.copy(at);
+    scene.add(m);
+    bits.push({ mesh:m, life:0.6,
+      vel:new THREE.Vector3((Math.random()-.5)*11, Math.random()*9, (Math.random()-.5)*11) });
+  }
+}
+
+/* ================= collision =================
+   Player is a sphere. For each box we find the closest point on the box and
+   push out along the shortest axis — cheap, stable, and it tells us when the
+   contact is a floor (so we can stand and jump on it). */
+function collide(){
+  grounded = false;
+  if (pos.y - PLAYER_R <= 0){          // arena floor
+    pos.y = PLAYER_R;
+    if (vel.y < 0) vel.y = 0;
+    grounded = true;
+  }
+  for (const b of boxes){
+    const cx = Math.max(b.min.x, Math.min(pos.x, b.max.x));
+    const cy = Math.max(b.min.y, Math.min(pos.y, b.max.y));
+    const cz = Math.max(b.min.z, Math.min(pos.z, b.max.z));
+    const dx = pos.x - cx, dy = pos.y - cy, dz = pos.z - cz;
+    const d2 = dx*dx + dy*dy + dz*dz;
+    if (d2 >= PLAYER_R*PLAYER_R) continue;
+
+    if (d2 > 1e-8){                    // outside the box: push along the contact normal
+      const d = Math.sqrt(d2), nx = dx/d, ny = dy/d, nz = dz/d, push = PLAYER_R - d;
+      pos.x += nx*push; pos.y += ny*push; pos.z += nz*push;
+      const along = vel.x*nx + vel.y*ny + vel.z*nz;
+      if (along < 0){ vel.x -= along*nx; vel.y -= along*ny; vel.z -= along*nz; }
+      if (ny > 0.5) grounded = true;
+    } else {                           // centre inside: eject along the shallowest face
+      const gaps = [
+        [pos.x - b.min.x, -1, 0, 0], [b.max.x - pos.x, 1, 0, 0],
+        [pos.y - b.min.y, 0, -1, 0], [b.max.y - pos.y, 0, 1, 0],
+        [pos.z - b.min.z, 0, 0, -1], [b.max.z - pos.z, 0, 0, 1]
+      ].sort((p, q) => p[0] - q[0])[0];
+      pos.x += gaps[1] * (gaps[0] + PLAYER_R);
+      pos.y += gaps[2] * (gaps[0] + PLAYER_R);
+      pos.z += gaps[3] * (gaps[0] + PLAYER_R);
+      if (gaps[2] > 0){ grounded = true; if (vel.y < 0) vel.y = 0; }
+    }
+  }
+  // arena walls
+  const lim = ARENA - 1.2;
+  pos.x = Math.max(-lim, Math.min(lim, pos.x));
+  pos.z = Math.max(-lim, Math.min(lim, pos.z));
+  if (pos.y < -20) damage(100);        // fell out of the world (shouldn't happen)
+}
+
+/* ================= state ================= */
+function damage(n){
+  if (!alive) return;
+  health = Math.max(0, health - n);
+  document.getElementById('shieldFill').style.width = health + '%';
+  document.body.classList.add('hurt');
+  setTimeout(() => document.body.classList.remove('hurt'), 260);
+  if (health === 0) end(false);
+}
+
+function end(){
+  alive = false;
+  playing = false;
+  document.exitPointerLock?.();
+  document.getElementById('card').innerHTML =
+    '<h1>Overrun</h1>' +
+    '<p class="sub">The arena is theirs for now.</p>' +
+    '<div class="score-line">Final score<b>' + score + '</b></div>' +
+    '<p>' + cores + ' cores recovered · wave ' + wave + '</p>' +
+    '<button id="go">Run it again</button>';
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('go').onclick = restart;
+}
+
+function restart(){
+  for (const d of drones) scene.remove(d.mesh);
+  for (const c of coreList) scene.remove(c);
+  for (const s of shots) scene.remove(s.mesh);
+  drones.length = coreList.length = shots.length = 0;
+  pos.set(0, 6, 26); vel.set(0, 0, 0);
+  health = 100; score = 0; cores = 0; wave = 1; alive = true;
+  document.getElementById('shieldFill').style.width = '100%';
+  hudScore(); hudWave();
+  for (let i = 0; i < 3; i++) spawnDrone();
+  for (let i = 0; i < 5; i++) spawnCore();
+  startPlay();
+}
+
+function startPlay(){
+  document.getElementById('overlay').classList.add('hidden');
+  playing = true;
+  try {
+    const r = canvas.requestPointerLock();
+    if (r && r.catch) r.catch(function(){});
+  } catch(e){}
+}
+
+const hudScore = () => {
+  document.getElementById('score').textContent = score;
+  document.getElementById('cores').textContent = cores;
+};
+const hudWave = () => { document.getElementById('waveNum').textContent = wave; };
+
+document.getElementById('go').onclick = restart;
+
+/* ================= loop ================= */
+const clock = new THREE.Clock();
+const fwd = new THREE.Vector3(), right = new THREE.Vector3(), wish = new THREE.Vector3();
+
+function tick(){
+  requestAnimationFrame(tick);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  if (playing && alive){
+    /* --- movement, relative to where the camera is looking --- */
+    fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+    right.set(Math.cos(yaw), 0, -Math.sin(yaw));
+    wish.set(0, 0, 0);
+    if (keys.KeyW || keys.ArrowUp)    wish.add(fwd);
+    if (keys.KeyS || keys.ArrowDown)  wish.sub(fwd);
+    if (keys.KeyD || keys.ArrowRight) wish.add(right);
+    if (keys.KeyA || keys.ArrowLeft)  wish.sub(right);
+
+    // Steer toward the speed we want rather than piling on acceleration and
+    // then scrubbing it off with friction — that fought itself to a crawl.
+    const boosting = keys.ShiftLeft || keys.ShiftRight;
+    const cap = MAX_SPEED * (boosting ? BOOST : 1);
+    if (wish.lengthSq() > 0) wish.normalize();
+    const grip = Math.min(1, (grounded ? GRIP_GROUND : GRIP_AIR) * dt);
+    vel.x += (wish.x * cap - vel.x) * grip;
+    vel.z += (wish.z * cap - vel.z) * grip;
+
+    /* --- jump, with a little coyote time off ledges --- */
+    if (grounded) lastGround = t;
+    if ((keys.Space) && t - lastGround < COYOTE && vel.y <= 0.1){
+      vel.y = JUMP_V;
+      lastGround = -9;
+      burst(pos.clone().setY(pos.y - PLAYER_R), 0x6ad8ff, 5);
+    }
+
+    vel.y += GRAVITY * dt;
+    pos.addScaledVector(vel, dt);
+    collide();
+
+    player.position.copy(pos);
+    playerGlow.position.copy(pos).setY(pos.y + 0.8);
+    // lean into the direction of travel, and spin the ring
+    body.rotation.z = THREE.MathUtils.lerp(body.rotation.z, -vel.x * 0.017, 0.12);
+    body.rotation.x = THREE.MathUtils.lerp(body.rotation.x,  vel.z * 0.017, 0.12);
+    player.rotation.y = yaw + Math.PI;
+    ringA.rotation.z += dt * 2.2;
+
+    fireCooldown -= dt;
+    if (fireCooldown < 0 && (keys.KeyF || keys.Enter)) fire();
+
+    /* --- shots --- */
+    for (let i = shots.length - 1; i >= 0; i--){
+      const s = shots[i];
+      s.mesh.position.addScaledVector(s.vel, dt);
+      s.life -= dt;
+      let dead = s.life <= 0 || Math.abs(s.mesh.position.x) > ARENA || Math.abs(s.mesh.position.z) > ARENA;
+      if (!dead){
+        for (let j = drones.length - 1; j >= 0; j--){
+          if (s.mesh.position.distanceTo(drones[j].mesh.position) < 1.05){
+            burst(drones[j].mesh.position, COL.drone, 12);
+            scene.remove(drones[j].mesh);
+            drones.splice(j, 1);
+            score += 25; hudScore();
+            dead = true;
+            break;
+          }
+        }
+      }
+      if (dead){ scene.remove(s.mesh); shots.splice(i, 1); }
+    }
+
+    /* --- drones chase, bob, and bite --- */
+    for (const d of drones){
+      const to = new THREE.Vector3().subVectors(pos, d.mesh.position);
+      const dist = to.length();
+      to.normalize();
+      const speed = 3.4 + wave * 0.55;
+      d.vel.lerp(to.multiplyScalar(speed), 0.028);
+      d.mesh.position.addScaledVector(d.vel, dt);
+      d.mesh.position.y += Math.sin(t*2 + d.phase) * dt * 0.9;
+      d.mesh.position.y = Math.max(1.1, d.mesh.position.y);
+      d.mesh.rotation.x += dt*1.3;
+      d.mesh.rotation.y += dt*1.9;
+      if (dist < 1.35){
+        damage(9);
+        burst(d.mesh.position, COL.drone, 7);
+        d.mesh.position.addScaledVector(to, -7);   // knocked back, not killed
+      }
+    }
+
+    /* --- cores --- */
+    for (let i = coreList.length - 1; i >= 0; i--){
+      const c = coreList[i];
+      c.rotation.y += dt*1.6;
+      c.rotation.x += dt*0.7;
+      c.position.y += Math.sin(t*1.7 + i) * dt * 0.5;
+      if (c.position.distanceTo(pos) < 1.75){
+        burst(c.position, COL.core, 14);
+        scene.remove(c);
+        coreList.splice(i, 1);
+        cores++; score += 60; hudScore();
+        spawnCore();
+        if (cores % 4 === 0){                      // the arena answers
+          wave++; hudWave();
+          for (let k = 0; k < Math.min(2 + wave, 7); k++) spawnDrone();
+          health = Math.min(100, health + 12);
+          document.getElementById('shieldFill').style.width = health + '%';
+        }
+      }
+    }
+  }
+
+  /* --- particles --- */
+  for (let i = bits.length - 1; i >= 0; i--){
+    const b = bits[i];
+    b.life -= dt;
+    b.vel.y += GRAVITY * dt * 0.6;
+    b.mesh.position.addScaledVector(b.vel, dt);
+    b.mesh.scale.setScalar(Math.max(0.01, b.life / 0.6));
+    if (b.life <= 0){ scene.remove(b.mesh); bits.splice(i, 1); }
+  }
+
+  /* --- third-person chase camera, easing in behind the player --- */
+  const cp = Math.cos(pitch);
+  camGoal.set(
+    pos.x + Math.sin(yaw) * camDist * cp,
+    pos.y + 2.6 + Math.sin(pitch) * camDist,
+    pos.z + Math.cos(yaw) * camDist * cp
+  );
+  unblockCamera();
+  camera.position.lerp(camGoal, 1 - Math.pow(0.0016, dt));
+  camera.lookAt(pos.x, pos.y + 1.1, pos.z);
+
+  moon.target.position.copy(pos);
+  moon.position.set(pos.x + 26, 44, pos.z + 18);
+
+  muzzle.intensity = clock.elapsedTime < muzzleUntil ? 14 : 0;
+
+  rim.rotation.z += dt * 0.05;
+  renderer.render(scene, camera);
+}
+tick();
+
+if (/[?&]debug\b/.test(location.search)){
+  window.arenaDebug = () => ({
+    pos:[+pos.x.toFixed(2), +pos.y.toFixed(2), +pos.z.toFixed(2)],
+    vel:[+vel.x.toFixed(2), +vel.y.toFixed(2), +vel.z.toFixed(2)],
+    grounded, health, score, cores, wave, playing, alive,
+    drones:drones.length, coresOut:coreList.length, shots:shots.length,
+    bits:bits.length, sceneObjects:scene.children.length,
+    lights:scene.children.filter(o => o.isLight).length,
+    nearestCore:coreList.length ? +Math.min(...coreList.map(c => c.position.distanceTo(pos))).toFixed(2) : null,
+    yaw, corePos:coreList.map(c => [+c.position.x.toFixed(2), +c.position.y.toFixed(2), +c.position.z.toFixed(2)]),
+    dronePos:drones.map(d => [+d.mesh.position.x.toFixed(1), +d.mesh.position.y.toFixed(1), +d.mesh.position.z.toFixed(1)])
+  });
+}
+
+// a first look at the arena before anyone presses anything
+for (let i = 0; i < 3; i++) spawnDrone();
+for (let i = 0; i < 5; i++) spawnCore();
+player.position.copy(pos);
+</script>
+</body>
+</html>
