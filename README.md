@@ -97,14 +97,17 @@ Shading is one flat colour per block — nothing is layered on top. Where a
 block is a place, the whole block takes its colour: the pines and the ball
 fields are green, the pond block is blue.
 
-Starcourt Mall, Hawkins Lab, the Community Pool and the Baseball Field are
-built rather than lettered — little shoeboxes in perspective with a lit face, a
-shaded side and a roof, so they stand up off the paper.
+Ten places are built rather than lettered — the Mall, Hawkins Lab, the Pool,
+the Baseball Field, the Water Tower, the Train Station, the Grand Diner, the
+High School, the Pizzeria and the Library — little models in perspective with a
+lit face, a shaded side and a roof, so they stand up off the paper.
 
 The town has surroundings, seen when a wide screen looks past it: a meadow and
 an orchard to the west, and to the east a lake with a duck, fields with a
 tractor, and a playground where a kid swings and a ball bounces. A cyclist
-rides Central Ave and a freight train crosses the rail line. Markers idle with
+crosses Central Ave and a drawn freight train crosses the rail line — each
+finishes its pass, rests a few seconds, and comes back from a random side, and
+there is only ever one of each. Markers idle with
 a gentle bob and grow a fifth larger under the mouse; by nightfall the kids
 and the cyclist have gone home, though the freight has not. All of it stands
 still for players who prefer reduced motion.

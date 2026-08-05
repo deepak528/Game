@@ -167,7 +167,8 @@
   .loc .pic{font-size:29px;text-anchor:middle;pointer-events:none}
   /* markers idle with a gentle bob; hover grows them a fifth. The two live on
      nested groups so the transforms never fight over one element. */
-  .marker{transform-box:fill-box;transform-origin:center;transition:transform .18s ease-out}
+  /* the visuals never take the pointer — the halo is the one true tap target */
+  .marker{transform-box:fill-box;transform-origin:center;transition:transform .18s ease-out;pointer-events:none}
   .bob{transform-box:fill-box;transform-origin:center;animation:bob 3.2s ease-in-out infinite}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3.5px)}}
   .loc.spent .bob{animation:none}
@@ -210,10 +211,12 @@
   .tcar{stroke:#00000022;stroke-width:1}
   /* places that are built rather than lettered */
   .art{pointer-events:none}
-  .art polygon,.art rect,.art ellipse,.art path,.art circle{
+  .shadow{fill:rgba(0,0,0,.12)}
+  .art :is(polygon,rect,ellipse,path,circle):not(.shadow){
     stroke-linejoin:round;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.22));
   }
   .blab{font-family:inherit;font-weight:700;letter-spacing:.5px}
+  .strut{stroke:#7e93a6;stroke-width:2.5;stroke-linecap:round}
   /* --- life around the town --- */
   .lake{fill:#a4d9f2}
   .scene{font-family:inherit;text-anchor:middle;pointer-events:none;user-select:none}
@@ -224,15 +227,13 @@
   @keyframes sway{from{transform:rotate(22deg)}to{transform:rotate(-22deg)}}
   .pball{animation:bounce 1.7s ease-in-out infinite}
   @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
-  .rider{animation:ride 26s linear infinite}
-  @keyframes ride{from{transform:translateX(1700px)}to{transform:translateX(-750px)}}
-  .train{animation:chug 40s linear infinite}
-  @keyframes chug{0%{transform:translateX(1800px)}55%{transform:translateX(-950px)}100%{transform:translateX(-950px)}}
+  /* the cyclist and the freight are script-driven so a pass can start from
+     either side; only the night fade lives in CSS */
   /* by nightfall the kids and the cyclist have gone home; the freight has not */
   .swing-arm,.pball,.rider{transition:opacity 1.5s}
   body.night .swing-arm,body.night .pball,body.night .rider{opacity:0}
   @media (prefers-reduced-motion:reduce){
-    .bob,.swing-arm,.pball,.rider,.train,.gate{animation:none}
+    .bob,.swing-arm,.pball,.gate{animation:none}
   }
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 
@@ -456,6 +457,54 @@
       g.appendChild(node('path', { d:'M'+(x-14)+','+(y+8)+' q7,-4 14,0 t14,0', fill:'none', stroke:'#bfe9f7', 'stroke-width':2, 'stroke-linecap':'round' }));
       g.appendChild(node('path', { d:'M'+(x+16)+','+(y-2)+' l6,-9 M'+(x+22)+','+(y-11)+' l0,10',
         fill:'none', stroke:'#c9b48f', 'stroke-width':2.5, 'stroke-linecap':'round' }));
+    },
+    tower: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+18, rx:16, ry:5, class:'shadow' }));
+      g.appendChild(node('line', { x1:x-10, y1:y+16, x2:x-4, y2:y-8, class:'strut' }));
+      g.appendChild(node('line', { x1:x+10, y1:y+16, x2:x+4, y2:y-8, class:'strut' }));
+      g.appendChild(node('line', { x1:x-8, y1:y+8, x2:x+8, y2:y+2, class:'strut' }));
+      g.appendChild(node('line', { x1:x+8, y1:y+8, x2:x-8, y2:y+2, class:'strut' }));
+      g.appendChild(node('rect', { x:x-12, y:y-24, width:24, height:17, rx:3, fill:'#a9bccb', stroke:'#7e93a6', 'stroke-width':1 }));
+      g.appendChild(node('polygon', { points:(x-13)+','+(y-24)+' '+x+','+(y-34)+' '+(x+13)+','+(y-24), fill:'#8fa5b6' }));
+    },
+    station: function(g, x, y){
+      box(g, x-20, y+10, 40, 15, 7, '#e0b089', '#c19170', '#f0cfae');
+      g.appendChild(node('polygon', { points:(x-26)+','+(y-5)+' '+(x-18)+','+(y-13)+' '+(x+32)+','+(y-13)+' '+(x+24)+','+(y-5), fill:'#b98a63' }));
+      g.appendChild(node('rect', { x:x-4, y:y-1, width:9, height:11, fill:'#6f5140' }));
+      g.appendChild(node('rect', { x:x-15, y:y-1, width:7, height:6, fill:'#fdf3d8' }));
+      g.appendChild(node('rect', { x:x+11, y:y-1, width:7, height:6, fill:'#fdf3d8' }));
+    },
+    diner: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+14, rx:26, ry:5, class:'shadow' }));
+      g.appendChild(node('rect', { x:x-24, y:y-12, width:48, height:24, rx:9, fill:'#dde3e8', stroke:'#aab4bd', 'stroke-width':1 }));
+      g.appendChild(node('rect', { x:x-20, y:y-6, width:40, height:8, rx:3, fill:'#9fd3ef' }));
+      g.appendChild(node('rect', { x:x-24, y:y+4, width:48, height:4, fill:'#d95555' }));
+      g.appendChild(node('rect', { x:x-11, y:y-22, width:22, height:9, rx:2, fill:'#d95555', stroke:'#a83f3f', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y-15, 'font-size':7, 'text-anchor':'middle', fill:'#fff', class:'blab' }, 'DINER'));
+    },
+    high: function(g, x, y){
+      box(g, x-24, y+12, 48, 24, 8, '#d99a6b', '#b87d52', '#ecc19b');
+      [[-18,-6],[-6,-6],[6,-6],[-18,3],[6,3]].forEach(function(w){
+        g.appendChild(node('rect', { x:x+w[0], y:y+w[1], width:9, height:6, fill:'#fdf3d8', stroke:'#00000018' }));
+      });
+      g.appendChild(node('rect', { x:x-5, y:y+2, width:10, height:10, fill:'#6f5140' }));
+      g.appendChild(node('line', { x1:x+30, y1:y-12, x2:x+30, y2:y-30, class:'strut' }));
+      g.appendChild(node('polygon', { points:(x+30)+','+(y-30)+' '+(x+42)+','+(y-27)+' '+(x+30)+','+(y-24), fill:'#d95555' }));
+    },
+    pizza: function(g, x, y){
+      box(g, x-16, y+10, 32, 16, 6, '#f4e3c4', '#d9c39a', '#fbf0d8');
+      for (let i = 0; i < 5; i++){
+        g.appendChild(node('rect', { x:x-18+i*7.2, y:y-12, width:7.2, height:8, fill:i%2 ? '#fdf6e8' : '#d95555' }));
+      }
+      g.appendChild(node('rect', { x:x-4, y:y+1, width:8, height:9, fill:'#7c5b43' }));
+      g.appendChild(node('circle', { cx:x+9, cy:y+1, r:3.5, fill:'#f7c948', stroke:'#c99a2e', 'stroke-width':1 }));
+    },
+    library: function(g, x, y){
+      box(g, x-20, y+10, 40, 18, 7, '#e9dfc9', '#cbbd9e', '#f5eddc');
+      g.appendChild(node('polygon', { points:(x-24)+','+(y-8)+' '+x+','+(y-20)+' '+(x+24)+','+(y-8), fill:'#d9cbaa', stroke:'#b3a482', 'stroke-width':1 }));
+      [-13,-4.5,4,12.5].forEach(function(cx){
+        g.appendChild(node('rect', { x:x+cx, y:y-6, width:3.5, height:16, fill:'#fbf6ea', stroke:'#b3a482', 'stroke-width':0.8 }));
+      });
     },
     field: function(g, x, y){
       g.appendChild(node('path', { d:'M'+(x-22)+','+(y+12)+' A26,26 0 0 1 '+(x+22)+','+(y+12)+' Z', fill:'#9fd98a' }));
@@ -803,24 +852,39 @@
     live.appendChild(node('line', { x1:1300, y1:792, x2:1300, y2:858, class:'pline' }));
     live.appendChild(node('text', { x:1240, y:892, 'font-size':24, class:'scene pball' }, '⚽'));
     live.appendChild(node('text', { x:1210, y:930, class:'streetname', 'text-anchor':'middle' }, 'Playground'));
-    // riders: a cyclist on Central Ave, the evening freight on the rail
-    live.appendChild(node('text', { x:0, y:506, 'font-size':28, class:'scene rider' }, '🚴'));
+    // the cyclist and the freight cross, rest, and return from a random side
+    const rider = node('g', { class:'rider' });
+    const riderGlyph = node('text', { x:0, y:506, 'font-size':28, class:'scene' }, '🚴');
+    rider.appendChild(riderGlyph);
+    live.appendChild(rider);
+
     const train = node('g', { class:'train' });
+    const trainBody = node('g', {});
     const RAILY = 286;
     function boxcar(bx, bw, fill){
-      train.appendChild(node('rect', { x:bx, y:RAILY-26, width:bw, height:20, rx:2.5, fill:fill, class:'tcar' }));
-      train.appendChild(node('circle', { cx:bx+8,    cy:RAILY-3, r:4, class:'twheel' }));
-      train.appendChild(node('circle', { cx:bx+bw-8, cy:RAILY-3, r:4, class:'twheel' }));
+      trainBody.appendChild(node('rect', { x:bx, y:RAILY-26, width:bw, height:20, rx:2.5, fill:fill, class:'tcar' }));
+      trainBody.appendChild(node('circle', { cx:bx+8,    cy:RAILY-3, r:4, class:'twheel' }));
+      trainBody.appendChild(node('circle', { cx:bx+bw-8, cy:RAILY-3, r:4, class:'twheel' }));
     }
-    train.appendChild(node('rect', { x:0,  y:RAILY-22, width:30, height:16, rx:3, class:'tengine' }));
-    train.appendChild(node('rect', { x:26, y:RAILY-32, width:14, height:26, rx:2.5, class:'tengine' }));
-    train.appendChild(node('rect', { x:5,  y:RAILY-31, width:6,  height:10, class:'tstack' }));
-    train.appendChild(node('circle', { cx:8,  cy:RAILY-3, r:4.5, class:'twheel' }));
-    train.appendChild(node('circle', { cx:20, cy:RAILY-3, r:4.5, class:'twheel' }));
-    train.appendChild(node('circle', { cx:33, cy:RAILY-3, r:4.5, class:'twheel' }));
+    trainBody.appendChild(node('rect', { x:0,  y:RAILY-22, width:30, height:16, rx:3, class:'tengine' }));
+    trainBody.appendChild(node('rect', { x:26, y:RAILY-32, width:14, height:26, rx:2.5, class:'tengine' }));
+    trainBody.appendChild(node('rect', { x:5,  y:RAILY-31, width:6,  height:10, class:'tstack' }));
+    trainBody.appendChild(node('circle', { cx:8,  cy:RAILY-3, r:4.5, class:'twheel' }));
+    trainBody.appendChild(node('circle', { cx:20, cy:RAILY-3, r:4.5, class:'twheel' }));
+    trainBody.appendChild(node('circle', { cx:33, cy:RAILY-3, r:4.5, class:'twheel' }));
     boxcar(44, 34, '#a9746c');
     boxcar(82, 34, '#7f9c6d');
+    train.appendChild(trainBody);
     live.appendChild(train);
+
+    // the glyph faces left, and the engine leads left as drawn; flip for east
+    movers.forEach(function(m){ m.stop(); });
+    movers = [
+      mover(rider, { span:[-650, 1650], speed:95, gap:[2, 5], firstDelay:0.8,
+        face:function(dir){ riderGlyph.setAttribute('transform', dir === 1 ? 'scale(-1 1)' : ''); } }),
+      mover(train, { span:[-850, 1800], speed:125, gap:[4, 8], firstDelay:2.5,
+        face:function(dir){ trainBody.setAttribute('transform', dir === 1 ? 'translate(116 0) scale(-1 1)' : ''); } })
+    ];
     svg.appendChild(live);
 
     // clue light: a flashlight beam and a ring, lit as their clues unlock
@@ -883,6 +947,41 @@
   }
 
   const gfx = id => svg.querySelector('.loc[data-id="' + id + '"]');
+
+  /* ---------- movers ----------
+     A vehicle crosses, rests a few seconds, then comes back from a random
+     side. One element per vehicle, so there is only ever one of each. */
+
+  let movers = [];
+
+  function mover(el, opts){
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let stopped = false;
+    const park = () => el.setAttribute('transform', 'translate(-3000,0)');
+    park();
+    function pass(){
+      if (stopped) return;
+      if (reduced.matches){ setTimeout(pass, 2000); return; }
+      const dir  = Math.random() < 0.5 ? 1 : -1;
+      const from = dir === 1 ? opts.span[0] : opts.span[1];
+      const to   = dir === 1 ? opts.span[1] : opts.span[0];
+      opts.face(dir);
+      const dur = Math.abs(to - from) / opts.speed * 1000;
+      const t0 = performance.now();
+      (function step(){
+        if (stopped) return;
+        const k = Math.min(1, (performance.now() - t0) / dur);
+        el.setAttribute('transform', 'translate(' + (from + (to - from) * k) + ',0)');
+        if (k < 1) requestAnimationFrame(step);
+        else {
+          park();
+          setTimeout(pass, (opts.gap[0] + Math.random() * (opts.gap[1] - opts.gap[0])) * 1000);
+        }
+      })();
+    }
+    setTimeout(pass, opts.firstDelay * 1000);
+    return { stop:function(){ stopped = true; park(); } };
+  }
 
   // A drawn marker can only be so fat before neighbours collide — the water
   // tower and the station sit 96 units apart. So a tap that lands near a place
