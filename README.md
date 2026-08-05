@@ -38,9 +38,16 @@ Tap a place to select it, then search it. Five guesses. Each miss reports how
 many blocks off you were and which way to go, and unlocks another clue:
 
 - **Clue 1** — who you are chasing, and how they think
-- **Clue 2** — the compass sector from The Town
-- **Clue 3** — a half-block distance band
+- **Clue 2** — the direction, named after a landmark you can see: "they went out
+  the 🏊 Community Pool way". A flashlight beam fans out across the map to match.
+- **Clue 3** — the distance as a walk: "a 2 to 3 minute walk from The Town", with
+  a glowing ring drawn at that range. Where the beam and the ring cross is where
+  to look.
 - **Clue 4** — why they picked the place they picked
+
+No compass points and no block counts: nobody knows which way north is on a
+drawing, and "3.5 blocks from the green" told you nothing. Guess feedback is in
+minutes too — "≈4 min away". One block is about a two-minute walk.
 
 Clues are listed newest first, so the one a miss just bought is at the top of
 the panel and never needs scrolling to.
@@ -89,6 +96,10 @@ straight.
 Shading is one flat colour per block — nothing is layered on top. Where a
 block is a place, the whole block takes its colour: the pines and the ball
 fields are green, the pond block is blue.
+
+Starcourt Mall, Hawkins Lab, the Community Pool and the Baseball Field are
+built rather than lettered — little shoeboxes in perspective with a lit face, a
+shaded side and a roof, so they stand up off the paper.
 
 The town has surroundings, seen when a wide screen looks past it: a meadow and
 an orchard to the west, and to the east a lake with a duck, fields with a

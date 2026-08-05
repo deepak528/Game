@@ -191,6 +191,29 @@
   .loc.town .dot{stroke:var(--accent);stroke-width:3}
   .loc.town .label{fill:var(--accent);font-size:18px;letter-spacing:.5px}
   .gate{animation:pulse 1.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  /* the clue light: a flashlight beam and a ring, lit as their clues unlock */
+  .beam{fill:url(#beamGrad);filter:url(#soften);opacity:0;transition:opacity .8s ease-out;pointer-events:none}
+  .ring{fill:none;stroke:#ffcf4a;opacity:0;transition:opacity .8s ease-out;pointer-events:none;
+        filter:url(#soften);mix-blend-mode:multiply}
+  .hints.lit2 .beam{opacity:1}
+  .hints.lit3 .ring{opacity:.5}
+  body.night .beam{opacity:0}
+  body.night .hints.lit2 .beam{opacity:1;filter:url(#soften) brightness(1.5)}
+  /* the kid on the swing — a whole one */
+  .kid{stroke:#3a332c;stroke-width:2.6;stroke-linecap:round;fill:none}
+  .kid-head{fill:#f6c98a;stroke:#3a332c;stroke-width:2}
+  .seat{stroke:#7a5c3a;stroke-width:4;stroke-linecap:round}
+  /* the freight */
+  .tengine{fill:#8f3f3a}
+  .tstack{fill:#5f4038}
+  .twheel{fill:#4a4038;stroke:#2f2823;stroke-width:1}
+  .tcar{stroke:#00000022;stroke-width:1}
+  /* places that are built rather than lettered */
+  .art{pointer-events:none}
+  .art polygon,.art rect,.art ellipse,.art path,.art circle{
+    stroke-linejoin:round;filter:drop-shadow(0 2px 1.5px rgba(0,0,0,.22));
+  }
+  .blab{font-family:inherit;font-weight:700;letter-spacing:.5px}
   /* --- life around the town --- */
   .lake{fill:#a4d9f2}
   .scene{font-family:inherit;text-anchor:middle;pointer-events:none;user-select:none}
@@ -203,7 +226,7 @@
   @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-30px)}}
   .rider{animation:ride 26s linear infinite}
   @keyframes ride{from{transform:translateX(1700px)}to{transform:translateX(-750px)}}
-  .train{animation:chug 30s linear infinite}
+  .train{animation:chug 40s linear infinite}
   @keyframes chug{0%{transform:translateX(1800px)}55%{transform:translateX(-950px)}100%{transform:translateX(-950px)}}
   /* by nightfall the kids and the cyclist have gone home; the freight has not */
   .swing-arm,.pball,.rider{transition:opacity 1.5s}
@@ -412,6 +435,44 @@
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
 
+  // A few places are built rather than lettered: a shoebox in perspective, with
+  // a lit face, a shaded side and a roof, so they stand up off the paper.
+  const BUILDS = {
+    mall: function(g, x, y){
+      box(g, x-20, y+8, 40, 20, 9, '#e8b3c6', '#c98ba2', '#f6d3df');
+      g.appendChild(node('rect', { x:x-13, y:y-4, width:26, height:11, rx:2, fill:'#f7e6a8', stroke:'#c9a94e', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y+5, 'font-size':9, 'text-anchor':'middle', fill:'#a2543c', class:'blab' }, 'MALL'));
+    },
+    lab: function(g, x, y){
+      box(g, x-18, y+9, 36, 22, 8, '#cfd8e6', '#a9b6c9', '#e6ecf4');
+      g.appendChild(node('rect', { x:x+4, y:y-16, width:9, height:18, fill:'#b9c5d6', stroke:'#8fa0b6', 'stroke-width':1 }));
+      [[-12,-2],[-2,-2],[-12,4],[-2,4]].forEach(function(w){
+        g.appendChild(node('rect', { x:x+w[0], y:y+w[1], width:7, height:5, fill:'#8fd3ef', opacity:.9 }));
+      });
+    },
+    pool: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+10, rx:24, ry:12, fill:'#dcd2bd' }));
+      g.appendChild(node('ellipse', { cx:x, cy:y+9,  rx:19, ry:9,  fill:'#57bde3' }));
+      g.appendChild(node('path', { d:'M'+(x-14)+','+(y+8)+' q7,-4 14,0 t14,0', fill:'none', stroke:'#bfe9f7', 'stroke-width':2, 'stroke-linecap':'round' }));
+      g.appendChild(node('path', { d:'M'+(x+16)+','+(y-2)+' l6,-9 M'+(x+22)+','+(y-11)+' l0,10',
+        fill:'none', stroke:'#c9b48f', 'stroke-width':2.5, 'stroke-linecap':'round' }));
+    },
+    field: function(g, x, y){
+      g.appendChild(node('path', { d:'M'+(x-22)+','+(y+12)+' A26,26 0 0 1 '+(x+22)+','+(y+12)+' Z', fill:'#9fd98a' }));
+      g.appendChild(node('path', { d:'M'+(x-22)+','+(y+12)+' L'+x+','+(y-8)+' L'+(x+22)+','+(y+12),
+        fill:'none', stroke:'#e9dcc2', 'stroke-width':3 }));
+      g.appendChild(node('path', { d:'M'+(x-11)+','+(y+12)+' q11,-9 22,0', fill:'none', stroke:'#d8c9a8', 'stroke-width':2 }));
+      g.appendChild(node('circle', { cx:x, cy:y+3, r:4.5, fill:'#fff', stroke:'#c96a5a', 'stroke-width':1.2 }));
+    }
+  };
+
+  // one shoebox: front face, side face in shadow, roof in light
+  function box(g, x, y, w, h, d, front, side, roof){
+    g.appendChild(node('polygon', { points:[x+w,y, x+w+d,y-d, x+w+d,y-h-d, x+w,y-h].join(' '), fill:side }));
+    g.appendChild(node('polygon', { points:[x,y-h, x+d,y-h-d, x+w+d,y-h-d, x+w,y-h].join(' '), fill:roof }));
+    g.appendChild(node('rect', { x:x, y:y-h, width:w, height:h, fill:front }));
+  }
+
   // Roads are drawn from data, so the town stays easy to redraw.
   const STREETS = [
     { name:'Broadway',    major:true,  x1:500, y1:60,  x2:500, y2:940 },
@@ -541,7 +602,6 @@
   }
 
   const octant = deg => Math.round(deg / 45) % 8;
-  const fmtBlocks = b => b < 0.05 ? 'right there' : b.toFixed(1) + (b < 1.05 ? ' block' : ' blocks');
 
   /* ---------- puzzle ---------- */
 
@@ -581,12 +641,35 @@
     return round + 1;   // unreachable in practice, but never loop forever
   }
 
+  // "3.5 blocks from the green" meant nothing to anyone. Directions are now a
+  // landmark everyone can see plus a beam of light drawn on the map; distances
+  // are a walk time plus a glowing ring. One block is about a two-minute walk.
+  const walkMin = b => Math.max(1, Math.round(b * 2));
+
+  // the farthest place out in the same direction — "they went that way"
+  function beaconFor(deg){
+    const oct = octant(deg);
+    let best = null, bestD = -1;
+    HIDEABLE.forEach(function(p){
+      if (p.id === puzzle.place.id) return;
+      if (octant(bearing(TOWN, p)) !== oct) return;
+      const d = blocksBetween(TOWN, p);
+      if (d > bestD){ bestD = d; best = p; }
+    });
+    return best;
+  }
+
   function clueList(){
     const lo = Math.floor(trueBlocks * 2) / 2;
+    const bcn = beaconFor(trueBearing);
+    const dir = bcn ? 'out the <b>' + bcn.pic + ' ' + bcn.name + '</b> way'
+                    : 'toward the <b>' + COMPASS[octant(trueBearing)] + '</b> edge of town';
+    const mins = lo === 0 ? 'barely a <b>minute\u2019s walk</b>'
+               : 'a <b>' + (lo * 2) + ' to ' + ((lo + 0.5) * 2) + ' minute walk</b>';
     return [
       puzzle.cast.flavor,
-      'The reading points <b>' + COMPASS[octant(trueBearing)] + '</b> of The Town.',
-      'It is <b>' + lo.toFixed(1) + ' to ' + (lo + 0.5).toFixed(1) + ' blocks</b> from the green.',
+      'They went ' + dir + ' — follow the beam of light on the map.',
+      'It is ' + mins + ' from The Town — search along the glowing ring.',
       'They picked it because <b>' + puzzle.place.hint + '</b>.'
     ];
   }
@@ -634,6 +717,14 @@
     wob.appendChild(node('feTurbulence', { type:'fractalNoise', baseFrequency:'0.013', numOctaves:'2', seed:'7', result:'n' }));
     wob.appendChild(node('feDisplacementMap', { in:'SourceGraphic', in2:'n', scale:'7' }));
     defs.appendChild(wob);
+    const glow = node('radialGradient', { id:'beamGrad', gradientUnits:'userSpaceOnUse', cx:TOWN.x, cy:TOWN.y, r:700 });
+    [['0%','#ffd76a','0.5'], ['55%','#ffce4d','0.26'], ['100%','#f7bd35','0.07']].forEach(function(st){
+      glow.appendChild(node('stop', { offset:st[0], 'stop-color':st[1], 'stop-opacity':st[2] }));
+    });
+    defs.appendChild(glow);
+    const soften = node('filter', { id:'soften', x:'-30%', y:'-30%', width:'160%', height:'160%' });
+    soften.appendChild(node('feGaussianBlur', { stdDeviation:'7' }));
+    defs.appendChild(soften);
     svg.appendChild(defs);
 
     // the ground wobbles; labels and markers stay crisp on top of it
@@ -696,8 +787,16 @@
     live.appendChild(node('line', { x1:1180, y1:762, x2:1196, y2:842, class:'pline' }));
     const swingAt = node('g', { transform:'translate(1120,764)' });   // pivot on the bar
     const arm = node('g', { class:'swing-arm' });
-    arm.appendChild(node('line', { x1:0, y1:0, x2:0, y2:46, class:'chain' }));
-    arm.appendChild(node('text', { x:0, y:64, 'font-size':24, class:'scene' }, '🧒'));
+    // a whole kid, not a floating head: chains, seat, head, body, arms, legs
+    arm.appendChild(node('line', { x1:-7, y1:0, x2:-7, y2:44, class:'chain' }));
+    arm.appendChild(node('line', { x1:7,  y1:0, x2:7,  y2:44, class:'chain' }));
+    arm.appendChild(node('line', { x1:-11, y1:44, x2:11, y2:44, class:'seat' }));
+    arm.appendChild(node('circle', { cx:0, cy:19, r:6.5, class:'kid-head' }));
+    arm.appendChild(node('line', { x1:0, y1:25, x2:0, y2:43, class:'kid' }));
+    arm.appendChild(node('line', { x1:0, y1:30, x2:-7, y2:37, class:'kid' }));
+    arm.appendChild(node('line', { x1:0, y1:30, x2:7,  y2:37, class:'kid' }));
+    arm.appendChild(node('polyline', { points:'0,43 10,47 9,57',  class:'kid' }));
+    arm.appendChild(node('polyline', { points:'0,43 13,45 14,55', class:'kid' }));
     swingAt.appendChild(arm);
     live.appendChild(swingAt);
     live.appendChild(node('line', { x1:1300, y1:792, x2:1362, y2:858, class:'slide' }));
@@ -706,8 +805,40 @@
     live.appendChild(node('text', { x:1210, y:930, class:'streetname', 'text-anchor':'middle' }, 'Playground'));
     // riders: a cyclist on Central Ave, the evening freight on the rail
     live.appendChild(node('text', { x:0, y:506, 'font-size':28, class:'scene rider' }, '🚴'));
-    live.appendChild(node('text', { x:0, y:296, 'font-size':26, class:'scene train' }, '🚂🚃🚃'));
+    const train = node('g', { class:'train' });
+    const RAILY = 286;
+    function boxcar(bx, bw, fill){
+      train.appendChild(node('rect', { x:bx, y:RAILY-26, width:bw, height:20, rx:2.5, fill:fill, class:'tcar' }));
+      train.appendChild(node('circle', { cx:bx+8,    cy:RAILY-3, r:4, class:'twheel' }));
+      train.appendChild(node('circle', { cx:bx+bw-8, cy:RAILY-3, r:4, class:'twheel' }));
+    }
+    train.appendChild(node('rect', { x:0,  y:RAILY-22, width:30, height:16, rx:3, class:'tengine' }));
+    train.appendChild(node('rect', { x:26, y:RAILY-32, width:14, height:26, rx:2.5, class:'tengine' }));
+    train.appendChild(node('rect', { x:5,  y:RAILY-31, width:6,  height:10, class:'tstack' }));
+    train.appendChild(node('circle', { cx:8,  cy:RAILY-3, r:4.5, class:'twheel' }));
+    train.appendChild(node('circle', { cx:20, cy:RAILY-3, r:4.5, class:'twheel' }));
+    train.appendChild(node('circle', { cx:33, cy:RAILY-3, r:4.5, class:'twheel' }));
+    boxcar(44, 34, '#a9746c');
+    boxcar(82, 34, '#7f9c6d');
+    live.appendChild(train);
     svg.appendChild(live);
+
+    // clue light: a flashlight beam and a ring, lit as their clues unlock
+    const hints = node('g', { class:'hints' });
+    const bc = octant(trueBearing) * 45, half = 27, RR = 1000;
+    const hxp = (a, r) => (TOWN.x + Math.sin(a * Math.PI / 180) * r).toFixed(1);
+    const hyp = (a, r) => (TOWN.y - Math.cos(a * Math.PI / 180) * r).toFixed(1);
+    hints.appendChild(node('path', {
+      class:'beam',
+      d:'M' + TOWN.x + ',' + TOWN.y +
+        ' L' + hxp(bc - half, RR) + ',' + hyp(bc - half, RR) +
+        ' A' + RR + ' ' + RR + ' 0 0 1 ' + hxp(bc + half, RR) + ',' + hyp(bc + half, RR) + ' Z'
+    }));
+    const band = Math.floor(trueBlocks * 2) / 2;
+    hints.appendChild(node('circle', {
+      class:'ring', cx:TOWN.x, cy:TOWN.y, r:(band + 0.25) * 100, 'stroke-width':64
+    }));
+    svg.appendChild(hints);
 
     STREETS.forEach(function(s){
       const horiz = Math.abs(s.y2 - s.y1) < Math.abs(s.x2 - s.x1);
@@ -732,8 +863,17 @@
       const marker = node('g', { class:'marker' });
       const bob = node('g', { class:'bob' });
       bob.style.animationDelay = (-(i * 0.47) % 3.2).toFixed(2) + 's';
-      bob.appendChild(node('circle', { cx:p.x, cy:p.y, r:24, class:'dot' }));
-      bob.appendChild(node('text',   { x:p.x, y:p.y + 10, class:'pic' }, p.pic));
+      if (BUILDS[p.id]){
+        // scaled about its own anchor so a build carries the same weight as
+        // the lettered markers beside it
+        const art = node('g', { class:'art',
+          transform:'translate(' + p.x + ',' + p.y + ') scale(1.4) translate(' + (-p.x) + ',' + (-p.y) + ')' });
+        BUILDS[p.id](art, p.x, p.y);
+        bob.appendChild(art);
+      } else {
+        bob.appendChild(node('circle', { cx:p.x, cy:p.y, r:24, class:'dot' }));
+        bob.appendChild(node('text',   { x:p.x, y:p.y + 10, class:'pic' }, p.pic));
+      }
       marker.appendChild(bob);
       g.appendChild(marker);
       g.appendChild(node('text',   { x:p.x, y:p.y + 46, class:'label' }, p.name));
@@ -1098,6 +1238,11 @@
 
     const clues = clueList();
     const shown = Math.min(guesses.length + 1, clues.length);
+    const hintG = svg.querySelector('.hints');
+    if (hintG){
+      hintG.classList.toggle('lit2', !done && shown >= 2);
+      hintG.classList.toggle('lit3', !done && shown >= 3);
+    }
     // newest clue on top, so the one that matters needs no scrolling
     el('clues').innerHTML = clues.slice(0, shown).map(function(c, i){
       return '<div class="clue"><p><span class="n">Clue ' + (i+1) + '</span>' + c + '</p></div>';
@@ -1108,7 +1253,7 @@
       return '<div class="guess-row">' +
                '<span>' + p.pic + ' ' + p.name + '</span>' +
                '<span class="dist" style="color:' + (g.hit ? 'var(--good)' : 'var(--muted)') + '">' +
-                 (g.hit ? 'found them!' : fmtBlocks(g.blocks) + ' off') +
+                 (g.hit ? 'found them!' : '\u2248' + walkMin(g.blocks) + ' min away') +
                '</span>' +
                '<span class="arrow">' + (g.hit ? '🎯' : ARROWS[octant(g.bearing)]) + '</span>' +
              '</div>';
@@ -1134,7 +1279,7 @@
     const g = gfx(puzzle.place.id);
     g.classList.add('hit');
     g.classList.remove('spent');
-    g.querySelector('.pic').classList.add('gate');
+    (g.querySelector('.pic') || g.querySelector('.art')).classList.add('gate');
     PLACES.forEach(function(p){ gfx(p.id).classList.remove('sel'); });
     renderVines(true);
 
@@ -1142,15 +1287,15 @@
     const share = '🔦 Home Before Dinner ' + key + '  ' +
       (won ? guesses.length + '/' + MAX_GUESSES : 'X/' + MAX_GUESSES) + '\n' +
       guesses.map(function(x){ return x.hit ? '🎯' : ARROWS[octant(x.bearing)]; }).join('') +
-      '\nclosest: ' + fmtBlocks(best);
+      '\nclosest: ' + (best < 0.05 ? 'right there' : '\u2248' + walkMin(best) + ' min');
 
     el('endBox').innerHTML =
       '<div class="result">' +
         '<h2>' + (won ? 'Found them.' : ranOut ? 'Nine o&rsquo;clock.' : 'They got away.') + '</h2>' +
         '<p style="margin:0;color:var(--muted)">' + puzzle.cast.pic +
           ' <span class="who">' + puzzle.cast.name + '</span> was hiding at ' +
-          puzzle.place.pic + ' <b>' + puzzle.place.name + '</b> — ' +
-          fmtBlocks(trueBlocks) + ' ' + COMPASS[octant(trueBearing)] + ' of The Town.</p>' +
+          puzzle.place.pic + ' <b>' + puzzle.place.name + '</b> — about ' +
+          walkMin(trueBlocks) + (walkMin(trueBlocks) === 1 ? ' minute' : ' minutes') + ' from The Town.</p>' +
       '</div>' +
       '<div class="share">' + share + '</div>' +
       '<p class="hint">Someone new misses dinner every day at midnight.</p>';
