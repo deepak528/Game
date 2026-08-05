@@ -107,7 +107,19 @@
     padding:10px 12px;box-shadow:0 8px 26px rgba(0,0,0,.18);font-size:12px;
   }
   body.admin #admin{display:block}
-  #admin .ahead{font-weight:700;margin-bottom:6px}
+  #admin .ahead{font-weight:700;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #admin .ahint{color:var(--muted);margin-bottom:8px}
+  #admin .amin{
+    width:26px;min-height:26px;padding:0;border-radius:7px;font-size:15px;line-height:1;
+    background:transparent;color:var(--muted);border:1px solid var(--line);box-shadow:none;
+  }
+  body.amin #admin{width:auto}
+  body.amin #aBody{display:none}
+  #admin .abtn[disabled]{opacity:.45;cursor:not-allowed}
+  /* a place marked for removal stays visible but clearly struck off */
+  .loc.removed{opacity:.3}
+  .loc.removed .label{text-decoration:line-through}
+  .loc.picked .label{fill:var(--accent);font-weight:800}
   #admin .arow{display:flex;gap:8px;align-items:center;margin-bottom:8px;color:var(--muted)}
   #admin .abtn{
     width:auto;flex:1 1 0;min-height:34px;padding:6px 10px;font-size:12.5px;border-radius:8px;
@@ -400,13 +412,23 @@
   <div id="dusk"></div>
   <div id="haze"></div>
   <div id="admin">
-    <div class="ahead">&#128296; Admin &mdash; drag any place to move it</div>
-    <div class="arow"><span id="aOverlap">checking&hellip;</span></div>
-    <div class="arow">
-      <button id="aCopy" class="abtn">Copy map</button>
-      <button id="aReset" class="abtn ghosty">Reset</button>
+    <div class="ahead">
+      <span>&#128296; Admin</span>
+      <button id="aMin" class="amin" title="Minimise">&minus;</button>
     </div>
-    <textarea id="aOut" readonly spellcheck="false"></textarea>
+    <div id="aBody">
+      <div class="ahint">Drag any place to move it &middot; click one to select</div>
+      <div class="arow"><span id="aPick">Nothing selected</span></div>
+      <div class="arow">
+        <button id="aRemove" class="abtn ghosty" disabled>Remove</button>
+      </div>
+      <div class="arow"><span id="aOverlap">checking&hellip;</span></div>
+      <div class="arow">
+        <button id="aCopy" class="abtn">Copy map</button>
+        <button id="aReset" class="abtn ghosty">Reset</button>
+      </div>
+      <textarea id="aOut" readonly spellcheck="false"></textarea>
+    </div>
   </div>
   <button id="zin" class="zbtn" aria-label="Zoom in">+</button>
   <button id="zminus" class="zbtn" aria-label="Zoom out">−</button>
@@ -444,30 +466,30 @@
 
   const PLACES = [
     { id:'town',    name:'The Town',          pic:'🏛️', x:500, y:500, hint:'the middle of everything' },
-    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:620, y:418, hint:'the whole block smells of oregano after four' },
+    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:602, y:434, hint:'the whole block smells of oregano after four' },
     { id:'library', name:'Public Library',    pic:'📚', x:400, y:434, hint:'you need a card to get in, and quiet to stay' },
-    { id:'middle',  name:'Middle School',     pic:'🎒', x:348, y:646, hint:'the bell still rings at 2:40, even in summer' },
+    { id:'middle',  name:'Middle School',     pic:'🎒', x:1217, y:650, hint:'the bell still rings at 2:40, even in summer' },
     { id:'high',    name:'High School',       pic:'🏫', x:672, y:672, hint:'the field lights come on Friday nights' },
-    { id:'tower',   name:'Water Tower',       pic:'🗼', x:496, y:372, hint:'you can see the whole grid from the catwalk' },
-    { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:634, y:556, hint:'it is open late and the jukebox eats quarters' },
+    { id:'tower',   name:'Water Tower',       pic:'🗼', x:-146, y:589, hint:'you can see the whole grid from the catwalk' },
+    { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:135, y:758, hint:'it is open late and the jukebox eats quarters' },
     { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:568, y:652, hint:'it is loud, and nobody looks up from the cabinets' },
     { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:752, y:462, hint:'you can walk in as yourself and walk out as somebody else' },
     { id:'station', name:'Train Station',     pic:'🚂', x:500, y:246, hint:'the freight goes through hard enough to rattle windows' },
     { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:266, y:314, hint:'the town gave up on that quarry and the kids did not' },
-    { id:'pool',    name:'Community Pool',    pic:'🏊', x:316, y:768, hint:'it is closed for the season and the fence is easy enough' },
+    { id:'pool',    name:'Community Pool',    pic:'🏊', x:357, y:828, hint:'it is closed for the season and the fence is easy enough' },
     { id:'field',   name:'Baseball Field',    pic:'⚾', x:720, y:806, hint:'the dugout stays dry when nothing else does' },
     { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:668, y:330, hint:'it is the only place in town selling a decent antenna' },
     { id:'grove',   name:'Old Grove',         pic:'🪦', x:232, y:518, hint:'the oldest stones there predate the parkway' },
-    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:448, y:592, hint:'if a thing in this town is broken, the part is there' },
+    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:633, y:144, hint:'if a thing in this town is broken, the part is there' },
     { id:'woods',   name:'The Pines',         pic:'🌲', x:820, y:232, hint:'the trees swallow a flashlight ten feet in' },
-    { id:'trailer', name:'Cherry Lane',       pic:'🚐', x:826, y:640, hint:'the walls are thin and everyone hears everything' },
-    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:118, y:436, hint:'the ovens run before sunrise and the line asks no questions' },
-    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:124, y:556, hint:'the milk steamer hisses loud enough to cover any conversation' },
+    { id:'trailer', name:'Cherry Lane',       pic:'🚐', x:874, y:642, hint:'the walls are thin and everyone hears everything' },
+    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:329, y:654, hint:'the ovens run before sunrise and the line asks no questions' },
+    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:1050, y:102, hint:'the milk steamer hisses loud enough to cover any conversation' },
     { id:'campagne',name:'Campagne House',    pic:'🥂', x:884, y:448, hint:'there is always a wedding on and nobody counts the guests' },
     { id:'video',   name:'Family Video',      pic:'📼', x:360, y:150, hint:'the horror aisle cannot be seen from the register' },
     { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:892, y:148, hint:'the fence says keep out and the gate was left open' },
     { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:896, y:788, hint:'it is brand new and nobody looks twice at a stranger' },
-    { id:'scoops',  name:'Scoops Ahoy',       pic:'🍦', x:898, y:892, hint:'the back room has one door, no windows and free ice cream' }
+    { id:'scoops',  name:'Scoops Ahoy',       pic:'🍦', x:1243, y:403, hint:'the back room has one door, no windows and free ice cream' }
   ];
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
@@ -1022,7 +1044,10 @@
       g.addEventListener('click', function(){ pick(p.id); });
       if (p.ox === undefined){ p.ox = p.x; p.oy = p.y; }
       placeMarker(p);
-      if (ADMIN) adminDraggable(g, p);
+      if (ADMIN){
+        adminDraggable(g, p);
+        if (adminGone.has(p.id)) g.classList.add('removed');
+      }
       svg.appendChild(g);
     });
   }
@@ -1036,34 +1061,63 @@
 
   const ADMIN = /[?&]admin\b/.test(location.search);
   const ADMIN_KEY = 'findr::admin::places';
-  let adminDragging = null;
+  let adminDragging = null, adminPicked = null;
+  const adminGone = new Set();
+
+  function adminSetRemoved(id, gone){
+    if (gone) adminGone.add(id); else adminGone.delete(id);
+    const g = gfx(id);
+    if (g) g.classList.toggle('removed', gone);
+    saveAdminMoves();
+    adminReport();
+  }
+
+  function adminSelect(id){
+    adminPicked = id;
+    PLACES.forEach(function(q){ const n = gfx(q.id); if (n) n.classList.toggle('picked', q.id === id); });
+    adminReport();
+  }
 
   function loadAdminMoves(){
     if (!ADMIN) return;
     try {
       const saved = JSON.parse(localStorage.getItem(ADMIN_KEY) || '{}');
+      const pos = saved.pos || saved;                    // older saves were flat
       PLACES.forEach(function(p){
-        if (saved[p.id]){ p.x = saved[p.id][0]; p.y = saved[p.id][1]; }
+        if (pos[p.id]){ p.x = pos[p.id][0]; p.y = pos[p.id][1]; }
       });
+      (saved.gone || []).forEach(function(id){ adminGone.add(id); });
+      recomputeBounds();
     } catch(e){}
   }
 
   function saveAdminMoves(){
-    const out = {};
-    PLACES.forEach(function(p){ out[p.id] = [Math.round(p.x), Math.round(p.y)]; });
+    const out = { pos:{}, gone:[...adminGone] };
+    PLACES.forEach(function(p){ out.pos[p.id] = [Math.round(p.x), Math.round(p.y)]; });
     try { localStorage.setItem(ADMIN_KEY, JSON.stringify(out)); } catch(e){}
   }
 
   // the same rule the map is judged by: markers, labels, and labels on markers
+  const hit = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
+                        Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
   function adminOverlaps(){
     const rects = PLACES.map(function(p){
       const g = gfx(p.id);
       const art = g.querySelector('.art') || g.querySelector('.dot');
       return { id:p.id, art:art.getBoundingClientRect(), lab:g.querySelector('.label').getBoundingClientRect() };
     });
-    const hit = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) *
-                          Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
     const bad = [];
+    // A place under a floating panel cannot be clicked at all, which is the
+    // same problem as one marker sitting on another.
+    ['.panel-scroll', '.panel-foot'].forEach(function(sel){
+      const box = document.querySelector(sel);
+      if (!box || !box.offsetParent) return;
+      const pr = box.getBoundingClientRect();
+      rects.forEach(function(R){
+        if (hit(R.art, pr) > 20) bad.push(R.id + ' under the panel');
+      });
+    });
     for (let i = 0; i < rects.length; i++){
       for (let j = i + 1; j < rects.length; j++){
         const A = rects[i], B = rects[j];
@@ -1084,9 +1138,20 @@
     tag.textContent = bad.length
       ? '\u26a0 ' + bad.length + ' overlap' + (bad.length > 1 ? 's' : '') + ': ' + bad.slice(0, 2).join(', ')
       : '\u2713 nothing overlaps';
-    el('aOut').value = PLACES.map(function(p){
-      return "{ id:'" + p.id + "', x:" + Math.round(p.x) + ", y:" + Math.round(p.y) + " },";
-    }).join('\n');
+
+    const pickedPlace = adminPicked && byId(adminPicked);
+    el('aPick').textContent = pickedPlace
+      ? 'Selected: ' + pickedPlace.name + (adminGone.has(adminPicked) ? ' (removed)' : '')
+      : 'Nothing selected';
+    el('aRemove').disabled = !adminPicked;
+    el('aRemove').textContent = adminPicked && adminGone.has(adminPicked) ? 'Restore' : 'Remove';
+
+    const kept = PLACES.filter(function(p){ return !adminGone.has(p.id); });
+    el('aOut').value =
+      kept.map(function(p){
+        return "{ id:'" + p.id + "', x:" + Math.round(p.x) + ", y:" + Math.round(p.y) + " },";
+      }).join('\n') +
+      (adminGone.size ? '\n// removed: ' + [...adminGone].join(', ') : '');
   }
 
   // markers are drawn at their original spot and shifted, so a move is one attribute
@@ -1098,6 +1163,7 @@
   function adminDraggable(g, p){
     g.addEventListener('pointerdown', function(e){
       e.stopPropagation();                 // the map must not pan underneath
+      adminSelect(p.id);
       adminDragging = p;
       g.classList.add('dragging');
       try { g.setPointerCapture(e.pointerId); } catch(err){}
@@ -1115,6 +1181,8 @@
       g.classList.remove('dragging');
       try { g.releasePointerCapture(e.pointerId); } catch(err){}
       adminDragging = null;
+      recomputeBounds();
+      applyView();
       saveAdminMoves();
       adminReport();
     }
@@ -1177,7 +1245,20 @@
      ever sees them, so a pinch zooms Safari's page and never reaches the map.
      A double-tap is a plain tap twice — every browser delivers it. */
 
-  const BASE = { x:48, y:48, w:904, h:904 };
+  // The frame is whatever the places need, not a fixed square — move a place
+  // to the edge of the county and the map grows to include it.
+  let BASE = { x:48, y:48, w:904, h:904 };
+
+  function recomputeBounds(){
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    PLACES.forEach(function(p){
+      x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x);
+      y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
+    });
+    const m = 130;                       // room for the labels and the taller builds
+    BASE = { x:x0 - m, y:y0 - m, w:(x1 - x0) + m*2, h:(y1 - y0) + m*2 };
+  }
+  recomputeBounds();
   const MAX_ZOOM = 4;
   const TAP_ZOOM = 2.6;           // how far one double-tap goes in
   // The view is a width and a centre; its height follows the shape of the map
@@ -1217,9 +1298,15 @@
 
   function applyView(){
     const v = viewSize();
-    // on whichever axis shows more than the whole town, centre it
-    viewCx = v.w >= BASE.w ? BASE.x + BASE.w / 2 + centreShift(v)
-           : clamp(viewCx, BASE.x + v.w / 2, BASE.x + BASE.w - v.w / 2);
+    // On whichever axis shows more than the whole town, centre it — but only
+    // bias for the clue card as far as there is slack, or the leftmost place
+    // gets pushed off the edge.
+    if (v.w >= BASE.w){
+      const lo = BASE.x + BASE.w - v.w / 2, hi = BASE.x + v.w / 2;
+      viewCx = clamp(BASE.x + BASE.w / 2 + centreShift(v), Math.min(lo, hi), Math.max(lo, hi));
+    } else {
+      viewCx = clamp(viewCx, BASE.x + v.w / 2, BASE.x + BASE.w - v.w / 2);
+    }
     viewCy = v.h >= BASE.h ? BASE.y + BASE.h / 2
            : clamp(viewCy, BASE.y + v.h / 2, BASE.y + BASE.h - v.h / 2);
     svg.setAttribute('viewBox',
@@ -1479,6 +1566,15 @@
   function startClock(){
     clockFrom = performance.now();
     stopClock();
+    if (ADMIN){                          // arranging the town is not a hunt
+      el('clock').textContent = '5:00 PM · paused';
+      el('clock').classList.remove('late');
+      el('dusk').style.opacity = 0;
+      el('haze').style.opacity = 0;
+      document.body.classList.remove('night');
+      renderVines(false);
+      return;
+    }
     clockTimer = setInterval(tick, 250);
     tick();
   }
@@ -1661,6 +1757,19 @@
         el('aCopy').textContent = 'Select + copy above';
       });
     };
+    el('aRemove').onclick = function(){
+      if (adminPicked) adminSetRemoved(adminPicked, !adminGone.has(adminPicked));
+    };
+    const MIN_KEY = 'findr::admin::min';
+    const setMin = function(on){
+      document.body.classList.toggle('amin', on);
+      el('aMin').innerHTML = on ? '&plus;' : '&minus;';
+      el('aMin').title = on ? 'Expand' : 'Minimise';
+      try { localStorage.setItem(MIN_KEY, on ? '1' : '0'); } catch(e){}
+    };
+    el('aMin').onclick = function(){ setMin(!document.body.classList.contains('amin')); };
+    try { setMin(localStorage.getItem(MIN_KEY) === '1'); } catch(e){ setMin(false); }
+
     el('aReset').onclick = function(){
       try { localStorage.removeItem(ADMIN_KEY); } catch(e){}
       location.reload();

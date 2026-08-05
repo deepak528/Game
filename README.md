@@ -125,13 +125,22 @@ with an `x`, a `y` and a `hint`; the clue system picks it up automatically.
 ## Admin mode
 
 Add `?admin` to the URL — `index.html?admin` — and every place becomes
-draggable. A panel appears with:
+draggable. The clock stays parked at five o'clock, since arranging the town is
+not a hunt. A panel appears with:
 
-- a **live overlap check** using the same rule the map is held to: no marker on
-  a marker, no label on a label, no label on a neighbouring marker
-- **Copy map**, which puts the whole layout on the clipboard as pasteable
-  `PLACES` lines
+- a **live overlap check**: no marker on a marker, no label on a label, no label
+  on a neighbouring marker, and nothing hidden under the floating panels — a
+  place under the clue card cannot be clicked at all
+- **Remove / Restore** for the selected place. Click a place to select it;
+  removed ones grey out with their name struck through and drop out of the
+  export, which notes them in a trailing comment
+- **Copy map**, which puts the layout on the clipboard as pasteable `PLACES`
+  lines
 - **Reset**, which throws the edits away
+- a **minimise** button in the corner, remembered between visits
+
+The map frame is computed from the places themselves, so dragging one out to the
+edge of the county grows the map to include it rather than losing it.
 
 Moves are kept in `localStorage` for that browser only, so the published game
 always shows the committed layout. Paste the copied lines back into `PLACES` to
