@@ -1,9 +1,9 @@
 # Home Before Dinner
 
-A daily hide-and-seek game played on a small fictional town with two maps of
-itself: the crayon-drawn Town, and the City — a Manhattan-style grid with the
-same Bethpage names on it. Someone from Hawkins is hiding at one of
-twenty-two places, and they were supposed to be home before dinner. You get
+A daily hide-and-seek game with two maps of the same place: the crayon-drawn
+Town, and the City — a Manhattan grid where those same twenty-two places answer
+to New York names. Someone from Hawkins is hiding at one of them, and they were
+supposed to be home before dinner. You get
 clues, you search a place, and the town tells you how far off you were.
 
 A crooked missing poster at the top of the panel says who you are looking for:
