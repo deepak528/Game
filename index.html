@@ -20,10 +20,12 @@
     --bg:#f7edd8; --panel:#fff8ea; --line:#e6d8bd; --ink:#3a332c;
     --muted:#8a7d6a; --accent:#e05e10; --good:#2e9e63;
     --glow:rgba(224,94,16,.25);
-    --paper:#9fcfe6; --rail:#8f97a3;
+    --paper:#fbf3df; --road:#b6ab97; --road2:#d2c8b3; --rail:#a68d72;
     --card:rgba(0,0,0,.05); --seg:rgba(0,0,0,.1); --sharebg:rgba(0,0,0,.05);
     --dash:#ffdf7e; --dis-bg:#ece1cb; --dis-ink:#a3947e;
   }
+  /* the City map floats in the river; the Town map sits on cream paper */
+  body.city{--paper:#9fcfe6; --rail:#8f97a3}
   /* Night falls on the map alone: it dims, vines come through, spores drift
      and the sun goes out. The UI stays in daylight throughout. */
   *{box-sizing:border-box}
@@ -56,22 +58,25 @@
     color:var(--muted);font-size:12px;margin-left:10px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  /* the pace toggle: how fast the evening runs */
-  #paceCtl{
-    margin-left:auto;display:flex;gap:2px;align-self:center;
+  /* the pace toggle (how fast the evening runs) and the map toggle */
+  #paceCtl,#mapCtl{
+    display:flex;gap:2px;align-self:center;
     border:1px solid var(--line);border-radius:999px;padding:2px;background:var(--card);
   }
+  #mapCtl{margin-left:auto}
   .pace{
     width:auto;min-height:26px;padding:2px 9px;font-size:11.5px;font-weight:600;
     background:transparent;color:var(--muted);border-radius:999px;box-shadow:none;
   }
   .pace.on{background:var(--accent);color:#fff}
   @media (max-width:480px){ .pace .lbl{display:none} .pace{padding:2px 7px} }
-  /* a narrow phone must not wrap the title onto a second line */
+  /* a narrow phone must not wrap the title, and with two toggle groups up
+     there the clock still has to fit whole — everything tightens a notch */
   @media (max-width:410px){
-    header{padding-left:calc(12px + env(safe-area-inset-left));padding-right:calc(12px + env(safe-area-inset-right))}
-    header h1{font-size:15px}
-    header .date{font-size:10.5px}
+    header{padding-left:calc(10px + env(safe-area-inset-left));padding-right:calc(10px + env(safe-area-inset-right));gap:6px}
+    header h1{font-size:13.5px}
+    header .date{font-size:10.5px;margin-left:0}
+    .pace{padding:2px 5px;min-height:24px;font-size:11px}
   }
 
   /* The map gets 70% of the screen, but never so much that the panel has no
@@ -159,16 +164,33 @@
     100%{transform:translate3d(24px,-15%,0) scale(1.15);opacity:0}
   }
 
-  /* --- the map itself: a midtown grid. The asphalt is one slab underneath and
-     the blocks sit on top, so the streets are simply the gaps between blocks. */
+  /* --- the maps. The Town is the crayon drawing; the City is a midtown grid
+     where the asphalt is one slab underneath, the blocks sit on top, and the
+     streets are simply the gaps between blocks. --- */
+  .street{stroke:var(--road);stroke-linecap:round;fill:none}
+  .street.major{stroke-width:13}
+  .street.minor{stroke:var(--road2);stroke-width:7}
+  .cline{stroke:var(--dash);stroke-width:3;stroke-dasharray:15 11;stroke-linecap:round;fill:none}
+  .lake{fill:#a4d9f2}
+  .sun-disc{fill:#ffd43b;stroke:#f2a71b;stroke-width:2.5}
+  .sun-ray{stroke:#f2a71b;stroke-width:4;stroke-linecap:round}
+  .sun-eye{fill:#8a5a00}
+  .sun-mouth{fill:none;stroke:#8a5a00;stroke-width:2.5;stroke-linecap:round}
+  /* the sun goes out as the light goes */
+  .sun-disc,.sun-ray{transition:fill .8s,stroke .8s}
+  body.night .sun-disc{fill:#3b3556;stroke:#2b2740}
+  body.night .sun-ray{stroke:#2b2740}
+  body.night .sun-eye,body.night .sun-mouth{display:none}
+  .slide{stroke:#d0873f;stroke-width:7;stroke-linecap:round}
   .asphalt{fill:#26282d}
   .sidewalk{fill:#d5d8dc}
   .lane-y{stroke:#e8b62c;stroke-width:2.6}
   .lane-w{stroke:#f2f3f5;stroke-width:2.4;stroke-dasharray:16 20;opacity:.8}
   .xwalk{stroke:#e8eaee;stroke-width:8;stroke-dasharray:3.5 4.5;opacity:.9}
   .rail{stroke:var(--rail);stroke-width:3;stroke-dasharray:9 7;fill:none}
-  .streetname{
-    fill:#f2f3f6;font-size:13px;opacity:.9;font-family:inherit;pointer-events:none;
+  .streetname{fill:var(--muted);font-size:13px;opacity:.8;font-family:inherit;pointer-events:none}
+  body.city .streetname{
+    fill:#f2f3f6;opacity:.9;
     paint-order:stroke;stroke:#26282d;stroke-width:5px;stroke-linejoin:round;
   }
   .cable{stroke:#5b6570;stroke-width:4;fill:none}
@@ -408,6 +430,10 @@
 
 <header>
   <h1>HOME BEFORE <span>DINNER</span></h1>
+  <div id="mapCtl" role="group" aria-label="Map">
+    <button id="mapTown" class="pace">🖍️<span class="lbl"> Town</span></button>
+    <button id="mapCity" class="pace">🗽<span class="lbl"> City</span></button>
+  </div>
   <div id="paceCtl" role="group" aria-label="Clock speed">
     <button id="paceSlow" class="pace">🐢<span class="lbl"> Slow</span></button>
     <button id="paceFast" class="pace on">🐇<span class="lbl"> Fast</span></button>
@@ -467,12 +493,34 @@
 (function(){
   'use strict';
 
-  /* ---------- the town ---------- */
+  /* ---------- the town, twice over ----------
+     Two maps of the same places: the crayon Town, and the City — a midtown
+     grid. ?map= in the URL wins, then the remembered choice; switching sets
+     the choice and reloads, so a single mode holds for the whole page life. */
 
-  // One block = 100 units. The grid is 5 lots by 5 lots; every place owns a
-  // whole block, and The Town is the park in the middle at 800,575.
+  const MAPMODE = (function(){
+    const q = /[?&]map=(city|town)\b/.exec(location.search);
+    if (q) return q[1];
+    try { return localStorage.getItem('findr::map') === 'town' ? 'town' : 'city'; }
+    catch(e){ return 'city'; }
+  })();
+  const CITY = MAPMODE === 'city';
+  document.body.classList.toggle('city', CITY);
+
+  // One block = 100 units. On the City grid every place owns a whole block
+  // and The Town is the park in the middle; on the crayon Town the same
+  // places sit where they always did, around the green at 500,500.
   const BLOCK = 100;
-  const TOWN = { x: 800, y: 575 };
+  const TOWN = CITY ? { x: 800, y: 575 } : { x: 500, y: 500 };
+
+  const TOWN_XY = {
+    town:[500,500], pizza:[332,369], library:[321,662], middle:[1047,655],
+    high:[672,672], tower:[-165,663], diner:[96,765], arcade:[-25,423],
+    lanes:[53,553], station:[500,246], bowl:[-7,224], pool:[609,786],
+    field:[1419,651], sparks:[668,330], smithy:[633,144], bagel:[498,738],
+    coffee:[1088,215], campagne:[496,865], video:[360,150], lab:[839,114],
+    mall:[1474,400], cookies:[1243,403]
+  };
 
   const PLACES = [
     { id:'town',    name:'The Town',          pic:'🏛️', x:800, y:575, hint:'the middle of everything' },
@@ -498,6 +546,9 @@
     { id:'campagne',name:'Campagne House',    pic:'🥂', x:1120, y:1035, hint:'there is always a wedding on and nobody counts the guests' },
     { id:'pool',    name:'Community Pool',    pic:'🏊', x:800, y:1035, hint:'it is closed for the season and the fence is easy enough' }
   ];
+
+  // PLACES carries the City coordinates; the Town map swaps its own in
+  if (!CITY) PLACES.forEach(function(p){ const c = TOWN_XY[p.id]; p.x = c[0]; p.y = c[1]; });
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
 
@@ -740,21 +791,80 @@
   // stays in frame even though no place sits at its edge
   const SLAB = { x0:-70, y0:-80, x1:1670, y1:1220 };
 
-  // Street trees on the sidewalk corners, a hot dog cart by the park, and
-  // boats out on the river for whoever's screen is wide enough to see it.
-  const TREES = [
+  // City: street trees on the sidewalk corners, a hot dog cart by the park,
+  // and boats out on the river for whoever's screen is wide enough to see it.
+  // Town: trees, the duck on the lake, a cow, a tractor in the fields.
+  const TREES = CITY ? [
     [350,208,'🌳',24],[670,208,'🌳',24],[1310,208,'🌳',24],
     [1560,438,'🌳',24],[350,898,'🌳',24],[1230,898,'🌳',24],
     [690,1128,'🌳',24],[987,540,'🌭',22],
     [690,515,'🌳',26],[910,505,'🌳',26],[700,662,'🌳',24],
     [-330,240,'⛵',30],[-300,880,'🛥️',28],[1930,300,'🚤',28],
     [2010,860,'⛵',30],[760,-300,'⛴️',30],[420,1460,'⛵',28],[1240,1420,'🛥️',28]
+  ] : [
+    [-200,150,'🌳',36],[-90,240,'🌲',32],[-140,392,'🐄',26],
+    [-170,792,'🌳',34],[-80,852,'🌳',30],
+    [1050,180,'🌲',34],[1540,120,'🌳',30],[1320,180,'🦆',22],
+    [1180,568,'🚜',30],[1360,452,'🌾',28],[1520,590,'🌳',30],
+    [1490,720,'🌳',30],[1060,924,'🌳',28],[1470,884,'🌳',30]
   ];
+
+  // The crayon Town's roads, blocks and lake, drawn only in that mode.
+  const TOWN_STREETS = [
+    { name:'Broadway',    major:true,  x1:500, y1:60,  x2:500, y2:940 },
+    { name:'Central Ave', major:true,  x1:-560, y1:500, x2:1560, y2:500 },
+    { name:'Grove St',    major:false, x1:240, y1:120, x2:240, y2:880 },
+    { name:'Cherry Ln',   major:false, x1:760, y1:120, x2:760, y2:880 },
+    { name:'School St',   major:false, x1:-460, y1:660, x2:1460, y2:660 },
+    { name:'Depot St',    major:false, x1:-460, y1:340, x2:1460, y2:340 },
+    { name:'The Parkway', major:true,  x1:944, y1:80,  x2:664, y2:944 }
+  ];
+  const TOWN_BLOCKS = [
+    { tone:'b3', points:'58,62 224,58 228,270 60,266' },        // NW corner
+    { tone:'b1', points:'256,60 484,66 482,268 254,272' },
+    { tone:'b5', points:'516,58 744,64 748,270 514,266' },
+    { tone:'b8', points:'776,64 926,70 866,268 772,272' },      // the pines
+    { tone:'b0', points:'58,356 226,352 224,486 60,482' },
+    { tone:'b5', points:'254,354 486,358 482,484 256,486' },
+    { tone:'b7', points:'514,356 746,352 744,486 516,482' },
+    { tone:'b0', points:'774,354 838,358 800,482 774,486' },    // west of the parkway
+    { tone:'b2', points:'872,356 944,352 944,638 780,642' },    // east of the parkway
+    { tone:'b1', points:'60,516 224,512 226,648 58,644' },
+    { tone:'b3', points:'256,514 484,518 482,646 254,644' },
+    { tone:'b0', points:'516,516 744,514 746,644 514,648' },
+    { tone:'b3', points:'58,676 226,672 224,936 62,938' },      // the pond
+    { tone:'b7', points:'254,674 486,678 484,936 256,934' },
+    { tone:'b8', points:'516,676 744,672 746,934 514,936' },    // ball fields
+    { tone:'b1', points:'770,676 944,672 944,936 684,938' },    // SE, past the parkway
+    // The countryside, seen when a wide screen looks past the town.
+    { tone:'b8', points:'-560,62 40,58 42,468 -556,464' },      // the meadow
+    { tone:'b7', points:'-556,476 42,472 40,704 -552,708' },
+    { tone:'b6', points:'-552,716 40,712 42,938 -548,934' },    // the orchard
+    { tone:'b4', points:'958,62 1560,66 1556,330 962,326' },    // the lake
+    { tone:'b5', points:'962,338 1556,334 1560,656 958,652' },  // the fields
+    { tone:'b6', points:'958,664 1560,660 1556,936 954,932' }   // the playground
+  ];
+  const TOWN_LAKE = '1160,120 1380,100 1500,170 1440,258 1220,266 1140,200';
 
   // Red growth for after dark. Vines creep in from the edges of the drawing,
   // and `stage` is how far into the night each one appears — by nine the town
   // is overgrown and one vine has reached the green.
-  const VINES = [
+  const VINES = !CITY ? [
+    { d:'M52,60 C90,140 40,240 88,330 S60,480 96,560', w:7, stage:0 },
+    { d:'M948,180 C880,220 840,190 780,240 S730,330 742,400 q6,30 -6,50', w:6, stage:0 },
+    { d:'M88,330 q40,-16 74,-6', w:4, alt:true, stage:1 },
+    { d:'M250,948 C280,880 240,820 280,760 S330,690 320,640', w:6, stage:1 },
+    { d:'M780,240 q-30,-30 -60,-36', w:4, alt:true, stage:1 },
+    { d:'M96,560 q34,18 44,52', w:4, alt:true, stage:2 },
+    { d:'M420,52 C400,120 460,170 430,240 q-18,40 8,84', w:5, stage:2 },
+    { d:'M948,900 C880,870 850,900 800,860 S740,800 720,750', w:5, stage:2 },
+    { d:'M430,240 q-40,10 -66,-6', w:3.5, alt:true, stage:3 },
+    { d:'M280,760 q40,6 62,30', w:4, alt:true, stage:3 },
+    { d:'M700,52 q30,60 -6,110', w:4, stage:3 },
+    // the last one crosses the town and stops at the edge of the green
+    { d:'M948,520 C860,540 800,500 720,530 S620,540 585,515', w:5, alt:true, stage:4 },
+    { d:'M720,530 q-20,30 -54,34', w:3.5, stage:4 }
+  ] : [
     { d:'M-60,80 C20,180 -30,320 40,440 S0,600 60,700', w:7, stage:0 },
     { d:'M1660,200 C1560,260 1500,230 1420,300 S1340,420 1360,500', w:6, stage:0 },
     { d:'M40,440 q54,-18 96,-4', w:4, alt:true, stage:1 },
@@ -770,7 +880,12 @@
     { d:'M1660,620 C1500,660 1400,600 1280,640 S1080,650 960,600 Q920,585 900,580', w:5, alt:true, stage:4 },
     { d:'M1280,640 q-26,40 -70,46', w:3.5, stage:4 }
   ];
-  const BUDS = [
+  const BUDS = !CITY ? [
+    { x:96,  y:560, r:4,   stage:2 }, { x:438, y:324, r:3.5, stage:3 },
+    { x:736, y:450, r:4,   stage:1 }, { x:320, y:640, r:3.5, stage:2 },
+    { x:720, y:750, r:3.5, stage:3 }, { x:694, y:162, r:3,   stage:4 },
+    { x:585, y:515, r:4.5, stage:4 }, { x:162, y:324, r:3,   stage:2 }
+  ] : [
     { x:60,   y:700, r:4,   stage:2 }, { x:640,  y:340, r:3.5, stage:3 },
     { x:1360, y:500, r:4,   stage:1 }, { x:490,  y:790, r:3.5, stage:2 },
     { x:1320, y:830, r:3.5, stage:3 }, { x:972,  y:90,  r:3,   stage:4 },
@@ -951,16 +1066,53 @@
     defs.appendChild(soften);
     svg.appendChild(defs);
 
-    // The grid is drawn dead straight — no wobble filter. Asphalt first, one
-    // slab under everything; the blocks sit on top and the streets are simply
-    // the gaps between them.
-    const ground = node('g', {});
+    // The Town wobbles like a hand drawing; the City grid is drawn dead
+    // straight. Either way: asphalt/paper first, everything else on top.
+    const ground = node('g', CITY ? {} : { filter:'url(#wobble)' });
     svg.appendChild(ground);
 
-    ground.appendChild(node('rect', {
+    if (!CITY){
+      TOWN_BLOCKS.forEach(function(b){ ground.appendChild(node('polygon', { points:b.points, class:'blk ' + b.tone })); });
+      ground.appendChild(node('polygon', { points:TOWN_LAKE, class:'lake' }));
+      // the railway runs east to west, just above Depot St
+      ground.appendChild(node('line', { x1:-700, y1:286, x2:1700, y2:286, class:'rail' }));
+      TOWN_STREETS.forEach(function(s){
+        ground.appendChild(node('line', {
+          x1:s.x1, y1:s.y1, x2:s.x2, y2:s.y2, class:'street ' + (s.major ? 'major' : 'minor')
+        }));
+        if (s.major) ground.appendChild(node('line', { x1:s.x1, y1:s.y1, x2:s.x2, y2:s.y2, class:'cline' }));
+      });
+      TOWN_STREETS.forEach(function(s){
+        const horiz = Math.abs(s.y2 - s.y1) < Math.abs(s.x2 - s.x1);
+        const lx = Math.min(s.x1 + 9, 934);   // keep the Parkway's name inside the crop
+        ground.appendChild(node('text', {
+          class:'streetname',
+          x: horiz ? 84 : lx,
+          y: horiz ? s.y1 - 9 : 96,
+          transform: horiz ? '' : 'rotate(90 ' + lx + ' 96)'
+        }, s.name));
+      });
+      // a sun for the corner of the drawing (it goes out in the Upside Down)
+      const sun = node('g', { class:'sun' });
+      sun.appendChild(node('circle', { cx:118, cy:112, r:28, class:'sun-disc' }));
+      for (let i = 0; i < 8; i++){
+        const a = i * Math.PI / 4;
+        sun.appendChild(node('line', {
+          x1: 118 + Math.cos(a) * 38, y1: 112 + Math.sin(a) * 38,
+          x2: 118 + Math.cos(a) * 52, y2: 112 + Math.sin(a) * 52, class:'sun-ray'
+        }));
+      }
+      sun.appendChild(node('circle', { cx:108, cy:106, r:3, class:'sun-eye' }));
+      sun.appendChild(node('circle', { cx:128, cy:106, r:3, class:'sun-eye' }));
+      sun.appendChild(node('path', { d:'M106,119 Q118,130 130,119', class:'sun-mouth' }));
+      ground.appendChild(sun);
+    }
+
+    if (CITY) ground.appendChild(node('rect', {
       x:SLAB.x0, y:SLAB.y0, width:SLAB.x1-SLAB.x0, height:SLAB.y1-SLAB.y0, rx:18, class:'asphalt'
     }));
 
+    if (CITY){
     // lane markings: double yellow down the avenues, broken white on streets
     AVX.forEach(function(ax){
       [-3, 3].forEach(function(o){
@@ -1028,6 +1180,7 @@
     ground.appendChild(node('ellipse', { cx:735, cy:640, rx:30, ry:15, class:'pond' }));
     ground.appendChild(node('path', { d:'M668,482 Q800,575 932,668', class:'ppath' }));
     ground.appendChild(node('path', { d:'M932,482 Q800,575 668,668', class:'ppath' }));
+    }
 
     // the growth sits over the streets but under every label and marker
     {
@@ -1051,9 +1204,10 @@
     TREES.forEach(function(t){
       live.appendChild(node('text', { x:t[0], y:t[1], 'font-size':t[3], class:'scene' }, t[2]));
     });
-    // the playground corner of the park: swing frame, a swinging kid, a ball.
-    // Drawn in its old coordinates and mapped into the park in one transform.
-    const pg = node('g', { transform:'translate(880,606) scale(0.45) translate(-1120,-764)' });
+    // The playground: swing frame, a swinging kid, a ball. On the Town it
+    // stands full-size out east; on the City the same drawing is mapped into
+    // the park corner in one transform.
+    const pg = node('g', CITY ? { transform:'translate(880,606) scale(0.45) translate(-1120,-764)' } : {});
     live.appendChild(pg);
     pg.appendChild(node('line', { x1:1060, y1:762, x2:1180, y2:762, class:'pline' }));
     pg.appendChild(node('line', { x1:1060, y1:762, x2:1044, y2:842, class:'pline' }));
@@ -1073,8 +1227,15 @@
     swingAt.appendChild(arm);
     pg.appendChild(swingAt);
     pg.appendChild(node('text', { x:1240, y:892, 'font-size':24, class:'scene pball' }, '⚽'));
-    // street lamps on the sidewalk corners around the park; they come on after eight
-    [[610,436],[990,436],[610,722],[990,722],[354,262],[1250,952]].forEach(function(L){
+    if (!CITY){
+      pg.appendChild(node('line', { x1:1300, y1:792, x2:1362, y2:858, class:'slide' }));
+      pg.appendChild(node('line', { x1:1300, y1:792, x2:1300, y2:858, class:'pline' }));
+      pg.appendChild(node('text', { x:1210, y:930, class:'streetname', 'text-anchor':'middle' }, 'Playground'));
+    }
+    // street lamps — City: on the sidewalk corners around the park;
+    // Town: along the big roads. They come on after eight either way.
+    (CITY ? [[610,436],[990,436],[610,722],[990,722],[354,262],[1250,952]]
+          : [[302,481],[700,481],[-140,481],[1046,481],[524,714],[556,300]]).forEach(function(L){
       const lampG = node('g', { class:'lamp' });
       lampG.appendChild(node('circle', { cx:L[0]+7, cy:L[1]-26, r:14, class:'lampglow' }));
       lampG.appendChild(node('line', { x1:L[0], y1:L[1], x2:L[0], y2:L[1]-24, class:'lamppost' }));
@@ -1085,13 +1246,13 @@
 
     // the cyclist and the freight cross, rest, and return from a random side
     const rider = node('g', { class:'rider' });
-    const riderGlyph = node('text', { x:0, y:470, 'font-size':28, class:'scene' }, '🚴');
+    const riderGlyph = node('text', { x:0, y:CITY ? 470 : 506, 'font-size':28, class:'scene' }, '🚴');
     rider.appendChild(riderGlyph);
     live.appendChild(rider);
 
     const train = node('g', { class:'train' });
     const trainBody = node('g', {});
-    const RAILY = -36;    // the elevated line above 59th
+    const RAILY = CITY ? -36 : 286;   // the el above 59th, or the line by Depot St
     function boxcar(bx, bw, fill){
       trainBody.appendChild(node('rect', { x:bx, y:RAILY-26, width:bw, height:20, rx:2.5, fill:fill, class:'tcar' }));
       trainBody.appendChild(node('circle', { cx:bx+8,    cy:RAILY-3, r:4, class:'twheel' }));
@@ -1111,9 +1272,9 @@
     // the glyph faces left, and the engine leads left as drawn; flip for east
     movers.forEach(function(m){ m.stop(); });
     movers = [
-      mover(rider, { span:[-450, 2050], speed:95, gap:[2, 5], firstDelay:0.8,
+      mover(rider, { span:CITY ? [-450, 2050] : [-650, 1650], speed:95, gap:[2, 5], firstDelay:0.8,
         face:function(dir){ riderGlyph.setAttribute('transform', dir === 1 ? 'scale(-1 1)' : ''); } }),
-      mover(train, { span:[-500, 2100], speed:125, gap:[4, 8], firstDelay:2.5,
+      mover(train, { span:CITY ? [-500, 2100] : [-850, 1800], speed:125, gap:[4, 8], firstDelay:2.5,
         face:function(dir){ trainBody.setAttribute('transform', dir === 1 ? 'translate(116 0) scale(-1 1)' : ''); } })
     ];
     svg.appendChild(live);
@@ -1142,9 +1303,9 @@
 
     PLACES.forEach(function(p, i){
       const g = node('g', { class:'loc' + (p.id === 'town' ? ' town' : ''), 'data-id':p.id });
-      // fat tap target: every place owns a whole block now, so the halo can
-      // be nearly half a block wide before neighbours collide
-      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:76, class:'halo' }));
+      // fat tap target: on the City every place owns a whole block, so the
+      // halo can be nearly half a block wide; the Town packs places closer
+      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:CITY ? 76 : 46, class:'halo' }));
       // marker takes the hover/selection scale; bob idles inside it, so the
       // two transforms never fight over the same element
       const marker = node('g', { class:'marker' });
@@ -1154,7 +1315,7 @@
         // scaled about its own anchor so a build carries the same weight as
         // the lettered markers beside it
         const art = node('g', { class:'art',
-          transform:'translate(' + p.x + ',' + p.y + ') scale(1.9) translate(' + (-p.x) + ',' + (-p.y) + ')' });
+          transform:'translate(' + p.x + ',' + p.y + ') scale(' + (CITY ? 1.9 : 1.4) + ') translate(' + (-p.x) + ',' + (-p.y) + ')' });
         BUILDS[p.id](art, p.x, p.y);
         bob.appendChild(art);
       } else {
@@ -1184,7 +1345,7 @@
      shows the committed layout — and Copy map hands the coordinates back. */
 
   const ADMIN = /[?&]admin\b/.test(location.search);
-  const ADMIN_KEY = 'findr::admin::places';
+  const ADMIN_KEY = 'findr::admin::places::' + MAPMODE;   // each map keeps its own edits
   let adminDragging = null, adminPicked = null;
   const adminGone = new Set();
 
@@ -1466,6 +1627,7 @@
       clearTimeout(c.timer);
     });
     taxiFleet = [];
+    if (!CITY) return;                                     // no cabs in the crayon town
     if (!window.gsap || !window.MotionPathPlugin) return;  // no framework, no traffic
     gsap.registerPlugin(MotionPathPlugin);
     const traffic = node('g', { class:'traffic' });
@@ -1480,9 +1642,9 @@
 
   // A tap that lands near a place counts for it: the nearest one inside this
   // radius wins, which gives big finger-sized targets without any overlapping
-  // circles on the map. Places sit one grid block apart (230 units at the
-  // closest), so 90 leaves comfortable daylight between neighbours.
-  const NEAR = 90;
+  // circles on the map. City places sit a full grid block apart (230 units);
+  // the Town packs them as close as 121, so its radius stays at 70.
+  const NEAR = CITY ? 90 : 70;
 
   function nearestPlace(pt){
     let best = null, bestD = Infinity;
@@ -1511,9 +1673,12 @@
       y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
     });
     const m = 130;                       // room for the labels and the taller builds
-    // the drawn city is bigger than its places — keep the whole slab in frame
-    x0 = Math.min(x0 - m, SLAB.x0); x1 = Math.max(x1 + m, SLAB.x1);
-    y0 = Math.min(y0 - m, SLAB.y0); y1 = Math.max(y1 + m, SLAB.y1);
+    x0 -= m; x1 += m; y0 -= m; y1 += m;
+    if (CITY){
+      // the drawn city is bigger than its places — keep the whole slab in frame
+      x0 = Math.min(x0, SLAB.x0); x1 = Math.max(x1, SLAB.x1);
+      y0 = Math.min(y0, SLAB.y0); y1 = Math.max(y1, SLAB.y1);
+    }
     BASE = { x:x0, y:y0, w:x1 - x0, h:y1 - y0 };
     if (typeof recomputeScale === 'function') recomputeScale();
   }
@@ -2001,6 +2166,14 @@
       const saved = load();
       if (saved && Array.isArray(saved.guesses) && saved.guesses.length){
         guesses = saved.guesses.filter(function(g){ return byId(g.id); });
+        // distances live on the map, not in the save: a hunt saved on one map
+        // and resumed on the other gets its numbers remeasured
+        guesses.forEach(function(g){
+          const p = byId(g.id);
+          g.hit = p.id === puzzle.place.id;
+          g.blocks = blocksBetween(p, puzzle.place);
+          g.bearing = bearing(p, puzzle.place);
+        });
         guesses.forEach(markSpent);
         const won = guesses.some(function(g){ return g.hit; });
         if (won || guesses.length >= MAX_GUESSES){ finish(won); return; }
@@ -2047,6 +2220,18 @@
   el('resetBtn').onclick = function(){ startRound(nextRound(), false); };
   el('paceSlow').onclick = function(){ setPace('slow', true); };
   el('paceFast').onclick = function(){ setPace('fast', true); };
+
+  // Two maps, one game: switching remembers the choice and reloads, so the
+  // whole page lives in a single mode. The hunt itself carries straight over.
+  el('mapTown').classList.toggle('on', !CITY);
+  el('mapCity').classList.toggle('on', CITY);
+  function switchMap(m){
+    try { localStorage.setItem('findr::map', m); } catch(e){}
+    const qs = location.search.replace(/([?&])map=(city|town)\b&?/, '$1').replace(/[?&]$/, '');
+    location.href = location.pathname + qs + (qs ? '&' : '?') + 'map=' + m;
+  }
+  el('mapTown').onclick = function(){ if (CITY) switchMap('town'); };
+  el('mapCity').onclick = function(){ if (!CITY) switchMap('city'); };
   try { setPace(localStorage.getItem(PACE_KEY) === 'slow' ? 'slow' : 'fast', false); } catch(e){}
 
   setRound(loadRound());          // so nextRound() has a puzzle to differ from

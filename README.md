@@ -1,7 +1,8 @@
 # Home Before Dinner
 
-A daily hide-and-seek game played on a small fictional city — a Manhattan-style
-grid with Bethpage names on it. Someone from Hawkins is hiding at one of
+A daily hide-and-seek game played on a small fictional town with two maps of
+itself: the crayon-drawn Town, and the City — a Manhattan-style grid with the
+same Bethpage names on it. Someone from Hawkins is hiding at one of
 twenty-two places, and they were supposed to be home before dinner. You get
 clues, you search a place, and the town tells you how far off you were.
 
@@ -24,7 +25,7 @@ the clue card covers, so every place stays visible and clickable rather than
 hiding underneath it.
 
 It is built for a phone. A tap counts for the nearest place within 90 map
-units, so the targets are finger-sized without any
+units on the City (70 on the tighter Town), so the targets are finger-sized without any
 overlapping circles drawn on the map. Safe-area insets keep the controls clear
 of the notch and the home indicator, `dvh` units keep the layout honest while
 Safari's toolbar slides in and out, and adding it to the home screen gives it a
@@ -72,7 +73,12 @@ nothing. Rounds are seeded off the day (`#1`, `#2`, …) rather than picked at
 random, so a hunt survives a reload and stays reproducible. Round 0 is the daily
 everyone shares.
 
-## The map
+## The maps
+
+A 🖍️ **Town** / 🗽 **City** toggle sits in the header. Both maps hold the same
+twenty-two places, so the day's hunt carries straight across — switching
+remembers your choice, reloads, and remeasures every distance on the map you
+land on. `?map=town` or `?map=city` in the URL forces one.
 
 Twenty-two locations, one block = 100 units:
 
@@ -87,7 +93,14 @@ Palace Arcade, Family Video, Hawkins Lab and Starcourt Mall are on loan from
 Hawkins; the bagels, the salon, the coffee, the cookies and Campagne House are
 pure Bethpage. The arcade goes unlabelled — the neon on the front says enough.
 
-The city is a grid, easy to follow the way the real one is: six avenues
+**The Town** is the original: a crayon drawing on cream paper, every block
+coloured in with its own pastel, dashed yellow centrelines down the big
+streets, a smiling sun in the corner that goes out after dark, and a
+turbulence filter over the ground so nothing is quite straight. Around it sit
+the meadow, the orchard, a lake with a duck, fields with a tractor and a cow,
+and a full-size playground with a swing, a slide and a ball.
+
+**The City** is a grid, easy to follow the way the real one is: six avenues
 (10th, 8th, Broadway, 5th, Park, Lexington) cross six streets (59th down to
 49th), all black asphalt with a double yellow line down every avenue, broken
 white lanes on the streets, zebra crossings on all four sides of every
@@ -96,7 +109,7 @@ is drawn dead straight — the crayon wobble is gone — but every lot keeps a
 pastel from the old box of crayons, wrapped in a grey sidewalk, so the map
 stays friendly while the streets stay legible.
 
-Every place owns a whole block, and every one of the twenty-two is built
+On the City every place owns a whole block. On both maps every one of the twenty-two is built
 rather than lettered — big models in perspective with a lit face, a shaded
 side and a roof. The Town itself is the park in the middle of the grid: lawn,
 a pond, two paths that meet at the gazebo, trees, and a small swing where a
@@ -120,11 +133,13 @@ Markers idle with a gentle bob and grow a fifth larger under the mouse; by
 nightfall the kid on the swing and the cyclist have gone home, though the
 freight and the cabs have not.
 
-Nothing crowds anything else: places sit a full block apart (230 units at the
-closest), comfortably clear of the 90-unit tap radius, and the admin overlap
-check agrees at phone and desktop sizes alike.
+Nothing crowds anything else on either map: City places sit a full block
+apart (230 units); the Town packs them as close as 121, still clear of its
+70-unit tap radius. The admin overlap check agrees at phone and desktop sizes
+alike, on both.
 
-The grid is drawn from the `AVX`/`STY` avenue and street tables and the
+The City grid is drawn from the `AVX`/`STY` avenue and street tables, the
+Town from its own `TOWN_STREETS`/`TOWN_BLOCKS`, and both share the
 `PLACES` array at the top of the script — move a coordinate and the city
 redraws. Adding a location means adding one entry with an `x`, a `y` and a
 `hint`; the clue system picks it up automatically.
@@ -149,7 +164,7 @@ not a hunt. A panel appears with:
 The map frame is computed from the places themselves, so dragging one out to the
 edge of the county grows the map to include it rather than losing it.
 
-Moves are kept in `localStorage` for that browser only, so the published game
+Moves are kept in `localStorage` for that browser only, separately per map, so the published game
 always shows the committed layout. Paste the copied lines back into `PLACES` to
 make a new arrangement permanent.
 
@@ -179,10 +194,11 @@ the choice is remembered.
 
 Night falls on the map alone — the panel, clues and buttons stay in daylight
 the whole way through, so everything stays readable while the town goes dark.
-Along with the dimming and the vines, spores drift up over the map, and the
-cabs switch their headlights on.
+Along with the dimming and the vines, spores drift up over the map; the City
+cabs switch their headlights on, and the Town's smiling sun goes out and
+loses its face.
 
-Six street lamps stand on the corners around the park. At **8:00 PM** they come on, and
+Six street lamps stand on the corners around the park (or along the Town's big roads). At **8:00 PM** they come on, and
 their pools of light are the last warm thing left as the town goes dark.
 
 The clock stops the moment the hunt ends, and New hunt puts it back to five
