@@ -917,7 +917,7 @@
   // narrowest street gives 13 and the KERB setback below makes up the rest.
   const AVW = AVX.map(function(){ return 34 + cityGeom() * 10; });   // 34–44
   const STW = STY.map(function(){ return 26 + cityGeom() * 8; });    // 26–34
-  AVW[2] = 52;                      // Broadway was laid out wide
+  AVW[1] = 52;                      // Broadway was laid out wide
   const JIT = 4;                    // enough to soften the ruler, not to wobble
   const NODE = AVX.map(function(ax){
     return STY.map(function(sy){

@@ -31,7 +31,8 @@ of the notch and the home indicator, `dvh` units keep the layout honest while
 Safari's toolbar slides in and out, and adding it to the home screen gives it a
 name and an icon.
 
-Everything is measured from **The Town**, the park in the middle of the grid.
+Everything is measured from the park in the middle — **The Town** on one map,
+**Central Park** on the other.
 The date decides who is hiding and where, so everyone gets the same puzzle and
 scores are directly comparable, with no server and no accounts.
 
@@ -117,7 +118,8 @@ the meadow, the orchard, a lake with a duck, fields with a tractor and a cow,
 and a full-size playground with a swing, a slide and a ball.
 
 **The City** is a grid, easy to follow the way the real one is: six avenues
-(10th, 8th, Broadway, 5th, Park, Lexington) cross six streets (59th to 49th),
+(11th, Broadway, Central Park West, 5th, Park, Lexington) cross six streets
+(59th to 49th),
 all black asphalt with a double yellow line down every avenue, broken white
 lanes on the streets, zebra crossings on all four sides of every intersection,
 and the street names painted straight onto the tarmac. Every lot keeps a
