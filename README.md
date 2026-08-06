@@ -101,7 +101,7 @@ the meadow, the orchard, a lake with a duck, fields with a tractor and a cow,
 and a full-size playground with a swing, a slide and a ball.
 
 **The City** is a grid, easy to follow the way the real one is: six avenues
-(10th, 8th, 7th, 5th, Park, Lexington) cross six streets (59th down to 49th),
+(10th, 8th, Broadway, 5th, Park, Lexington) cross six streets (59th to 49th),
 all black asphalt with a double yellow line down every avenue, broken white
 lanes on the streets, zebra crossings on all four sides of every intersection,
 and the street names painted straight onto the tarmac. Every lot keeps a
