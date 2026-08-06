@@ -189,14 +189,21 @@
   .lane-y{stroke:#e8b62c;stroke-width:2.6}
   .lane-w{stroke:#f2f3f5;stroke-width:2.4;stroke-dasharray:16 20}
   .xwalk{stroke:#e8eaee;stroke-width:8;stroke-dasharray:3.5 4.5}
-  .bway-walk{fill:none;stroke:#d5d8dc;stroke-linecap:butt}
-  .bway-road{fill:none;stroke:#26282d;stroke-linecap:butt}
-  .sqlawn{fill:#6cbb63;stroke:#dfe3e7;stroke-width:3}
-  .sqname{
-    fill:#22402a;font-size:13px;font-weight:700;font-family:inherit;
-    text-anchor:middle;pointer-events:none;
-    paint-order:stroke;stroke:#cfeac9;stroke-width:3px;stroke-linejoin:round;
-  }
+  /* the roads have been dug up and repaved in places, and the seams show */
+  .patch{fill:#31343a}
+  .patch.dark{fill:#1e2024}
+  .seam{stroke:#3f444b;stroke-width:2.2;fill:none;stroke-linecap:round}
+  /* the block that breaks the rules: a site, and a service alley */
+  .dig{fill:#b9a892}
+  .hoard{fill:#4a6fa5;stroke:#2f4a72;stroke-width:1}
+  .hoard.alt{fill:#5b7fb5}
+  .crane{stroke:#e8a33d;stroke-width:3;fill:none;stroke-linecap:round}
+  .crane-hook{stroke:#9aa2ab;stroke-width:1.4;fill:none}
+  .cone{fill:#e2622c}
+  .spoil{fill:#8f7f6a}
+  .alley{fill:#2b2e33}
+  .alley-kerb{fill:#c8ccd1}
+  .dump{fill:#3f6b4a;stroke:#274a30;stroke-width:1}
   /* street furniture: hydrants, scaffolding, and a vent that keeps steaming */
   .hydrant{fill:#d24b3e;stroke:#8f2f26;stroke-width:.8}
   .scaff{stroke:#c8a34a;stroke-width:2.4;fill:none;stroke-linecap:round}
@@ -807,22 +814,13 @@
   // and every block is the gap between them. Named like the city it copies.
   const AVX = [0, 320, 640, 960, 1280, 1600];       // nominal avenue centrelines
   const STY = [0, 230, 460, 690, 920, 1150];        // nominal street centrelines
-  const AVE_NAMES = ['10th Ave','8th Ave','7th Ave','5th Ave','Park Ave','Lexington Ave'];
+  const AVE_NAMES = ['10th Ave','8th Ave','Broadway','5th Ave','Park Ave','Lexington Ave'];
   const ST_NAMES  = ['59th St','57th St','55th St','53rd St','51st St','49th St'];
   const PARK = { col:2, row:2 };                     // The Town, mid-grid
   // the asphalt slab runs a little past the outer avenues, and the whole of it
   // stays in frame even though no place sits at its edge
   const SLAB = { x0:-70, y0:-80, x1:1670, y1:1220 };
   const SLAB_PAD = 60;              // the piers stick out past the nominal edge
-
-  // Broadway does not care about the grid. It runs on the diagonal from the
-  // top right to the bottom left, crossing every avenue and every street on
-  // the way and shaving a corner off the park, which is what makes the wedge
-  // lots and the little squares where it meets an avenue. It is threaded so
-  // that at each row of blocks it passes midway between two of them.
-  const BWAY = { x0:1120, y0:-80, x1:240, y1:1220 };
-  const bwayX = y => BWAY.x0 + (BWAY.x1 - BWAY.x0) * (y - BWAY.y0) / (BWAY.y1 - BWAY.y0);
-  const BWAY_W = 58;                // the widest road in town
 
   /* ---------- the grid, but nobody laid it with a ruler ----------
      No two roads are the same width and no two intersections line up exactly,
@@ -860,26 +858,6 @@
   const avXAt = (i, y) => walkLine(aveLine(i), y, 'y');
   const stYAt = (j, x) => walkLine(stLine(j), x, 'x');
 
-  function segInt(p, p2, q, q2){
-    const r = { x:p2.x - p.x, y:p2.y - p.y }, s = { x:q2.x - q.x, y:q2.y - q.y };
-    const d = r.x * s.y - r.y * s.x;
-    if (!d) return null;
-    const t = ((q.x - p.x) * s.y - (q.y - p.y) * s.x) / d;
-    const u = ((q.x - p.x) * r.y - (q.y - p.y) * r.x) / d;
-    if (t < 0 || t > 1 || u < 0 || u > 1) return null;
-    return { x:p.x + r.x * t, y:p.y + r.y * t };
-  }
-
-  // where Broadway meets a road, found by walking that road's segments
-  function bwayMeet(line){
-    const A = { x:BWAY.x0, y:BWAY.y0 }, B = { x:BWAY.x1, y:BWAY.y1 };
-    for (let k = 1; k < line.length; k++){
-      const hit = segInt(A, B, line[k-1], line[k]);
-      if (hit) return hit;
-    }
-    return null;
-  }
-
   // a closed shape with its corners rounded off
   function roundPoly(pts, r){
     let d = '';
@@ -905,20 +883,22 @@
     });
   }
 
-  // the four corners of one block, set back from the roads around it
+  // The four corners of one block, set back from the roads around it. KERB is
+  // slack between the road edge and the block: a road bends between its own
+  // intersections, so a cab holding its lane needs a little room at the ends.
+  const KERB = 4;
   function blockQuad(c, r){
     return [
-      { x:NODE[c][r].x     + AVW[c]/2,   y:NODE[c][r].y     + STW[r]/2 },
-      { x:NODE[c+1][r].x   - AVW[c+1]/2, y:NODE[c+1][r].y   + STW[r]/2 },
-      { x:NODE[c+1][r+1].x - AVW[c+1]/2, y:NODE[c+1][r+1].y - STW[r+1]/2 },
-      { x:NODE[c][r+1].x   + AVW[c]/2,   y:NODE[c][r+1].y   - STW[r+1]/2 }
+      { x:NODE[c][r].x     + AVW[c]/2   + KERB, y:NODE[c][r].y     + STW[r]/2   + KERB },
+      { x:NODE[c+1][r].x   - AVW[c+1]/2 - KERB, y:NODE[c+1][r].y   + STW[r]/2   + KERB },
+      { x:NODE[c+1][r+1].x - AVW[c+1]/2 - KERB, y:NODE[c+1][r+1].y - STW[r+1]/2 - KERB },
+      { x:NODE[c][r+1].x   + AVW[c]/2   + KERB, y:NODE[c][r+1].y   - STW[r+1]/2 - KERB }
     ];
   }
 
-  // The road network as a graph, so a cab can drive Broadway like any other
-  // road instead of assuming everything meets at right angles. Nodes are
-  // intersections — grid corners plus every Broadway crossing — and edges run
-  // between neighbours along each avenue, street and Broadway itself.
+  // The road network as a graph, since the roads are polylines rather than
+  // straight lines. Nodes are intersections and edges run between neighbours
+  // along each avenue and street.
   function buildRoads(){
     const nodes = new Map();
     const key = (x, y) => Math.round(x) + ',' + Math.round(y);
@@ -934,25 +914,13 @@
         list[i].nb.push(list[i-1]);
       }
     };
-    // an avenue runs through its own crossings, in order, plus wherever
-    // Broadway cuts it; a street likewise
-    const along = [];
+    // an avenue runs through its own crossings, in order; a street likewise
     AVX.forEach(function(ax, i){
-      const pts = aveLine(i).map(function(p){ return { x:p.x, y:p.y }; });
-      const m = bwayMeet(aveLine(i));
-      if (m){ pts.push(m); along.push(m); }
-      pts.sort(function(a, b){ return a.y - b.y; });
-      chain(pts.map(function(p){ return at(p.x, p.y); }));
+      chain(aveLine(i).map(function(p){ return at(p.x, p.y); }));
     });
     STY.forEach(function(sy, j){
-      const pts = stLine(j).map(function(p){ return { x:p.x, y:p.y }; });
-      const m = bwayMeet(stLine(j));
-      if (m){ pts.push(m); along.push(m); }
-      pts.sort(function(a, b){ return a.x - b.x; });
-      chain(pts.map(function(p){ return at(p.x, p.y); }));
+      chain(stLine(j).map(function(p){ return at(p.x, p.y); }));
     });
-    along.sort(function(a, b){ return a.y - b.y; });
-    chain(along.map(function(p){ return at(p.x, p.y); }));
 
     return [...nodes.values()];
   }
@@ -1281,7 +1249,7 @@
 
     // The island's edge is not a ruler line: it is nibbled all the way round,
     // and a pier sticks out into the water on each side. Its outline is kept
-    // as a clip, since Broadway has to stop at the water like everything else.
+    // as a clip, since the traffic has to stop at the water like everything else.
     const isle = (function(){
       const pts = [];
       const push = (x, y) => pts.push(x.toFixed(1) + ',' + y.toFixed(1));
@@ -1329,6 +1297,49 @@
         }));
       }
     }
+
+    // Asphalt patchwork. The roads have been dug up and repaved over the
+    // years and the seams were never quite hidden. Laid before the blocks, so
+    // whatever falls outside a road gets covered by the block on top of it.
+    (function(){
+      const runs = [];
+      AVX.forEach(function(ax, i){
+        const L = aveLine(i);
+        for (let k = 1; k < L.length; k++) runs.push([L[k-1], L[k], AVW[i]]);
+      });
+      STY.forEach(function(sy, j){
+        const L = stLine(j);
+        for (let k = 1; k < L.length; k++) runs.push([L[k-1], L[k], STW[j]]);
+      });
+      runs.forEach(function(sp){
+        const a = sp[0], b = sp[1], w = sp[2];
+        const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+        const nx = -(b.y - a.y), ny = b.x - a.x, NL = Math.hypot(nx, ny) || 1;
+        if (rnd() < 0.55){                       // a repaved patch
+          const t = 0.15 + rnd() * 0.6;
+          const cx = a.x + (b.x - a.x) * t, cy = a.y + (b.y - a.y) * t;
+          const pl = 40 + rnd() * 70, pw = w * (0.45 + rnd() * 0.5);
+          ground.appendChild(node('rect', {
+            x:(cx - pl/2).toFixed(1), y:(cy - pw/2).toFixed(1),
+            width:pl.toFixed(1), height:pw.toFixed(1), rx:3,
+            class: rnd() < 0.5 ? 'patch' : 'patch dark',
+            transform:'rotate(' + (ang + rnd()*8 - 4).toFixed(1) + ' ' + cx.toFixed(1) + ' ' + cy.toFixed(1) + ')'
+          }));
+        }
+        if (rnd() < 0.45){                       // a tar seam wandering with the road
+          const t0 = rnd() * 0.4, t1 = t0 + 0.3 + rnd() * 0.3;
+          let d = '';
+          for (let k = 0; k <= 5; k++){
+            const t = t0 + (t1 - t0) * (k / 5);
+            const o = (rnd() - 0.5) * Math.min(14, w * 0.5);
+            d += (k ? ' L' : 'M') +
+              (a.x + (b.x - a.x) * t + nx / NL * o).toFixed(1) + ',' +
+              (a.y + (b.y - a.y) * t + ny / NL * o).toFixed(1);
+          }
+          ground.appendChild(node('path', { d:d, class:'seam' }));
+        }
+      });
+    })();
 
     // Lane markings follow the kinks: each road is painted segment by
     // segment, so a line that bends at an intersection bends with it.
@@ -1404,55 +1415,82 @@
       }, AVE_NAMES[i]));
     });
 
-    // Broadway, laid over the blocks it cuts: sidewalk apron, then asphalt.
-    // The wedge lots and the slivers at the avenues are simply what is left
-    // of the square blocks underneath.
+    // One block breaks the rules. The lot at the top of Broadway has been dug
+    // up: hoarding round the edge, a crane over it, and the spoil left in a
+    // heap. It is cut from its own lot, so it goes wherever that block landed.
     (function(){
-      const bw = node('g', { 'clip-path':'url(#isle)' });   // it stops at the water
-      ground.appendChild(bw);
-      const L = Math.hypot(BWAY.x1 - BWAY.x0, BWAY.y1 - BWAY.y0);
-      const px = (BWAY.y1 - BWAY.y0) / L, py = -(BWAY.x1 - BWAY.x0) / L;   // across it
-      bw.appendChild(node('line', {
-        x1:BWAY.x0, y1:BWAY.y0, x2:BWAY.x1, y2:BWAY.y1,
-        class:'bway-walk', 'stroke-width':BWAY_W + 26
+      const lot = LOTS[2 * 9 + 1].lot;
+      const x0 = Math.min(lot[0].x, lot[3].x), x1 = Math.max(lot[1].x, lot[2].x);
+      const y0 = Math.min(lot[0].y, lot[1].y), y1 = Math.max(lot[2].y, lot[3].y);
+      const w = x1 - x0, h = y1 - y0;
+      // the ground, torn open
+      ground.appendChild(node('path', {
+        d:roundPoly([{x:x0+3,y:y0+8},{x:x1-7,y:y0+2},{x:x1-2,y:y1-7},{x:x0+8,y:y1-2}], 8),
+        class:'dig'
       }));
-      bw.appendChild(node('line', {
-        x1:BWAY.x0, y1:BWAY.y0, x2:BWAY.x1, y2:BWAY.y1,
-        class:'bway-road', 'stroke-width':BWAY_W
-      }));
-      [-3, 3].forEach(function(o){
-        worn(BWAY.x0 + px*o, BWAY.y0 + py*o, BWAY.x1 + px*o, BWAY.y1 + py*o, 'lane-y', bw);
+      ground.appendChild(node('ellipse', { cx:x0 + w*0.30, cy:y1 - h*0.24, rx:24, ry:13, class:'spoil' }));
+      ground.appendChild(node('ellipse', { cx:x0 + w*0.24, cy:y1 - h*0.30, rx:15, ry:9,  class:'spoil' }));
+      // hoarding: plywood panels all the way round the site
+      const ring = [[x0,y0,x1,y0],[x1,y0,x1,y1],[x1,y1,x0,y1],[x0,y1,x0,y0]];
+      ring.forEach(function(e){
+        const len = Math.hypot(e[2]-e[0], e[3]-e[1]), n = Math.max(2, Math.round(len / 26));
+        for (let k = 0; k < n; k++){
+          const t = k / n, u = (k + 0.86) / n;
+          const ax = e[0] + (e[2]-e[0])*t,  ay = e[1] + (e[3]-e[1])*t;
+          const bx2 = e[0] + (e[2]-e[0])*u, by2 = e[1] + (e[3]-e[1])*u;
+          const vertical = Math.abs(e[2]-e[0]) < Math.abs(e[3]-e[1]);
+          ground.appendChild(node('rect', {
+            x:(Math.min(ax,bx2) - (vertical ? 3 : 0)).toFixed(1),
+            y:(Math.min(ay,by2) - (vertical ? 0 : 3)).toFixed(1),
+            width:(vertical ? 6 : Math.abs(bx2-ax)).toFixed(1),
+            height:(vertical ? Math.abs(by2-ay) : 6).toFixed(1),
+            class:'hoard' + (k % 2 ? ' alt' : '')
+          }));
+        }
       });
-      // its name runs along it, at the angle it runs
-      const ang = Math.atan2(BWAY.y1 - BWAY.y0, BWAY.x1 - BWAY.x0) * 180 / Math.PI + 180;
-      const lx = bwayX(250), ly = 250;
-      bw.appendChild(node('text', {
-        class:'streetname', x:lx, y:ly, 'text-anchor':'middle', opacity:.9,
-        transform:'rotate(' + ang.toFixed(1) + ' ' + lx.toFixed(1) + ' ' + ly + ')'
-      }, 'Broadway'));
+      // the crane: mast, jib, counter-jib and a hook on a wire
+      const mx = x0 + w*0.66, my = y0 + h*0.62;
+      ground.appendChild(node('line', { x1:mx, y1:my, x2:mx, y2:my-54, class:'crane' }));
+      ground.appendChild(node('line', { x1:mx-4, y1:my-18, x2:mx+4, y2:my-34, class:'crane' }));
+      ground.appendChild(node('line', { x1:mx+4, y1:my-18, x2:mx-4, y2:my-34, class:'crane' }));
+      ground.appendChild(node('line', { x1:mx-26, y1:my-54, x2:mx+62, y2:my-54, class:'crane' }));
+      ground.appendChild(node('line', { x1:mx+40, y1:my-54, x2:mx+40, y2:my-30, class:'crane-hook' }));
+      ground.appendChild(node('rect', { x:mx+37, y:my-30, width:7, height:5, rx:1, fill:'#9aa2ab' }));
+      // cones along the kerb outside the hoarding
+      [[0.18,-0.04],[0.38,-0.04],[0.58,-0.04],[0.86,0.5]].forEach(function(c){
+        const cx = x0 + w*c[0], cy = y0 + h*c[1];
+        ground.appendChild(node('polygon', {
+          points:[cx, cy-8, cx+4.2, cy+1, cx-4.2, cy+1].map(function(v){ return v.toFixed(1); }).join(' '),
+          class:'cone'
+        }));
+      });
     })();
 
-    // Where Broadway cuts an avenue it leaves a sliver, and the city planted a
-    // triangle of grass on the biggest one and called it a square. It is cut
-    // from the lot it sits on, so it follows that block wherever it landed.
+    // and one lot is cut in two by a service alley running through the middle
     (function(){
-      const lot = LOTS[2 * 9 + 1].lot;                       // the block Broadway halves
-      const tr = lot[1], br = lot[2];
-      const apex = { x:tr.x, y:tr.y + (br.y - tr.y) * 0.24 };
-      const base = br.y - 6;
-      // the base stops well clear of Broadway's apron
-      const bl = { x:Math.max(bwayX(base) + 62, br.x - 108), y:base };
-      ground.appendChild(node('polygon', {
-        points:[apex.x, apex.y, br.x, base, bl.x, base].map(function(v){ return v.toFixed(1); }).join(' '),
-        class:'sqlawn'
+      const lot = LOTS[1 * 9 + 3].lot;
+      const top = { x:(lot[0].x + lot[1].x) / 2, y:(lot[0].y + lot[1].y) / 2 };
+      const bot = { x:(lot[3].x + lot[2].x) / 2, y:(lot[3].y + lot[2].y) / 2 };
+      const half = 13;
+      ground.appendChild(node('rect', {
+        x:(top.x - half - 3).toFixed(1), y:(top.y - 4).toFixed(1),
+        width:(half + 3) * 2, height:(bot.y - top.y + 8).toFixed(1), class:'alley-kerb'
       }));
-      const cx = (apex.x + br.x + bl.x) / 3, cy = (apex.y + base + base) / 3;
-      ground.appendChild(node('text', { x:cx.toFixed(1), y:(cy + 14).toFixed(1), class:'sqname' }, 'Herald Sq'));
-      [[15,-46,17],[5,-14,16]].forEach(function(t){
-        ground.appendChild(node('text', {
-          x:(cx + t[0]).toFixed(1), y:(cy + t[1]).toFixed(1), 'font-size':t[2], class:'scene'
-        }, '🌳'));
-      });
+      ground.appendChild(node('rect', {
+        x:(top.x - half).toFixed(1), y:(top.y - 4).toFixed(1),
+        width:half * 2, height:(bot.y - top.y + 8).toFixed(1), class:'alley'
+      }));
+      // a dumpster down the far end, and a fire escape on the wall beside it
+      const dy = bot.y - 42;
+      ground.appendChild(node('rect', { x:(top.x - 9).toFixed(1), y:dy.toFixed(1), width:18, height:11, rx:1.5, class:'dump' }));
+      ground.appendChild(node('rect', { x:(top.x - 9).toFixed(1), y:(dy - 2).toFixed(1), width:18, height:3, rx:1, class:'dump' }));
+      for (let k = 0; k < 3; k++){
+        ground.appendChild(node('line', {
+          x1:(top.x + half - 1).toFixed(1), y1:(top.y + 34 + k * 26).toFixed(1),
+          x2:(top.x + half + 7).toFixed(1), y2:(top.y + 34 + k * 26).toFixed(1),
+          stroke:'#8b939c', 'stroke-width':1.6
+        }));
+      }
     })();
 
     // Manhattan is an island: the grid floats in the river, 55th St runs out
@@ -1877,8 +1915,31 @@
   }
 
   // A random run of turns through the road graph, never straight back the way
-  // it came. Broadway is just more edges, so a cab takes the diagonal whenever
-  // the walk happens to turn onto it.
+  // it came. The graph is built from the real intersections, so a cab follows
+  // whatever bends the roads actually have.
+  // Carry on to the edge of the grid. The run on and off the map is drawn by
+  // extending the end segment, and a road kinks at every intersection, so
+  // extending from a node in the middle of town would drift off the road and
+  // through somebody's block. Past the outer avenues there are no blocks left
+  // to hit.
+  function toEdge(from, back){
+    const out = [];
+    let cur = from, last = back;
+    for (let g = 0; g < 8; g++){
+      const u = unitTo(last, cur);
+      let best = null, bestDot = 0.7;
+      cur.nb.forEach(function(n){
+        if (n === last) return;
+        const v = unitTo(cur, n), d = u.x * v.x + u.y * v.y;
+        if (d > bestDot){ bestDot = d; best = n; }
+      });
+      if (!best) break;
+      out.push(best);
+      last = cur; cur = best;
+    }
+    return out;
+  }
+
   function taxiWaypoints(){
     let cur = ROADS[Math.floor(Math.random() * ROADS.length)], prev = null;
     const out = [cur];
@@ -1900,7 +1961,11 @@
       prev = cur; cur = nxt;
       out.push(cur);
     }
-    return out.map(function(n){ return { x:n.x, y:n.y }; });
+    if (out.length < 2) return [];
+    // run out to the edge at both ends before anything gets extended
+    const head = toEdge(out[0], out[1]).reverse();
+    const tail = toEdge(out[out.length-1], out[out.length-2]);
+    return head.concat(out, tail).map(function(n){ return { x:n.x, y:n.y }; });
   }
 
   const unitTo = function(a, b){
@@ -1924,8 +1989,8 @@
       const n1 = i > 0 ? right(run[i-1], p) : right(p, run[i+1]);
       const n2 = i < run.length - 1 ? right(p, run[i+1]) : right(run[i-1], p);
       const dot = n1.x*n2.x + n1.y*n2.y;
-      // miter join, exact at right angles; the floor keeps a hairpin off
-      // Broadway from throwing the lane halfway across the city
+      // miter join, exact at right angles; the floor keeps a sharp turn from
+      // throwing the lane halfway across the city
       const k = LANE / Math.max(0.4, 1 + dot);
       return { x:p.x + (n1.x + n2.x) * k, y:p.y + (n1.y + n2.y) * k };
     });
@@ -1937,8 +2002,8 @@
     for (let i = 1; i < pts.length - 1; i++){
       const a = pts[i-1], p = pts[i], c = pts[i+1];
       const u1 = unitTo(a, p), u2 = unitTo(p, c);
-      // never round away more than a third of the shorter leg, or a short
-      // Broadway sliver between two crossings would swallow its own corners
+      // never round away more than a third of the shorter leg, or a short hop
+      // between two crossings would swallow its own corners
       const r = Math.min(CORNER,
         Math.hypot(p.x-a.x, p.y-a.y) / 3, Math.hypot(c.x-p.x, c.y-p.y) / 3);
       d += ' L' + (p.x - u1.x*r).toFixed(1) + ',' + (p.y - u1.y*r).toFixed(1) +

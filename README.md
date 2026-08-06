@@ -118,14 +118,18 @@ the block shapes fall out of wherever the corners landed. The one hard floor is
 the narrowest street: it still has to hold a cab driving a lane's width off the
 centreline, which is what sets the minimum.
 
-**Broadway does not care about the grid.** It runs the whole way across on the
-diagonal, top right to bottom left, crossing every avenue and every street and
-shaving a corner off the park. What is left of the square blocks either side of
-it are wedge lots, and on the biggest sliver the city planted a triangle of
-grass and called it Herald Sq. Broadway is threaded so that at each row of
-blocks it passes midway between two of them, so nothing it cuts is a building.
-Herald Sq is cut from the lot it sits on, so it follows that block wherever
-the jitter happened to put it.
+**One block breaks the rules.** The lot between Broadway and 5th has been dug
+open: hoarding round the edge, the ground torn up, spoil left in a heap, a
+crane over it and cones along the kerb. Another lot is cut clean in two by a
+service alley running through the middle of it, with a dumpster down the far
+end and a fire escape on the wall beside it. Both are built from the lot they
+sit on, so they follow their block wherever the jitter put it.
+
+The roads themselves are patchworked: repaved rectangles in a slightly
+different black, laid at a slight angle to the road, with tar seams wandering
+along beside them where the trench was filled back in. The patches go down
+before the blocks, so whatever falls outside a road is covered by the block on
+top of it.
 
 Nothing else is quite perfect either. The paint is worn: every line is laid
 down in a few runs of different fadedness, a stretch here and there has gone
@@ -138,7 +142,8 @@ it belongs to rather than to a fixed coordinate. All of it is drawn from one fix
 the city wears the same way every time it is drawn — a new hunt does not
 repave the streets.
 
-On the City every place owns a whole block. On both maps every one of the twenty-two is built
+On the City every place owns a whole block, and three lots are left over —
+one dug up, one split by the alley, one still empty. On both maps every one of the twenty-two is built
 rather than lettered — big models in perspective with a lit face, a shaded
 side and a roof. The Town itself is the park in the middle of the grid: lawn,
 a pond, two paths that meet at the gazebo, trees, and a small swing where a
@@ -151,13 +156,14 @@ above and below it.
 
 **Taxis.** Five yellow cabs work the grid, driven by GSAP's MotionPathPlugin
 (vendored, so the game still loads offline). The roads are held as a graph —
-nodes are intersections, including every Broadway crossing, and edges run
-between neighbours — so a cab takes the diagonal whenever its walk turns onto
-it rather than assuming everything meets at right angles. Each cab picks a
-random run of turns through that graph — mostly straight on, never a U-turn —
-keeps to the right-hand side of the road, rounds its corners on a real curve,
-drives in from offscreen and out again, rests a few seconds, and picks a new
-route. After dark their headlights come on. A cyclist still crosses on 55th
+nodes are the real, jittered intersections and edges run between neighbours —
+so a cab follows whatever bends a road actually has rather than assuming
+straight lines. Each cab picks a random run of turns through that graph —
+mostly straight on, never a U-turn — keeps to the right-hand side of the road,
+rounds its corners on a real curve, runs out to the edge of the grid before
+driving off the map, rests a few seconds, and picks a new route. Traffic is
+clipped to the island, so a cab on its way out stops at the coast, or takes
+the bridge if it left on 55th. After dark their headlights come on. A cyclist still crosses on 55th
 and the freight still rattles over the trestle, one of each at a time, and
 everything stands still for players who prefer reduced motion.
 
@@ -171,7 +177,7 @@ apart (230 units); the Town packs them as close as 121, still clear of its
 alike, on both.
 
 The City grid is drawn from the `AVX`/`STY` avenue and street tables, jittered
-into the `NODE` table of real intersections, plus `BWAY` for the diagonal; the
+into the `NODE` table of real intersections; the
 Town from its own `TOWN_STREETS`/`TOWN_BLOCKS`, and both share the
 `PLACES` array at the top of the script — move a coordinate and the city
 redraws. Adding a location means adding one entry with an `x`, a `y` and a
