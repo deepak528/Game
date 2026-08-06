@@ -109,14 +109,15 @@ pastel from the old box of crayons, wrapped in a grey sidewalk, so the map
 stays friendly while the streets stay legible.
 
 **But nobody laid it with a ruler.** No road is quite the width of its
-neighbour — the streets run 32 to 40 units and the avenues 38 to 48, with Park
-Ave a 52-unit boulevard — and no two intersections line up exactly, so an
+neighbour — the streets run 26 to 34 units and the avenues 34 to 44, with
+Broadway a 52-unit boulevard — and no two intersections line up exactly, so an
 avenue is a polyline through its own crossings rather than a straight line and
 every block is a slightly different quadrilateral. The lane paint follows the
 kinks, the crosswalks take their width from the two roads that meet there, and
-the block shapes fall out of wherever the corners landed. The one hard floor is
-the narrowest street: it still has to hold a cab driving a lane's width off the
-centreline, which is what sets the minimum.
+the block shapes fall out of wherever the corners landed. Blocks are set back a
+further four units from every road edge, which is the slack a cab needs on the
+narrowest street: it drives six off the centreline with a half-body of eight,
+and a 26-unit street only gives it thirteen.
 
 **One block breaks the rules.** The lot between Broadway and 5th has been dug
 open: hoarding round the edge, the ground torn up, spoil left in a heap, a

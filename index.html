@@ -829,12 +829,12 @@
      Both come off one fixed seed, so the city is the same city every time. */
 
   const cityGeom = mulberry32(0x9d71);
-  // No road is quite the width of its neighbour. The narrowest street still
-  // has to hold a cab a lane's width off the centreline, which is what sets
-  // the floor here.
-  const AVW = AVX.map(function(){ return 38 + cityGeom() * 10; });   // 38–48
-  const STW = STY.map(function(){ return 32 + cityGeom() * 8; });    // 32–40
-  AVW[4] = 52;                      // Park Ave was laid out as a boulevard
+  // No road is quite the width of its neighbour. A cab drives LANE off the
+  // centreline with a half-body of 8, so it needs 14 either side; the
+  // narrowest street gives 13 and the KERB setback below makes up the rest.
+  const AVW = AVX.map(function(){ return 34 + cityGeom() * 10; });   // 34–44
+  const STW = STY.map(function(){ return 26 + cityGeom() * 8; });    // 26–34
+  AVW[2] = 52;                      // Broadway was laid out wide
   const JIT = 9;
   const NODE = AVX.map(function(ax){
     return STY.map(function(sy){
