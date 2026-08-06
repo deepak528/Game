@@ -173,8 +173,15 @@ it belongs to rather than to a fixed coordinate. All of it is drawn from one fix
 the city wears the same way every time it is drawn — a new hunt does not
 repave the streets.
 
-On the City every place owns a whole block, and three lots are left over —
-one dug up, one split by the alley, one still empty. On both maps every one of the twenty-two is built
+On the City every place owns a whole block, but it does not own it alone: small
+flat-roofed neighbours fill the ends of every lot, a low terrace of shopfronts
+runs along the street frontage, and there are tanks up on some of the roofs.
+That is what stops each block reading as one building alone in a coloured
+rectangle. The terrace takes whatever height is left below the place's name and
+goes without if there is not enough, so it can never crowd a label. There is a
+way down to the subway on four corners.
+
+On both maps every one of the twenty-two is built
 rather than lettered — big models in perspective with a lit face, a shaded
 side and a roof. The Town itself is the park in the middle of the grid: lawn,
 a pond, two paths that meet at the gazebo, trees, and a small swing where a

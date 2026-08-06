@@ -990,6 +990,10 @@
     diner:[0,3], library:[1,3], middle:[3,3], field:[4,3],
     tower:[1,4], bagel:[2,4], pool:[3,4], smithy:[4,4]
   };
+  const CELL_PLACE = {};
+  Object.keys(CITY_CELL).forEach(function(id){
+    CELL_PLACE[CITY_CELL[id][0] + ',' + CITY_CELL[id][1]] = id;
+  });
   const DUG_CELL = [0, 4];          // the one lot nobody ever built on
   const ALLEY_CELL = [0, 3];        // the deli, with a service alley beside it
 
@@ -1517,6 +1521,81 @@
       }
     }
 
+    // A block is more than the one place on it. Small flat-roofed neighbours
+    // fill the ends of every lot, either side of the landmark, which is what
+    // stops each block reading as one building alone in a coloured rectangle.
+    const FILL = [
+      ['#c98f74','#a8735c','#dda88b'], ['#b9a48c','#9a866f','#d2bfa6'],
+      ['#a9b3bd','#8d97a1','#c2ccd5'], ['#c2a0a8','#a3838a','#d8b9c0'],
+      ['#9fb0a4','#83948a','#b8c8bc'], ['#cbb08a','#a8906f','#e0caa8']
+    ];
+    function fillLot(lot, pl){
+      const x0 = Math.min(lot[0].x, lot[3].x), x1 = Math.max(lot[1].x, lot[2].x);
+      const base = pl.y + 12;
+      // the middle is left alone for the landmark and its name
+      [[x0 + 5, pl.x - 90], [pl.x + 90, x1 - 5]].forEach(function(span){
+        let x = span[0];
+        while (x < span[1] - 18){
+          const w = Math.min(18 + rnd() * 15, span[1] - x);
+          if (w < 16) break;
+          const h = 20 + rnd() * 32, d = 5 + rnd() * 3;
+          const t = FILL[Math.floor(rnd() * FILL.length)];
+          box(ground, x, base, w, h, d, t[0], t[1], t[2]);
+          // a couple of window courses, and the odd tank up on the roof
+          for (let ry = 0; ry < Math.floor(h / 13); ry++){
+            for (let rx = 0; rx < Math.floor(w / 7); rx++){
+              if (rnd() < 0.22) continue;
+              ground.appendChild(node('rect', {
+                x:(x + 3 + rx * 7).toFixed(1), y:(base - h + 5 + ry * 13).toFixed(1),
+                width:3.4, height:4.6, fill:'#f4ecd8', opacity:(0.5 + rnd() * 0.4).toFixed(2)
+              }));
+            }
+          }
+          if (rnd() < 0.4){
+            const tx = x + w * 0.5, ty = base - h - d;
+            ground.appendChild(node('rect', { x:(tx-4.5).toFixed(1), y:(ty-9).toFixed(1),
+              width:9, height:7, rx:1, fill:'#8a6a4e', stroke:'#5f4632', 'stroke-width':0.7 }));
+            ground.appendChild(node('polygon', {
+              points:[tx-5.5, ty-9, tx, ty-13, tx+5.5, ty-9].map(function(v){ return v.toFixed(1); }).join(' '),
+              fill:'#6f5340' }));
+            [-3, 3].forEach(function(o){
+              ground.appendChild(node('line', { x1:(tx+o).toFixed(1), y1:(ty-2).toFixed(1),
+                x2:(tx+o).toFixed(1), y2:ty.toFixed(1), stroke:'#5f4632', 'stroke-width':1 }));
+            });
+          }
+          x += w + 3;
+        }
+      });
+      // A low terrace of shopfronts along the street frontage, filling the
+      // front of the lot. Its height is whatever is left below the name — if
+      // that is not enough to be worth drawing, the lot goes without.
+      const y1 = Math.max(lot[2].y, lot[3].y);
+      const room = (y1 - 8) - (pl.y + 60);
+      if (room >= 9){
+        const H = Math.min(17, room);
+        let x = x0 + 5;
+        while (x < x1 - 18){
+          const w = Math.min(16 + rnd() * 14, x1 - 5 - x);
+          if (w < 14) break;
+          const t = FILL[Math.floor(rnd() * FILL.length)];
+          box(ground, x, y1 - 2, w, H * (0.72 + rnd() * 0.28), 4, t[0], t[1], t[2]);
+          if (rnd() < 0.55){
+            ground.appendChild(node('rect', {
+              x:(x + w * 0.35).toFixed(1), y:(y1 - 9).toFixed(1),
+              width:(w * 0.3).toFixed(1), height:7, fill:'#5f4a38', opacity:.8
+            }));
+          }
+          x += w + 2.5;
+        }
+      }
+    }
+    for (let c = 0; c < AVX.length - 1; c++){
+      for (let r = 0; r < STY.length - 1; r++){
+        const L = LOTS[c * 9 + r], pid = CELL_PLACE[c + ',' + r];
+        if (L && pid) fillLot(L.lot, byId(pid));
+      }
+    }
+
     // Central Park, three blocks of it, with the cross streets stopped at the
     // wall. Everything in it is measured off the lot, so it follows the grid.
     const parkQuad = blockQuad(PARK.col, PARK.row0, PARK.row1);
@@ -1723,6 +1802,26 @@
         }
       }
     })();
+    // a way down to the subway on a few corners
+    [[1,0,3],[3,2,1],[0,3,1],[4,1,0]].forEach(function(t){
+      const L = LOTS[t[0] * 9 + t[1]];
+      if (!L) return;
+      const q = L.quad[t[2]], m = L.lot[t[2]];
+      const x = q.x + (m.x - q.x) * 0.22, y = q.y + (m.y - q.y) * 0.22;
+      ground.appendChild(node('rect', { x:(x-9).toFixed(1), y:(y-5).toFixed(1),
+        width:18, height:11, rx:2, fill:'#1a1c20' }));
+      for (let k = 0; k < 3; k++){
+        ground.appendChild(node('line', { x1:(x-8).toFixed(1), y1:(y-2+k*3.2).toFixed(1),
+          x2:(x+8).toFixed(1), y2:(y-2+k*3.2).toFixed(1), stroke:'#5a6068', 'stroke-width':1.1 }));
+      }
+      ground.appendChild(node('line', { x1:(x-9).toFixed(1), y1:(y-5).toFixed(1),
+        x2:(x-9).toFixed(1), y2:(y-13).toFixed(1), stroke:'#7d868f', 'stroke-width':1.8 }));
+      ground.appendChild(node('line', { x1:(x+9).toFixed(1), y1:(y-5).toFixed(1),
+        x2:(x+9).toFixed(1), y2:(y-13).toFixed(1), stroke:'#7d868f', 'stroke-width':1.8 }));
+      ground.appendChild(node('circle', { cx:(x-9).toFixed(1), cy:(y-15).toFixed(1), r:3,
+        fill:'#3f9c4a', stroke:'#28682f', 'stroke-width':0.8 }));
+    });
+
     // a tree on the corner of a few blocks, and a cart by the park
     [[1,0,1],[3,1,0],[0,2,1],[4,3,0],[1,4,1],[3,4,0]].forEach(function(t){
       const L = LOTS[t[0] * 9 + t[1]];
