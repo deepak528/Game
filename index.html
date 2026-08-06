@@ -184,9 +184,33 @@
   .slide{stroke:#d0873f;stroke-width:7;stroke-linecap:round}
   .asphalt{fill:#26282d}
   .sidewalk{fill:#d5d8dc}
+  /* paint opacity is set per line as it is drawn — the city's road markings
+     are worn, and a blanket rule here would override that */
   .lane-y{stroke:#e8b62c;stroke-width:2.6}
-  .lane-w{stroke:#f2f3f5;stroke-width:2.4;stroke-dasharray:16 20;opacity:.8}
-  .xwalk{stroke:#e8eaee;stroke-width:8;stroke-dasharray:3.5 4.5;opacity:.9}
+  .lane-w{stroke:#f2f3f5;stroke-width:2.4;stroke-dasharray:16 20}
+  .xwalk{stroke:#e8eaee;stroke-width:8;stroke-dasharray:3.5 4.5}
+  .bway-walk{fill:none;stroke:#d5d8dc;stroke-linecap:butt}
+  .bway-road{fill:none;stroke:#26282d;stroke-linecap:butt}
+  .sqlawn{fill:#6cbb63;stroke:#dfe3e7;stroke-width:3}
+  .sqname{
+    fill:#22402a;font-size:13px;font-weight:700;font-family:inherit;
+    text-anchor:middle;pointer-events:none;
+    paint-order:stroke;stroke:#cfeac9;stroke-width:3px;stroke-linejoin:round;
+  }
+  /* street furniture: hydrants, scaffolding, and a vent that keeps steaming */
+  .hydrant{fill:#d24b3e;stroke:#8f2f26;stroke-width:.8}
+  .scaff{stroke:#c8a34a;stroke-width:2.4;fill:none;stroke-linecap:round}
+  .scaff-deck{fill:#e0c27c;opacity:.85}
+  .vent{fill:#4c525a;stroke:#2f343a;stroke-width:1}
+  .steam{
+    fill:#eef2f6;opacity:0;transform-box:fill-box;transform-origin:center bottom;
+    animation:steamup 5.5s ease-out infinite;
+  }
+  @keyframes steamup{
+    0%{opacity:0;transform:translateY(0) scale(.5)}
+    22%{opacity:.5}
+    100%{opacity:0;transform:translateY(-52px) scale(1.7)}
+  }
   .rail{stroke:var(--rail);stroke-width:3;stroke-dasharray:9 7;fill:none}
   .streetname{fill:var(--muted);font-size:13px;opacity:.8;font-family:inherit;pointer-events:none}
   body.city .streetname{
@@ -303,7 +327,7 @@
   .swing-arm,.pball,.rider{transition:opacity 1.5s}
   body.night .swing-arm,body.night .pball,body.night .rider{opacity:0}
   @media (prefers-reduced-motion:reduce){
-    .bob,.swing-arm,.pball,.gate{animation:none}
+    .bob,.swing-arm,.pball,.gate,.steam{animation:none}
   }
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
 
@@ -531,7 +555,7 @@
     { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:1440, y:115, hint:'the milk steamer hisses loud enough to cover any conversation' },
     { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:160, y:345, hint:'it is loud, and nobody looks up from the cabinets' , noLabel:true },
     { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:480, y:345, hint:'the whole block smells of oregano after four' },
-    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:800, y:345, hint:'if a thing in this town is broken, the part is there' },
+    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:1440, y:1035, hint:'if a thing in this town is broken, the part is there' },
     { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:1120, y:345, hint:'it is the only place in town selling a decent antenna' },
     { id:'cookies', name:'Crumbl Cookies',    pic:'🍪', x:1440, y:345, hint:'the queue goes out of the door on a Friday and the boxes are pink' },
     { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:160, y:575, hint:'you can walk in as yourself and walk out as somebody else' },
@@ -539,7 +563,7 @@
     { id:'high',    name:'High School',       pic:'🏫', x:1120, y:575, hint:'the field lights come on Friday nights' },
     { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:1440, y:575, hint:'it is brand new and nobody looks twice at a stranger' },
     { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:160, y:805, hint:'it is open late and the jukebox eats quarters' },
-    { id:'tower',   name:'Water Tower',       pic:'🗼', x:480, y:805, hint:'you can see the whole grid from the catwalk' },
+    { id:'tower',   name:'Water Tower',       pic:'🗼', x:160, y:1035, hint:'you can see the whole grid from the catwalk' },
     { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:800, y:805, hint:'the ovens run before sunrise and the line asks no questions' },
     { id:'middle',  name:'Middle School',     pic:'🎒', x:1120, y:805, hint:'the bell still rings at 2:40, even in summer' },
     { id:'field',   name:'Baseball Field',    pic:'⚾', x:1440, y:805, hint:'the dugout stays dry when nothing else does' },
@@ -784,12 +808,66 @@
   const AVX = [0, 320, 640, 960, 1280, 1600];       // avenue centrelines
   const STY = [0, 230, 460, 690, 920, 1150];        // street centrelines
   const AVW = 40, STW = 30;                          // how wide each runs
-  const AVE_NAMES = ['10th Ave','8th Ave','Broadway','5th Ave','Park Ave','Lexington Ave'];
+  const AVE_NAMES = ['10th Ave','8th Ave','7th Ave','5th Ave','Park Ave','Lexington Ave'];
   const ST_NAMES  = ['59th St','57th St','55th St','53rd St','51st St','49th St'];
   const PARK = { col:2, row:2 };                     // The Town, mid-grid
   // the asphalt slab runs a little past the outer avenues, and the whole of it
   // stays in frame even though no place sits at its edge
   const SLAB = { x0:-70, y0:-80, x1:1670, y1:1220 };
+  const SLAB_PAD = 60;              // the piers stick out past the nominal edge
+
+  // Broadway does not care about the grid. It runs on the diagonal from the
+  // top right to the bottom left, crossing every avenue and every street on
+  // the way and shaving a corner off the park, which is what makes the wedge
+  // lots and the little squares where it meets an avenue. It is threaded so
+  // that at each row of blocks it passes midway between two of them.
+  const BWAY = { x0:1120, y0:-80, x1:240, y1:1220 };
+  const bwayX = y => BWAY.x0 + (BWAY.x1 - BWAY.x0) * (y - BWAY.y0) / (BWAY.y1 - BWAY.y0);
+  const bwayY = x => BWAY.y0 + (BWAY.y1 - BWAY.y0) * (x - BWAY.x0) / (BWAY.x1 - BWAY.x0);
+  const BWAY_W = AVW + 4;           // the widest road in town
+
+  // The road network as a graph, so a cab can drive Broadway like any other
+  // road instead of assuming everything meets at right angles. Nodes are
+  // intersections — grid corners plus every Broadway crossing — and edges run
+  // between neighbours along each avenue, street and Broadway itself.
+  function buildRoads(){
+    const nodes = new Map();
+    const key = (x, y) => Math.round(x) + ',' + Math.round(y);
+    const at = function(x, y){
+      const k = key(x, y);
+      if (!nodes.has(k)) nodes.set(k, { x:x, y:y, nb:[] });
+      return nodes.get(k);
+    };
+    const chain = function(list){
+      for (let i = 1; i < list.length; i++){
+        if (list[i] === list[i-1]) continue;
+        list[i-1].nb.push(list[i]);
+        list[i].nb.push(list[i-1]);
+      }
+    };
+    const inY = y => y > BWAY.y0 && y < BWAY.y1;
+    const inX = x => x > Math.min(BWAY.x0, BWAY.x1) && x < Math.max(BWAY.x0, BWAY.x1);
+
+    AVX.forEach(function(ax){
+      const ys = STY.slice();
+      if (inX(ax)) ys.push(bwayY(ax));
+      ys.sort(function(a, b){ return a - b; });
+      chain(ys.map(function(y){ return at(ax, y); }));
+    });
+    STY.forEach(function(sy){
+      const xs = AVX.slice();
+      if (inY(sy)) xs.push(bwayX(sy));
+      xs.sort(function(a, b){ return a - b; });
+      chain(xs.map(function(x){ return at(x, sy); }));
+    });
+    const along = [];
+    AVX.forEach(function(ax){ if (inX(ax)) along.push({ x:ax, y:bwayY(ax) }); });
+    STY.forEach(function(sy){ if (inY(sy)) along.push({ x:bwayX(sy), y:sy }); });
+    along.sort(function(a, b){ return a.y - b.y; });
+    chain(along.map(function(p){ return at(p.x, p.y); }));
+
+    return [...nodes.values()];
+  }
 
   // City: street trees on the sidewalk corners, a hot dog cart by the park,
   // and boats out on the river for whoever's screen is wide enough to see it.
@@ -1108,19 +1186,70 @@
       ground.appendChild(sun);
     }
 
-    if (CITY) ground.appendChild(node('rect', {
-      x:SLAB.x0, y:SLAB.y0, width:SLAB.x1-SLAB.x0, height:SLAB.y1-SLAB.y0, rx:18, class:'asphalt'
-    }));
-
     if (CITY){
+    // One fixed seed, so the city's wear and its coastline are the same every
+    // time it is drawn — a new hunt should not repave the streets.
+    const rnd = mulberry32(0x51ce);
+
+    // The island's edge is not a ruler line: it is nibbled all the way round,
+    // and a pier sticks out into the water on each side. Its outline is kept
+    // as a clip, since Broadway has to stop at the water like everything else.
+    const isle = (function(){
+      const pts = [];
+      const push = (x, y) => pts.push(x.toFixed(1) + ',' + y.toFixed(1));
+      // each edge as [x1,y1,x2,y2, outward normal], walked clockwise
+      [[SLAB.x0, SLAB.y0, SLAB.x1, SLAB.y0,  0, -1],
+       [SLAB.x1, SLAB.y0, SLAB.x1, SLAB.y1,  1,  0],
+       [SLAB.x1, SLAB.y1, SLAB.x0, SLAB.y1,  0,  1],
+       [SLAB.x0, SLAB.y1, SLAB.x0, SLAB.y0, -1,  0]].forEach(function(e){
+        const len = Math.hypot(e[2] - e[0], e[3] - e[1]);
+        const n = Math.max(8, Math.round(len / 85));
+        const ux = (e[2] - e[0]) / len, uy = (e[3] - e[1]) / len;
+        const pier = 2 + Math.floor(rnd() * (n - 4));
+        for (let i = 0; i < n; i++){
+          const t = i / n;
+          const x = e[0] + (e[2] - e[0]) * t, y = e[1] + (e[3] - e[1]) * t;
+          const d = rnd() * 15 - 11;                  // mostly nibbled inward
+          push(x + e[4] * d, y + e[5] * d);
+          if (i === pier){                            // out into the water and back
+            const o = 44;
+            push(x + e[4] * o + ux * 7,  y + e[5] * o + uy * 7);
+            push(x + e[4] * o + ux * 31, y + e[5] * o + uy * 31);
+            push(x + e[4] * d + ux * 38, y + e[5] * d + uy * 38);
+          }
+        }
+      });
+      const shape = pts.join(' ');
+      ground.appendChild(node('polygon', { points:shape, class:'asphalt' }));
+      const clip = node('clipPath', { id:'isle' });
+      clip.appendChild(node('polygon', { points:shape }));
+      ground.appendChild(clip);
+      return shape;
+    })();
+
+    // Paint wears. Every marking is laid down in a few runs, some fainter
+    // than others, and now and then a stretch has gone altogether.
+    function worn(x1, y1, x2, y2, cls, into){
+      const runs = 5 + Math.floor(rnd() * 3);
+      for (let i = 0; i < runs; i++){
+        if (rnd() < 0.13) continue;
+        const a = i / runs, b = (i + 1) / runs;
+        (into || ground).appendChild(node('line', {
+          x1:(x1 + (x2 - x1) * a).toFixed(1), y1:(y1 + (y2 - y1) * a).toFixed(1),
+          x2:(x1 + (x2 - x1) * b).toFixed(1), y2:(y1 + (y2 - y1) * b).toFixed(1),
+          class:cls, opacity:(0.5 + rnd() * 0.5).toFixed(2)
+        }));
+      }
+    }
+
     // lane markings: double yellow down the avenues, broken white on streets
     AVX.forEach(function(ax){
       [-3, 3].forEach(function(o){
-        ground.appendChild(node('line', { x1:ax+o, y1:SLAB.y0+20, x2:ax+o, y2:SLAB.y1-20, class:'lane-y' }));
+        worn(ax + o, SLAB.y0 + 20, ax + o, SLAB.y1 - 20, 'lane-y');
       });
     });
     STY.forEach(function(sy){
-      ground.appendChild(node('line', { x1:SLAB.x0+20, y1:sy, x2:SLAB.x1-20, y2:sy, class:'lane-w' }));
+      worn(SLAB.x0 + 20, sy, SLAB.x1 - 20, sy, 'lane-w');
     });
 
     // the blocks: a sidewalk apron with the lot coloured in on top of it. The
@@ -1138,23 +1267,72 @@
       }
     }
 
-    // zebra crossings on all four sides of every intersection
+    // Zebra crossings on all four sides of every intersection. Each one is
+    // worn on its own: a little faded, and some have lost an end stripe.
     AVX.forEach(function(ax){ STY.forEach(function(sy){
-      ground.appendChild(node('line', { x1:ax-AVW/2, y1:sy-STW/2-6, x2:ax+AVW/2, y2:sy-STW/2-6, class:'xwalk' }));
-      ground.appendChild(node('line', { x1:ax-AVW/2, y1:sy+STW/2+6, x2:ax+AVW/2, y2:sy+STW/2+6, class:'xwalk' }));
-      ground.appendChild(node('line', { x1:ax-AVW/2-6, y1:sy-STW/2, x2:ax-AVW/2-6, y2:sy+STW/2, class:'xwalk' }));
-      ground.appendChild(node('line', { x1:ax+AVW/2+6, y1:sy-STW/2, x2:ax+AVW/2+6, y2:sy+STW/2, class:'xwalk' }));
+      [[ax-AVW/2, sy-STW/2-6, ax+AVW/2, sy-STW/2-6],
+       [ax-AVW/2, sy+STW/2+6, ax+AVW/2, sy+STW/2+6],
+       [ax-AVW/2-6, sy-STW/2, ax-AVW/2-6, sy+STW/2],
+       [ax+AVW/2+6, sy-STW/2, ax+AVW/2+6, sy+STW/2]].forEach(function(w){
+        const eat = rnd() < 0.3 ? 0.12 + rnd() * 0.2 : 0;   // a stripe gone from one end
+        ground.appendChild(node('line', {
+          x1:w[0] + (w[2] - w[0]) * eat, y1:w[1] + (w[3] - w[1]) * eat, x2:w[2], y2:w[3],
+          class:'xwalk', opacity:(0.6 + rnd() * 0.4).toFixed(2)
+        }));
+      });
     }); });
 
-    // street names painted on the asphalt, avenue names running along them
+    // Street names painted on the asphalt, avenue names running along them.
+    // The stencils are laid by hand, so none of them is quite square.
     STY.forEach(function(sy, i){
-      ground.appendChild(node('text', { class:'streetname', x:170, y:sy+4.5 }, ST_NAMES[i]));
+      ground.appendChild(node('text', {
+        class:'streetname', x:170, y:sy + 4.5, opacity:(0.65 + rnd() * 0.3).toFixed(2),
+        transform:'rotate(' + (rnd() * 3 - 1.5).toFixed(2) + ' 170 ' + (sy + 4.5) + ')'
+      }, ST_NAMES[i]));
     });
     AVX.forEach(function(ax, i){
       ground.appendChild(node('text', {
         class:'streetname', x:ax, y:346, 'text-anchor':'middle',
-        transform:'rotate(-90 ' + ax + ' 346)'
+        opacity:(0.65 + rnd() * 0.3).toFixed(2),
+        transform:'rotate(' + (-90 + rnd() * 3 - 1.5).toFixed(2) + ' ' + ax + ' 346)'
       }, AVE_NAMES[i]));
+    });
+
+    // Broadway, laid over the blocks it cuts: sidewalk apron, then asphalt.
+    // The wedge lots and the slivers at the avenues are simply what is left
+    // of the square blocks underneath.
+    (function(){
+      const bw = node('g', { 'clip-path':'url(#isle)' });   // it stops at the water
+      ground.appendChild(bw);
+      const L = Math.hypot(BWAY.x1 - BWAY.x0, BWAY.y1 - BWAY.y0);
+      const px = (BWAY.y1 - BWAY.y0) / L, py = -(BWAY.x1 - BWAY.x0) / L;   // across it
+      bw.appendChild(node('line', {
+        x1:BWAY.x0, y1:BWAY.y0, x2:BWAY.x1, y2:BWAY.y1,
+        class:'bway-walk', 'stroke-width':BWAY_W + 26
+      }));
+      bw.appendChild(node('line', {
+        x1:BWAY.x0, y1:BWAY.y0, x2:BWAY.x1, y2:BWAY.y1,
+        class:'bway-road', 'stroke-width':BWAY_W
+      }));
+      [-3, 3].forEach(function(o){
+        worn(BWAY.x0 + px*o, BWAY.y0 + py*o, BWAY.x1 + px*o, BWAY.y1 + py*o, 'lane-y', bw);
+      });
+      // its name runs along it, at the angle it runs
+      const ang = Math.atan2(BWAY.y1 - BWAY.y0, BWAY.x1 - BWAY.x0) * 180 / Math.PI + 180;
+      const lx = bwayX(250), ly = 250;
+      bw.appendChild(node('text', {
+        class:'streetname', x:lx, y:ly, 'text-anchor':'middle', opacity:.9,
+        transform:'rotate(' + ang.toFixed(1) + ' ' + lx.toFixed(1) + ' ' + ly + ')'
+      }, 'Broadway'));
+    })();
+
+    // Where Broadway cuts an avenue it leaves a sliver, and the city planted
+    // a triangle of grass on the biggest one and called it a square.
+    ground.appendChild(node('polygon', { points:'926,290 926,431 830,431', class:'sqlawn' }));
+    // the name goes low, where the wedge is wide enough to hold it
+    ground.appendChild(node('text', { x:888, y:417, class:'sqname' }, 'Herald Sq'));
+    [[912,332,17],[901,374,16]].forEach(function(t){
+      ground.appendChild(node('text', { x:t[0], y:t[1], 'font-size':t[2], class:'scene' }, '🌳'));
     });
 
     // Manhattan is an island: the grid floats in the river, 55th St runs out
@@ -1180,6 +1358,36 @@
     ground.appendChild(node('ellipse', { cx:735, cy:640, rx:30, ry:15, class:'pond' }));
     ground.appendChild(node('path', { d:'M668,482 Q800,575 932,668', class:'ppath' }));
     ground.appendChild(node('path', { d:'M932,482 Q800,575 668,668', class:'ppath' }));
+
+    // Street furniture: hydrants on the corners, scaffolding up on one block,
+    // and a vent in the road that has been steaming for years.
+    [[32,34],[606,232],[970,692],[1272,462],[350,922],[1566,252]].forEach(function(h){
+      const x = h[0], y = h[1];
+      ground.appendChild(node('rect', { x:x-2.6, y:y-7, width:5.2, height:9, rx:1.6, class:'hydrant' }));
+      ground.appendChild(node('circle', { cx:x, cy:y-8, r:2.4, class:'hydrant' }));
+      ground.appendChild(node('rect', { x:x-5, y:y-5, width:10, height:2, rx:1, class:'hydrant' }));
+      ground.appendChild(node('rect', { x:x-3.4, y:y+2, width:6.8, height:2, rx:1, class:'hydrant' }));
+    });
+    (function(){                       // scaffolding up against the high school
+      const x0 = 1058, x1 = 1182, y = 496, bay = 31;
+      ground.appendChild(node('rect', { x:x0, y:y-10, width:x1-x0, height:5, class:'scaff-deck' }));
+      ground.appendChild(node('line', { x1:x0, y1:y+8, x2:x1, y2:y+8, class:'scaff' }));
+      for (let x = x0; x <= x1 + 0.5; x += bay){
+        ground.appendChild(node('line', { x1:x, y1:y-10, x2:x, y2:y+10, class:'scaff' }));
+        if (x < x1){                   // a cross brace in each bay, not one long diagonal
+          ground.appendChild(node('line', { x1:x, y1:y+8, x2:x+bay, y2:y-5, class:'scaff' }));
+        }
+      }
+    })();
+    (function(){                       // the vent, and what comes off it
+      const x = 952, y = 520;
+      ground.appendChild(node('ellipse', { cx:x, cy:y, rx:9, ry:4.5, class:'vent' }));
+      [[0,-4,7,0],[ -5,-6,5,1.6],[6,-7,5.5,3.2]].forEach(function(s){
+        const puff = node('ellipse', { cx:x+s[0], cy:y+s[1], rx:s[2], ry:s[2]*0.8, class:'steam' });
+        puff.style.animationDelay = s[3] + 's';
+        ground.appendChild(puff);
+      });
+    })();
     }
 
     // the growth sits over the streets but under every label and marker
@@ -1521,7 +1729,7 @@
      the town simply has no traffic and everything else plays on. */
 
   const TAXI_N = 5, TAXI_SPEED = 150, LANE = 9, CORNER = 16;
-  let taxiFleet = [];
+  let taxiFleet = [], ROADS = [];
 
   function taxiNode(){
     const g = node('g', { class:'taxi', transform:'translate(-3000,0)' });
@@ -1539,27 +1747,31 @@
     return g;
   }
 
-  // a random run of turns through the grid, never straight back the way it came
+  // A random run of turns through the road graph, never straight back the way
+  // it came. Broadway is just more edges, so a cab takes the diagonal whenever
+  // the walk happens to turn onto it.
   function taxiWaypoints(){
-    let ix = Math.floor(Math.random() * AVX.length);
-    let iy = Math.floor(Math.random() * STY.length);
-    let last = null;
-    const nodes = [[ix, iy]];
+    let cur = ROADS[Math.floor(Math.random() * ROADS.length)], prev = null;
+    const out = [cur];
     const steps = 7 + Math.floor(Math.random() * 6);
     for (let s = 0; s < steps; s++){
-      const opts = [[1,0],[-1,0],[0,1],[0,-1]].filter(function(d){
-        if (last && d[0] === -last[0] && d[1] === -last[1]) return false;
-        const nx = ix + d[0], ny = iy + d[1];
-        return nx >= 0 && nx < AVX.length && ny >= 0 && ny < STY.length;
-      });
-      let d = opts[Math.floor(Math.random() * opts.length)];
-      // mostly keep going straight — city drivers hate turning
-      if (last && Math.random() < 0.6 &&
-          opts.some(function(o){ return o[0] === last[0] && o[1] === last[1]; })) d = last;
-      ix += d[0]; iy += d[1]; last = d;
-      nodes.push([ix, iy]);
+      const opts = cur.nb.filter(function(n){ return n !== prev; });
+      if (!opts.length) break;
+      let nxt = opts[Math.floor(Math.random() * opts.length)];
+      // mostly carry straight on — city drivers hate turning
+      if (prev && Math.random() < 0.6){
+        const u = unitTo(prev, cur);
+        let best = null, bestDot = -2;
+        opts.forEach(function(n){
+          const v = unitTo(cur, n), d = u.x * v.x + u.y * v.y;
+          if (d > bestDot){ bestDot = d; best = n; }
+        });
+        if (best && bestDot > 0.3) nxt = best;
+      }
+      prev = cur; cur = nxt;
+      out.push(cur);
     }
-    return nodes.map(function(n){ return { x:AVX[n[0]], y:STY[n[1]] }; });
+    return out.map(function(n){ return { x:n.x, y:n.y }; });
   }
 
   const unitTo = function(a, b){
@@ -1583,7 +1795,9 @@
       const n1 = i > 0 ? right(run[i-1], p) : right(p, run[i+1]);
       const n2 = i < run.length - 1 ? right(p, run[i+1]) : right(run[i-1], p);
       const dot = n1.x*n2.x + n1.y*n2.y;
-      const k = LANE / (1 + dot);          // miter join, exact at right angles
+      // miter join, exact at right angles; the floor keeps a hairpin off
+      // Broadway from throwing the lane halfway across the city
+      const k = LANE / Math.max(0.4, 1 + dot);
       return { x:p.x + (n1.x + n2.x) * k, y:p.y + (n1.y + n2.y) * k };
     });
   }
@@ -1594,9 +1808,13 @@
     for (let i = 1; i < pts.length - 1; i++){
       const a = pts[i-1], p = pts[i], c = pts[i+1];
       const u1 = unitTo(a, p), u2 = unitTo(p, c);
-      d += ' L' + (p.x - u1.x*CORNER).toFixed(1) + ',' + (p.y - u1.y*CORNER).toFixed(1) +
+      // never round away more than a third of the shorter leg, or a short
+      // Broadway sliver between two crossings would swallow its own corners
+      const r = Math.min(CORNER,
+        Math.hypot(p.x-a.x, p.y-a.y) / 3, Math.hypot(c.x-p.x, c.y-p.y) / 3);
+      d += ' L' + (p.x - u1.x*r).toFixed(1) + ',' + (p.y - u1.y*r).toFixed(1) +
            ' Q' + p.x.toFixed(1) + ',' + p.y.toFixed(1) +
-           ' '  + (p.x + u2.x*CORNER).toFixed(1) + ',' + (p.y + u2.y*CORNER).toFixed(1);
+           ' '  + (p.x + u2.x*r).toFixed(1) + ',' + (p.y + u2.y*r).toFixed(1);
     }
     const e = pts[pts.length - 1];
     return d + ' L' + e.x.toFixed(1) + ',' + e.y.toFixed(1);
@@ -1608,7 +1826,12 @@
       cab.timer = setTimeout(function(){ taxiGo(cab); }, 3000);
       return;
     }
-    const guide = node('path', { d:taxiPathD(taxiLane(taxiWaypoints())), fill:'none', stroke:'none' });
+    const route = taxiWaypoints();
+    if (route.length < 3){                                 // a dead end: try again
+      cab.timer = setTimeout(function(){ taxiGo(cab); }, 800);
+      return;
+    }
+    const guide = node('path', { d:taxiPathD(taxiLane(route)), fill:'none', stroke:'none' });
     svg.appendChild(guide);
     cab.tween = gsap.to(cab.el, {
       duration: guide.getTotalLength() / TAXI_SPEED,
@@ -1630,6 +1853,7 @@
     if (!CITY) return;                                     // no cabs in the crayon town
     if (!window.gsap || !window.MotionPathPlugin) return;  // no framework, no traffic
     gsap.registerPlugin(MotionPathPlugin);
+    ROADS = buildRoads();
     const traffic = node('g', { class:'traffic' });
     svg.appendChild(traffic);
     for (let i = 0; i < TAXI_N; i++){
@@ -1675,9 +1899,10 @@
     const m = 130;                       // room for the labels and the taller builds
     x0 -= m; x1 += m; y0 -= m; y1 += m;
     if (CITY){
-      // the drawn city is bigger than its places — keep the whole slab in frame
-      x0 = Math.min(x0, SLAB.x0); x1 = Math.max(x1, SLAB.x1);
-      y0 = Math.min(y0, SLAB.y0); y1 = Math.max(y1, SLAB.y1);
+      // the drawn city is bigger than its places — keep the whole island in
+      // frame, piers and all
+      x0 = Math.min(x0, SLAB.x0 - SLAB_PAD); x1 = Math.max(x1, SLAB.x1 + SLAB_PAD);
+      y0 = Math.min(y0, SLAB.y0 - SLAB_PAD); y1 = Math.max(y1, SLAB.y1 + SLAB_PAD);
     }
     BASE = { x:x0, y:y0, w:x1 - x0, h:y1 - y0 };
     if (typeof recomputeScale === 'function') recomputeScale();

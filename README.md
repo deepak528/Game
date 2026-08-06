@@ -100,14 +100,30 @@ turbulence filter over the ground so nothing is quite straight. Around it sit
 the meadow, the orchard, a lake with a duck, fields with a tractor and a cow,
 and a full-size playground with a swing, a slide and a ball.
 
-**The City** is a grid, easy to follow the way the real one is: six avenues
-(10th, 8th, Broadway, 5th, Park, Lexington) cross six streets (59th down to
+**The City** is a grid, easy to follow the way the real one is: five numbered
+avenues (10th, 8th, 7th, 5th, Park, Lexington) cross six streets (59th down to
 49th), all black asphalt with a double yellow line down every avenue, broken
 white lanes on the streets, zebra crossings on all four sides of every
-intersection, and the street names painted straight onto the tarmac. The grid
-is drawn dead straight — the crayon wobble is gone — but every lot keeps a
-pastel from the old box of crayons, wrapped in a grey sidewalk, so the map
-stays friendly while the streets stay legible.
+intersection, and the street names painted straight onto the tarmac. Every lot
+keeps a pastel from the old box of crayons, wrapped in a grey sidewalk, so the
+map stays friendly while the streets stay legible.
+
+**Broadway does not care about the grid.** It runs the whole way across on the
+diagonal, top right to bottom left, crossing every avenue and every street and
+shaving a corner off the park. What is left of the square blocks either side of
+it are wedge lots, and on the biggest sliver the city planted a triangle of
+grass and called it Herald Sq. Broadway is threaded so that at each row of
+blocks it passes midway between two of them, so nothing it cuts is a building.
+
+Nothing else is quite perfect either. The paint is worn: every line is laid
+down in a few runs of different fadedness, a stretch here and there has gone
+altogether, some crossings have lost a stripe from one end, and no street-name
+stencil is quite square. The island's edge is nibbled all the way round rather
+than ruled, with a pier sticking out into the water on each side. Hydrants
+stand on the corners, scaffolding is up against the high school, and a vent in
+5th Ave has been steaming for years. All of it is drawn from one fixed seed, so
+the city wears the same way every time it is drawn — a new hunt does not
+repave the streets.
 
 On the City every place owns a whole block. On both maps every one of the twenty-two is built
 rather than lettered — big models in perspective with a lit face, a shaded
@@ -121,9 +137,12 @@ sees water, bridges and boats past the island, and a phone sees the river
 above and below it.
 
 **Taxis.** Five yellow cabs work the grid, driven by GSAP's MotionPathPlugin
-(vendored, so the game still loads offline). Each cab picks a random run of
-turns through the intersections — mostly straight on, never a U-turn — keeps
-to the right-hand side of the road, rounds its corners on a real curve,
+(vendored, so the game still loads offline). The roads are held as a graph —
+nodes are intersections, including every Broadway crossing, and edges run
+between neighbours — so a cab takes the diagonal whenever its walk turns onto
+it rather than assuming everything meets at right angles. Each cab picks a
+random run of turns through that graph — mostly straight on, never a U-turn —
+keeps to the right-hand side of the road, rounds its corners on a real curve,
 drives in from offscreen and out again, rests a few seconds, and picks a new
 route. After dark their headlights come on. A cyclist still crosses on 55th
 and the freight still rattles over the trestle, one of each at a time, and
@@ -138,7 +157,8 @@ apart (230 units); the Town packs them as close as 121, still clear of its
 70-unit tap radius. The admin overlap check agrees at phone and desktop sizes
 alike, on both.
 
-The City grid is drawn from the `AVX`/`STY` avenue and street tables, the
+The City grid is drawn from the `AVX`/`STY` avenue and street tables plus
+`BWAY` for the diagonal, the
 Town from its own `TOWN_STREETS`/`TOWN_BLOCKS`, and both share the
 `PLACES` array at the top of the script — move a coordinate and the city
 redraws. Adding a location means adding one entry with an `x`, a `y` and a
