@@ -98,17 +98,17 @@ pure Bethpage. The arcade goes unlabelled — the neon on the front says enough.
 On the **City** the same twenty-two are New York, one for one:
 
 🌳 Central Park · 🚂 Grand Central · 📚 The Public Library · 🏛️ City Hall ·
-🏫 Stuyvesant High · 🏙️ Empire State · 🥪 Katz's Deli · 👾 Chinatown Fair ·
-💈 Astor Place Barbers · 🏢 The Flatiron · ⛰️ Tompkins Square · 🏊 Astoria Pool ·
-⚾ Yankee Stadium · 📻 B&H Photo · 🔧 Canal St Hardware · 🥯 Ess-a-Bagel ·
-☕ Caffè Reggio · 🥂 Tavern on the Green · 📼 Kim's Video · 🍕 Joe's Pizza ·
+🏫 Columbia · 🏙️ Empire State · 🥪 Katz's Deli · 🎆 Times Square ·
+💈 Astor Place Barbers · 🏢 The Flatiron · ⛲ Washington Square · 🏊 Astoria Pool ·
+⚾ Yankee Stadium · 📻 Radio City · 🔧 Canal St Hardware · 🥯 Ess-a-Bagel ·
+☕ Caffè Reggio · 🥂 Tavern on the Green · 📚 The Strand · 🍕 Joe's Pizza ·
 🛍️ Macy's · 🍪 Levain Bakery
 
 The avenues are renamed to match — 11th, Broadway, Central Park West, 5th, Park
 and Lexington — and the shop signage comes off the place, so one model serves
 either map: the same building reads DINER on the Town and DELI on the City.
-Empire State and the Flatiron are drawn only for the City, since neither of
-them is a shop with a Town equivalent.
+Empire State, the Flatiron, Washington Square's arch and the Strand are drawn
+only for the City, since none of them is a shop with a Town equivalent.
 
 **The Town** is the original: a crayon drawing on cream paper, every block
 coloured in with its own pastel, dashed yellow centrelines down the big

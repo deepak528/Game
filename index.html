@@ -588,19 +588,19 @@
     mall:    ["Macy's",'🛍️','eleven floors, and a wooden escalator nobody has got round to replacing',"MACY'S"],
     lab:     ['The Flatiron','🏢','it comes to a point where the two avenues meet'],
     tower:   ['Empire State','🏙️','you can see every bridge in the city from the eighty-sixth floor'],
-    high:    ['Stuyvesant High','🏫','the lights stay on for whatever the team is doing on Friday'],
+    high:    ['Columbia','🏫','the steps are full whenever the weather is any good'],
     middle:  ['City Hall','🏛️','there is a flag up and a queue for something, always'],
     diner:   ["Katz's Deli",'🥪','you get a ticket at the door and you do not lose it','DELI'],
     pizza:   ["Joe's Pizza",'🍕','a slice, folded, eaten standing up on the pavement'],
     bagel:   ['Ess-a-Bagel','🥯','the ovens run before sunrise and the line asks no questions'],
     coffee:  ['Caffè Reggio','☕','the machine hisses loud enough to cover any conversation'],
     cookies: ['Levain Bakery','🍪','the queue goes round the corner and they come out warm','LEVAIN'],
-    arcade:  ['Chinatown Fair','👾','it is loud, and nobody looks up from the cabinets','ARCADE'],
-    video:   ["Kim's Video",'📼','the back room has films nobody else will lend you','VIDEO'],
+    arcade:  ['Times Square','🎆','it is the one corner of the city that never gets dark','TIMES SQ'],
+    video:   ['The Strand','📚','eighteen miles of books, and nobody minds how long you browse','STRAND'],
     lanes:   ['Astor Place Barbers','💈','you go down the stairs and come back up as somebody else'],
-    sparks:  ['B&H Photo','📻','the only counter left in the city selling a decent antenna'],
+    sparks:  ['Radio City','📻','the marquee is lit before anyone has arrived'],
     smithy:  ['Canal St Hardware','🔧','if a thing in this city is broken, the part is in that basement','HARDWARE'],
-    bowl:    ['Tompkins Square','⛰️','the boards start before the sun does'],
+    bowl:    ['Washington Square','⛲','somebody is always playing chess under the arch'],
     pool:    ['Astoria Pool','🏊','it is shut for the season and the fence is easy enough'],
     field:   ['Yankee Stadium','⚾','the dugout stays dry when nothing else does'],
     campagne:['Tavern on the Green','🥂','there is always a wedding on and nobody counts the guests']
@@ -609,6 +609,7 @@
     const c = CITY_INFO[p.id];
     if (!c) return;
     p.name = c[0]; p.pic = c[1]; p.hint = c[2]; p.sign = c[3];
+    p.noLabel = false;
   });
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
@@ -854,6 +855,29 @@
       });
       g.appendChild(node('line', { x1:x, y1:y-46, x2:x, y2:y-62, class:'strut' }));
       g.appendChild(node('circle', { cx:x, cy:y-63, r:2.2, fill:'#f2c14e' }));
+    },
+    bowl: function(g, x, y){           // Washington Square: the arch and the fountain
+      g.appendChild(node('ellipse', { cx:x, cy:y+15, rx:23, ry:6, class:'shadow' }));
+      const t = y - 2;
+      g.appendChild(node('rect', { x:x-17, y:t-26, width:34, height:7, rx:1.5, fill:'#ece4d6', stroke:'#c3b9a6', 'stroke-width':0.8 }));
+      g.appendChild(node('rect', { x:x-17, y:t-19, width:9, height:21, fill:'#ded5c6' }));
+      g.appendChild(node('rect', { x:x+8,  y:t-19, width:9, height:21, fill:'#ded5c6' }));
+      g.appendChild(node('path', { d:'M'+(x-8)+','+(t+2)+' L'+(x-8)+','+(t-9)+' Q'+x+','+(t-20)+' '+(x+8)+','+(t-9)+' L'+(x+8)+','+(t+2)+' Z', fill:'#7f776b' }));
+      g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:14, ry:6, fill:'#cfc7b8' }));
+      g.appendChild(node('ellipse', { cx:x, cy:y+12, rx:9.5, ry:4, fill:'#7cc7ea' }));
+      g.appendChild(node('line', { x1:x, y1:y+10, x2:x, y2:y+3, stroke:'#bfe4f5', 'stroke-width':2, 'stroke-linecap':'round' }));
+    },
+    video: function(g, x, y, p){       // the Strand, and its miles of books
+      box(g, x-18, y+10, 36, 17, 6, '#8d5b4a', '#6f4738', '#a87765');
+      g.appendChild(node('rect', { x:x-21, y:y-14, width:42, height:8, rx:2, fill:'#c8172c', stroke:'#8f0f1e', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#fff', class:'blab' }, sign(p, 'STRAND')));
+      [[-14,-2],[-3,-2],[8,-2]].forEach(function(w){
+        g.appendChild(node('rect', { x:x+w[0], y:y+w[1], width:8, height:7, fill:'#f3e6c8' }));
+      });
+      g.appendChild(node('rect', { x:x-4, y:y+3, width:9, height:7, fill:'#4e3327' }));
+      // a book left open on the roof
+      g.appendChild(node('polygon', { points:[x-9,y-20, x,y-23, x,y-17].join(' '), fill:'#efe6cf', stroke:'#b9ac8d', 'stroke-width':0.8 }));
+      g.appendChild(node('polygon', { points:[x+9,y-20, x,y-23, x,y-17].join(' '), fill:'#e2d7bb', stroke:'#b9ac8d', 'stroke-width':0.8 }));
     },
     lab: function(g, x, y){            // the Flatiron, coming to its point
       g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:19, ry:6, class:'shadow' }));
