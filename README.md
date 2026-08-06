@@ -76,11 +76,12 @@ everyone shares.
 ## The maps
 
 A 🖍️ **Town** / 🗽 **City** toggle sits in the header. Both maps hold the same
-twenty-two places, so the day's hunt carries straight across — switching
-remembers your choice, reloads, and remeasures every distance on the map you
-land on. `?map=town` or `?map=city` in the URL forces one.
+twenty-two places — the same ids, so the day's hunt is the same hunt on either
+one — but they answer to different names. Switching remembers your choice,
+reloads, and remeasures every distance on the map you land on. `?map=town` or
+`?map=city` in the URL forces one.
 
-Twenty-two locations, one block = 100 units:
+One block = 100 units. On the **Town** they are the places a small town has:
 
 🏛️ The Town · 🍕 Pappardelle's Pizzeria · 📚 Public Library · 🎒 Middle School ·
 🏫 High School · 🗼 Water Tower · 🥤 The Grand Diner · 👾 Palace Arcade ·
@@ -92,6 +93,21 @@ Twenty-two locations, one block = 100 units:
 Palace Arcade, Family Video, Hawkins Lab and Starcourt Mall are on loan from
 Hawkins; the bagels, the salon, the coffee, the cookies and Campagne House are
 pure Bethpage. The arcade goes unlabelled — the neon on the front says enough.
+
+On the **City** the same twenty-two are New York, one for one:
+
+🌳 Central Park · 🚂 Grand Central · 📚 The Public Library · 🏛️ City Hall ·
+🏫 Stuyvesant High · 🏙️ Empire State · 🥪 Katz's Deli · 👾 Chinatown Fair ·
+💈 Astor Place Barbers · 🏢 The Flatiron · ⛰️ Tompkins Square · 🏊 Astoria Pool ·
+⚾ Yankee Stadium · 📻 B&H Photo · 🔧 Canal St Hardware · 🥯 Ess-a-Bagel ·
+☕ Caffè Reggio · 🥂 Tavern on the Green · 📼 Kim's Video · 🍕 Joe's Pizza ·
+🛍️ Macy's · 🍪 Levain Bakery
+
+The avenues are renamed to match — 11th, Broadway, Central Park West, 5th, Park
+and Lexington — and the shop signage comes off the place, so one model serves
+either map: the same building reads DINER on the Town and DELI on the City.
+Empire State and the Flatiron are drawn only for the City, since neither of
+them is a shop with a Town equivalent.
 
 **The Town** is the original: a crayon drawing on cream paper, every block
 coloured in with its own pastel, dashed yellow centrelines down the big
@@ -108,18 +124,32 @@ and the street names painted straight onto the tarmac. Every lot keeps a
 pastel from the old box of crayons, wrapped in a grey sidewalk, so the map
 stays friendly while the streets stay legible.
 
-**But nobody laid it with a ruler.** No road is quite the width of its
-neighbour — the streets run 26 to 34 units and the avenues 34 to 44, with
-Broadway a 52-unit boulevard — and no two intersections line up exactly, so an
-avenue is a polyline through its own crossings rather than a straight line and
-every block is a slightly different quadrilateral. The lane paint follows the
+**But nobody laid it with a ruler.** The avenues are not evenly spaced and
+neither are the streets, so the blocks they make are all different sizes —
+that, rather than wobble, is most of what stops the grid reading as graph
+paper. On top of it no road is quite the width of its neighbour — the streets
+run 26 to 34 units and the avenues 34 to 44, with Broadway a 52-unit boulevard
+— and no two intersections line up exactly, so an avenue is a polyline through
+its own crossings rather than a straight line and every block is a slightly
+different quadrilateral. The kink is small on purpose: four units, enough to
+soften the ruler and not enough to look drunk.
+
+**Central Park is not a block, it is three of them.** The cross streets stop
+dead at its wall, the road graph has no edge through it and the cabs go round,
+and inside there is a lake, a reservoir, two drives winding the length of it,
+trees and the bandstand everything is measured from. A few other blocks are two
+lots that never got knocked together, with a party wall down them and a
+different colour either side, and the Flatiron's lot is cut off at an angle
+rather than squared like the rest. The lane paint follows the
 kinks, the crosswalks take their width from the two roads that meet there, and
-the block shapes fall out of wherever the corners landed. Blocks are set back a
+the block shapes fall out of wherever the corners landed, and every place is
+laid out by grid cell rather than by coordinate, so moving a road moves the
+buildings with it. Blocks are set back a
 further four units from every road edge, which is the slack a cab needs on the
 narrowest street: it drives six off the centreline with a half-body of eight,
 and a 26-unit street only gives it thirteen.
 
-**One block breaks the rules.** The lot between Broadway and 5th has been dug
+**One more block breaks the rules.** The lot beside the Empire State has been dug
 open: hoarding round the edge, the ground torn up, spoil left in a heap, a
 crane over it and cones along the kerb. Another lot is cut clean in two by a
 service alley running through the middle of it, with a dumpster down the far
@@ -162,8 +192,10 @@ so a cab follows whatever bends a road actually has rather than assuming
 straight lines. Each cab picks a random run of turns through that graph —
 mostly straight on, never a U-turn — keeps to the right-hand side of the road,
 rounds its corners on a real curve, runs out to the edge of the grid before
-driving off the map, rests a few seconds, and picks a new route. Traffic is
-clipped to the island, so a cab on its way out stops at the coast, or takes
+driving off the map, rests a few seconds, and picks a new route. On its way off the map a cab
+works outward to the edge of the grid first — every step further from the
+middle than the last, which is what gets it out of a T-junction against the
+park — and traffic is clipped to the island, so it stops at the coast or takes
 the bridge if it left on 55th. After dark their headlights come on. A cyclist still crosses on 55th
 and the freight still rattles over the trestle, one of each at a time, and
 everything stands still for players who prefer reduced motion.

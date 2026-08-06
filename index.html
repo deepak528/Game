@@ -542,7 +542,7 @@
   // and The Town is the park in the middle; on the crayon Town the same
   // places sit where they always did, around the green at 500,500.
   const BLOCK = 100;
-  const TOWN = CITY ? { x: 800, y: 575 } : { x: 500, y: 500 };
+  let TOWN = { x: 800, y: 575 };    // set once the places are laid out below
 
   const TOWN_XY = {
     town:[500,500], pizza:[332,369], library:[321,662], middle:[1047,655],
@@ -579,12 +579,45 @@
   ];
 
   // PLACES carries the City coordinates; the Town map swaps its own in
-  if (!CITY) PLACES.forEach(function(p){ const c = TOWN_XY[p.id]; p.x = c[0]; p.y = c[1]; });
+  // On the City the same twenty-two places answer to New York names. The ids
+  // never change, so the day's hunt is the same hunt on either map.
+  const CITY_INFO = {
+    town:    ['Central Park','🌳','it is the middle of everything and half the city is in it'],
+    station: ['Grand Central','🚂','the clock over the concourse is where everyone says to meet'],
+    library: ['The Public Library','📚','two stone lions out front, and nobody raises their voice inside'],
+    mall:    ["Macy's",'🛍️','eleven floors, and a wooden escalator nobody has got round to replacing',"MACY'S"],
+    lab:     ['The Flatiron','🏢','it comes to a point where the two avenues meet'],
+    tower:   ['Empire State','🏙️','you can see every bridge in the city from the eighty-sixth floor'],
+    high:    ['Stuyvesant High','🏫','the lights stay on for whatever the team is doing on Friday'],
+    middle:  ['City Hall','🏛️','there is a flag up and a queue for something, always'],
+    diner:   ["Katz's Deli",'🥪','you get a ticket at the door and you do not lose it','DELI'],
+    pizza:   ["Joe's Pizza",'🍕','a slice, folded, eaten standing up on the pavement'],
+    bagel:   ['Ess-a-Bagel','🥯','the ovens run before sunrise and the line asks no questions'],
+    coffee:  ['Caffè Reggio','☕','the machine hisses loud enough to cover any conversation'],
+    cookies: ['Levain Bakery','🍪','the queue goes round the corner and they come out warm','LEVAIN'],
+    arcade:  ['Chinatown Fair','👾','it is loud, and nobody looks up from the cabinets','ARCADE'],
+    video:   ["Kim's Video",'📼','the back room has films nobody else will lend you','VIDEO'],
+    lanes:   ['Astor Place Barbers','💈','you go down the stairs and come back up as somebody else'],
+    sparks:  ['B&H Photo','📻','the only counter left in the city selling a decent antenna'],
+    smithy:  ['Canal St Hardware','🔧','if a thing in this city is broken, the part is in that basement','HARDWARE'],
+    bowl:    ['Tompkins Square','⛰️','the boards start before the sun does'],
+    pool:    ['Astoria Pool','🏊','it is shut for the season and the fence is easy enough'],
+    field:   ['Yankee Stadium','⚾','the dugout stays dry when nothing else does'],
+    campagne:['Tavern on the Green','🥂','there is always a wedding on and nobody counts the guests']
+  };
+  if (CITY) PLACES.forEach(function(p){
+    const c = CITY_INFO[p.id];
+    if (!c) return;
+    p.name = c[0]; p.pic = c[1]; p.hint = c[2]; p.sign = c[3];
+  });
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
 
   // A few places are built rather than lettered: a shoebox in perspective, with
   // a lit face, a shaded side and a roof, so they stand up off the paper.
+  // a model's signage comes off the place, so one model serves either map
+  const sign = (p, dflt) => (p && p.sign) || dflt;
+
   const BUILDS = {
     town: function(g, x, y){
       // the park gazebo: everything in town is measured from here
@@ -641,10 +674,10 @@
       g.appendChild(node('circle', { cx:x-4, cy:y-31, r:2, fill:'#e04b4b' }));
       g.appendChild(node('path', { d:'M'+(x-12)+','+(y-30)+' q8,-7 16,0', fill:'none', stroke:'#9fb4c9', 'stroke-width':1.4 }));
     },
-    smithy: function(g, x, y){
+    smithy: function(g, x, y, p){
       box(g, x-18, y+10, 36, 17, 6, '#c9d2d9', '#a7b2bc', '#e0e6ea');
       g.appendChild(node('rect', { x:x-21, y:y-14, width:42, height:8, rx:2, fill:'#455361', stroke:'#2f3a45', 'stroke-width':1 }));
-      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#ffd34e', class:'blab' }, 'HARDWARE'));
+      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#ffd34e', class:'blab' }, sign(p, 'HARDWARE')));
       g.appendChild(node('rect', { x:x-4, y:y+1, width:8, height:9, fill:'#3f4a54' }));
       g.appendChild(node('rect', { x:x-14, y:y-2, width:8, height:6, fill:'#fdf3d8' }));
       g.appendChild(node('rect', { x:x+7, y:y-2, width:8, height:6, fill:'#fdf3d8' }));
@@ -672,10 +705,10 @@
       g.appendChild(node('path', { d:'M'+(x+6)+','+(y-22)+' q5,0 5,3.5 q0,3.5 -5,3.5', fill:'none', stroke:'#8a6f4d', 'stroke-width':1.6 }));
       g.appendChild(node('path', { d:'M'+(x-2)+','+(y-27)+' q2,-3 0,-6 M'+(x+2)+','+(y-27)+' q2,-3 0,-6', fill:'none', stroke:'#c9c2b4', 'stroke-width':1.4, 'stroke-linecap':'round' }));
     },
-    video: function(g, x, y){
+    video: function(g, x, y, p){
       box(g, x-18, y+10, 36, 17, 6, '#5878b8', '#43609a', '#7593cc');
       g.appendChild(node('rect', { x:x-21, y:y-14, width:42, height:8, rx:2, fill:'#f7c531', stroke:'#c99a2e', 'stroke-width':1 }));
-      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#31456e', class:'blab' }, 'VIDEO'));
+      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#31456e', class:'blab' }, sign(p, 'VIDEO')));
       g.appendChild(node('rect', { x:x-13, y:y-2, width:9, height:7, fill:'#bcd7f2' }));
       g.appendChild(node('rect', { x:x+4, y:y-2, width:9, height:7, fill:'#bcd7f2' }));
       g.appendChild(node('rect', { x:x-4, y:y+2, width:8, height:8, fill:'#2c3a5c' }));
@@ -684,12 +717,12 @@
       g.appendChild(node('circle', { cx:x-3.5, cy:y-18.5, r:1.6, fill:'#777' }));
       g.appendChild(node('circle', { cx:x+3.5, cy:y-18.5, r:1.6, fill:'#777' }));
     },
-    mall: function(g, x, y){
+    mall: function(g, x, y, p){
       box(g, x-20, y+8, 40, 20, 9, '#e8b3c6', '#c98ba2', '#f6d3df');
       g.appendChild(node('rect', { x:x-13, y:y-4, width:26, height:11, rx:2, fill:'#f7e6a8', stroke:'#c9a94e', 'stroke-width':1 }));
-      g.appendChild(node('text', { x:x, y:y+5, 'font-size':9, 'text-anchor':'middle', fill:'#a2543c', class:'blab' }, 'MALL'));
+      g.appendChild(node('text', { x:x, y:y+5, 'font-size':9, 'text-anchor':'middle', fill:'#a2543c', class:'blab' }, sign(p, 'MALL')));
     },
-    lab: function(g, x, y){
+    lab: function(g, x, y, p){
       box(g, x-18, y+9, 36, 22, 8, '#cfd8e6', '#a9b6c9', '#e6ecf4');
       g.appendChild(node('rect', { x:x+4, y:y-16, width:9, height:18, fill:'#b9c5d6', stroke:'#8fa0b6', 'stroke-width':1 }));
       [[-12,-2],[-2,-2],[-12,4],[-2,4]].forEach(function(w){
@@ -719,13 +752,13 @@
       g.appendChild(node('rect', { x:x-15, y:y-1, width:7, height:6, fill:'#fdf3d8' }));
       g.appendChild(node('rect', { x:x+11, y:y-1, width:7, height:6, fill:'#fdf3d8' }));
     },
-    diner: function(g, x, y){
+    diner: function(g, x, y, p){
       g.appendChild(node('ellipse', { cx:x, cy:y+14, rx:26, ry:5, class:'shadow' }));
       g.appendChild(node('rect', { x:x-24, y:y-12, width:48, height:24, rx:9, fill:'#dde3e8', stroke:'#aab4bd', 'stroke-width':1 }));
       g.appendChild(node('rect', { x:x-20, y:y-6, width:40, height:8, rx:3, fill:'#9fd3ef' }));
       g.appendChild(node('rect', { x:x-24, y:y+4, width:48, height:4, fill:'#d95555' }));
       g.appendChild(node('rect', { x:x-11, y:y-22, width:22, height:9, rx:2, fill:'#d95555', stroke:'#a83f3f', 'stroke-width':1 }));
-      g.appendChild(node('text', { x:x, y:y-15, 'font-size':7, 'text-anchor':'middle', fill:'#fff', class:'blab' }, 'DINER'));
+      g.appendChild(node('text', { x:x, y:y-15, 'font-size':7, 'text-anchor':'middle', fill:'#fff', class:'blab' }, sign(p, 'DINER')));
     },
     high: function(g, x, y){
       box(g, x-24, y+12, 48, 24, 8, '#d99a6b', '#b87d52', '#ecc19b');
@@ -751,17 +784,17 @@
         g.appendChild(node('rect', { x:x+cx, y:y-6, width:3.5, height:16, fill:'#fbf6ea', stroke:'#b3a482', 'stroke-width':0.8 }));
       });
     },
-    arcade: function(g, x, y){
+    arcade: function(g, x, y, p){
       box(g, x-18, y+10, 36, 18, 6, '#6d5a9e', '#55467e', '#8a76bd');
       g.appendChild(node('rect', { x:x-21, y:y-16, width:42, height:9, rx:2, fill:'#2f2350', stroke:'#8a76bd', 'stroke-width':1 }));
-      g.appendChild(node('text', { x:x, y:y-9, 'font-size':7, 'text-anchor':'middle', fill:'#ff7ad9', class:'blab' }, 'ARCADE'));
+      g.appendChild(node('text', { x:x, y:y-9, 'font-size':7, 'text-anchor':'middle', fill:'#ff7ad9', class:'blab' }, sign(p, 'ARCADE')));
       [-17,-8,1,10,17].forEach(function(bx, i){
         g.appendChild(node('circle', { cx:x+bx, cy:y-18.5, r:1.3, fill:i%2 ? '#7ef3ff' : '#ffd34e' }));
       });
       g.appendChild(node('rect', { x:x-5, y:y, width:10, height:10, fill:'#1d1440' }));
       g.appendChild(node('rect', { x:x-5, y:y, width:10, height:2.5, fill:'#ff7ad9' }));
     },
-    cookies: function(g, x, y){
+    cookies: function(g, x, y, p){
       g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:24, ry:5, class:'shadow' }));
       box(g, x-19, y+10, 38, 17, 7, '#f6d9e4', '#dcb3c6', '#fdeef4');
       // a scalloped awning over the counter
@@ -769,7 +802,7 @@
         g.appendChild(node('path', { d:'M'+(x-19+i*7.6)+','+(y-7)+' q3.8,5 7.6,0', fill:i%2 ? '#e0648f' : '#fff1f6', stroke:'#c9527a', 'stroke-width':0.6 }));
       }
       g.appendChild(node('rect', { x:x-14, y:y-19, width:28, height:10, rx:2, fill:'#fff', stroke:'#e0648f', 'stroke-width':1 }));
-      g.appendChild(node('text', { x:x, y:y-11.5, 'font-size':6.5, 'text-anchor':'middle', fill:'#c9527a', class:'blab' }, 'CRUMBL'));
+      g.appendChild(node('text', { x:x, y:y-11.5, 'font-size':6.5, 'text-anchor':'middle', fill:'#c9527a', class:'blab' }, sign(p, 'CRUMBL')));
       // the cookie itself, on the roof where everyone can see it
       g.appendChild(node('circle', { cx:x, cy:y-27, r:7, fill:'#e8b878', stroke:'#c08f52', 'stroke-width':1 }));
       [[-2.5,-29],[2,-26],[-1,-24],[3.5,-30]].forEach(function(c){
@@ -803,6 +836,48 @@
     }
   };
 
+  // Two places are landmarks rather than shops, and only on the City map, so
+  // they get their own models drawn over the top of the Town's.
+  const CITY_BUILDS = {
+    tower: function(g, x, y){          // the Empire State, setback by setback
+      g.appendChild(node('ellipse', { cx:x, cy:y+15, rx:21, ry:6, class:'shadow' }));
+      box(g, x-17, y+13, 34, 15, 7, '#cfc7b6', '#a9a193', '#e6dfcf');
+      box(g, x-11, y-2,  22, 22, 5, '#d9d1bf', '#b2aa9b', '#ede6d6');
+      box(g, x-6,  y-24, 12, 22, 3, '#e2dac8', '#bab2a2', '#f3ecdc');
+      // the setbacks are all windows, in rows
+      [[-15,4,7],[-9,-9,5],[-4,-30,3]].forEach(function(w){
+        for (let k = 0; k < w[2]; k++){
+          g.appendChild(node('rect', {
+            x:x + w[0] + k * 4.4, y:y + w[1], width:2.4, height:5, fill:'#8fb6cf', opacity:.85
+          }));
+        }
+      });
+      g.appendChild(node('line', { x1:x, y1:y-46, x2:x, y2:y-62, class:'strut' }));
+      g.appendChild(node('circle', { cx:x, cy:y-63, r:2.2, fill:'#f2c14e' }));
+    },
+    lab: function(g, x, y){            // the Flatiron, coming to its point
+      g.appendChild(node('ellipse', { cx:x, cy:y+13, rx:19, ry:6, class:'shadow' }));
+      const H = 34, ax = x-15, ay = y+11, bx = x+17, by = y+4, px = x+1, py = y-6;
+      // the two faces that meet at the point, and the roof between them
+      g.appendChild(node('polygon', { points:[px,py, ax,ay, ax,ay-H, px,py-H].join(' '), fill:'#cbb094' }));
+      g.appendChild(node('polygon', { points:[px,py, bx,by, bx,by-H, px,py-H].join(' '), fill:'#a98d6e' }));
+      g.appendChild(node('polygon', { points:[px,py-H, ax,ay-H, bx,by-H].join(' '), fill:'#e0d2ba' }));
+      // window courses down both faces
+      for (let k = 0; k < 5; k++){
+        const t = 0.16 + k * 0.17;
+        g.appendChild(node('line', {
+          x1:(px + (ax-px)*t).toFixed(1), y1:(py + (ay-py)*t - H + 5).toFixed(1),
+          x2:(px + (ax-px)*t).toFixed(1), y2:(py + (ay-py)*t - 5).toFixed(1),
+          stroke:'#8a7358', 'stroke-width':1.1, opacity:.7 }));
+        g.appendChild(node('line', {
+          x1:(px + (bx-px)*t).toFixed(1), y1:(py + (by-py)*t - H + 5).toFixed(1),
+          x2:(px + (bx-px)*t).toFixed(1), y2:(py + (by-py)*t - 5).toFixed(1),
+          stroke:'#77603f', 'stroke-width':1.1, opacity:.7 }));
+      }
+      g.appendChild(node('rect', { x:px-3, y:py-6, width:6, height:6, fill:'#6b543a' }));
+    }
+  };
+
   // one shoebox: front face, side face in shadow, roof in light
   function box(g, x, y, w, h, d, front, side, roof){
     g.appendChild(node('polygon', { points:[x+w,y, x+w+d,y-d, x+w+d,y-h-d, x+w,y-h].join(' '), fill:side }));
@@ -812,11 +887,19 @@
 
   // The grid, drawn from data: avenues run north-south, streets east-west,
   // and every block is the gap between them. Named like the city it copies.
-  const AVX = [0, 320, 640, 960, 1280, 1600];       // nominal avenue centrelines
-  const STY = [0, 230, 460, 690, 920, 1150];        // nominal street centrelines
-  const AVE_NAMES = ['10th Ave','8th Ave','Broadway','5th Ave','Park Ave','Lexington Ave'];
+  // The avenues are not evenly spaced and neither are the streets, so the
+  // blocks they make are all different sizes. That, rather than wobble, is
+  // what stops the grid reading as graph paper.
+  const AVX = [0, 300, 620, 980, 1290, 1600];       // nominal avenue centrelines
+  const STY = [0, 215, 450, 700, 930, 1150];        // nominal street centrelines
+  const AVE_NAMES = ['11th Ave','Broadway','Central Park W','5th Ave','Park Ave','Lexington Ave'];
   const ST_NAMES  = ['59th St','57th St','55th St','53rd St','51st St','49th St'];
-  const PARK = { col:2, row:2 };                     // The Town, mid-grid
+  // Central Park is not a block, it is three of them stacked. The cross
+  // streets stop at its edge and the cabs have to go round.
+  const PARK = { col:2, row0:1, row1:3 };
+  const inPark = (c, r) => c === PARK.col && r >= PARK.row0 && r <= PARK.row1;
+  // a street strictly inside the park's height does not get through it
+  const parkBlocks = j => j > PARK.row0 && j <= PARK.row1;
   // the asphalt slab runs a little past the outer avenues, and the whole of it
   // stays in frame even though no place sits at its edge
   const SLAB = { x0:-70, y0:-80, x1:1670, y1:1220 };
@@ -835,7 +918,7 @@
   const AVW = AVX.map(function(){ return 34 + cityGeom() * 10; });   // 34–44
   const STW = STY.map(function(){ return 26 + cityGeom() * 8; });    // 26–34
   AVW[2] = 52;                      // Broadway was laid out wide
-  const JIT = 9;
+  const JIT = 4;                    // enough to soften the ruler, not to wobble
   const NODE = AVX.map(function(ax){
     return STY.map(function(sy){
       return { x:ax + (cityGeom() - 0.5) * 2 * JIT, y:sy + (cityGeom() - 0.5) * 2 * JIT };
@@ -887,14 +970,44 @@
   // slack between the road edge and the block: a road bends between its own
   // intersections, so a cab holding its lane needs a little room at the ends.
   const KERB = 4;
-  function blockQuad(c, r){
+  // one block, or a run of them stacked into one — the park spans three
+  function blockQuad(c, r, rEnd){
+    const rb = (rEnd === undefined ? r : rEnd) + 1;
     return [
-      { x:NODE[c][r].x     + AVW[c]/2   + KERB, y:NODE[c][r].y     + STW[r]/2   + KERB },
-      { x:NODE[c+1][r].x   - AVW[c+1]/2 - KERB, y:NODE[c+1][r].y   + STW[r]/2   + KERB },
-      { x:NODE[c+1][r+1].x - AVW[c+1]/2 - KERB, y:NODE[c+1][r+1].y - STW[r+1]/2 - KERB },
-      { x:NODE[c][r+1].x   + AVW[c]/2   + KERB, y:NODE[c][r+1].y   - STW[r+1]/2 - KERB }
+      { x:NODE[c][r].x     + AVW[c]/2   + KERB, y:NODE[c][r].y    + STW[r]/2  + KERB },
+      { x:NODE[c+1][r].x   - AVW[c+1]/2 - KERB, y:NODE[c+1][r].y  + STW[r]/2  + KERB },
+      { x:NODE[c+1][rb].x  - AVW[c+1]/2 - KERB, y:NODE[c+1][rb].y - STW[rb]/2 - KERB },
+      { x:NODE[c][rb].x    + AVW[c]/2   + KERB, y:NODE[c][rb].y   - STW[rb]/2 - KERB }
     ];
   }
+
+  // The City lays its places out by cell, so the layout follows the grid
+  // rather than a list of coordinates that has to be re-tuned by hand.
+  const CITY_CELL = {
+    bowl:[0,0], video:[1,0], station:[2,0], lab:[3,0], coffee:[4,0],
+    arcade:[0,1], pizza:[1,1], sparks:[3,1], cookies:[4,1],
+    lanes:[0,2], campagne:[1,2], high:[3,2], mall:[4,2],
+    diner:[0,3], library:[1,3], middle:[3,3], field:[4,3],
+    tower:[1,4], bagel:[2,4], pool:[3,4], smithy:[4,4]
+  };
+  const DUG_CELL = [0, 4];          // the one lot nobody ever built on
+  const ALLEY_CELL = [0, 3];        // the deli, with a service alley beside it
+
+  const cellMid = (c, r0, r1) => ({
+    x:(NODE[c][r0].x + NODE[c+1][r0].x + NODE[c][r1+1].x + NODE[c+1][r1+1].x) / 4,
+    y:(NODE[c][r0].y + NODE[c+1][r0].y + NODE[c][r1+1].y + NODE[c+1][r1+1].y) / 4
+  });
+
+  PLACES.forEach(function(p){
+    if (CITY){
+      const cell = p.id === 'town' ? [PARK.col, PARK.row0, PARK.row1] : CITY_CELL[p.id];
+      const m = cellMid(cell[0], cell[1], cell.length > 2 ? cell[2] : cell[1]);
+      p.x = Math.round(m.x); p.y = Math.round(m.y);
+    } else {
+      const c = TOWN_XY[p.id]; p.x = c[0]; p.y = c[1];
+    }
+  });
+  TOWN = { x:byId('town').x, y:byId('town').y };
 
   // The road network as a graph, since the roads are polylines rather than
   // straight lines. Nodes are intersections and edges run between neighbours
@@ -919,7 +1032,11 @@
       chain(aveLine(i).map(function(p){ return at(p.x, p.y); }));
     });
     STY.forEach(function(sy, j){
-      chain(stLine(j).map(function(p){ return at(p.x, p.y); }));
+      const line = stLine(j).map(function(p){ return at(p.x, p.y); });
+      if (parkBlocks(j)){                     // no way through Central Park
+        chain(line.slice(0, PARK.col + 1));
+        chain(line.slice(PARK.col + 1));
+      } else chain(line);
     });
 
     return [...nodes.values()];
@@ -929,10 +1046,6 @@
   // and boats out on the river for whoever's screen is wide enough to see it.
   // Town: trees, the duck on the lake, a cow, a tractor in the fields.
   const TREES = CITY ? [
-    [350,208,'🌳',24],[670,208,'🌳',24],[1310,208,'🌳',24],
-    [1560,438,'🌳',24],[350,898,'🌳',24],[1230,898,'🌳',24],
-    [690,1128,'🌳',24],[987,540,'🌭',22],
-    [690,515,'🌳',26],[910,505,'🌳',26],[700,662,'🌳',24],
     [-330,240,'⛵',30],[-300,880,'🛥️',28],[1930,300,'🚤',28],
     [2010,860,'⛵',30],[760,-300,'⛴️',30],[420,1460,'⛵',28],[1240,1420,'🛥️',28]
   ] : [
@@ -1142,7 +1255,7 @@
     return [
       puzzle.cast.flavor,
       'They went ' + dir + ' — follow the beam of light on the map.',
-      'It is ' + mins + ' from The Town — search along the glowing ring.',
+      'It is ' + mins + ' from <b>' + byId('town').name + '</b> — search along the glowing ring.',
       'They picked it because <b>' + puzzle.place.hint + '</b>.'
     ];
   }
@@ -1204,6 +1317,7 @@
     // straight. Either way: asphalt/paper first, everything else on top.
     const ground = node('g', CITY ? {} : { filter:'url(#wobble)' });
     svg.appendChild(ground);
+    let PARK_BOX = null;      // the park's box, wanted again by the playground
 
     if (!CITY){
       TOWN_BLOCKS.forEach(function(b){ ground.appendChild(node('polygon', { points:b.points, class:'blk ' + b.tone })); });
@@ -1360,6 +1474,8 @@
         .concat(L.map(function(p){ return { x:p.x, y:p.y }; }),
                 [{ x:SLAB.x1 - 20, y:L[L.length-1].y }]);
       for (let k = 1; k < run.length; k++){
+        // run has the off-map stub at each end, so segment k joins node k-2 to k-1
+        if (parkBlocks(j) && k === PARK.col + 2) continue;      // stopped at the park
         worn(run[k-1].x, run[k-1].y, run[k].x, run[k].y, 'lane-w', null, 3);
       }
     });
@@ -1370,25 +1486,91 @@
     const LOTS = [];
     for (let c = 0; c < AVX.length - 1; c++){
       for (let r = 0; r < STY.length - 1; r++){
+        if (inPark(c, r)) continue;                 // the park is drawn as one
         const quad = blockQuad(c, r);
         ground.appendChild(node('path', { d:roundPoly(quad, 10), class:'sidewalk' }));
         const lot = inset(quad, 19);
-        const park = c === PARK.col && r === PARK.row;
-        ground.appendChild(node('path', {
-          d:roundPoly(lot, 6), class: park ? 'lawn' : 'lot b' + ((c*3 + r*5) % 9)
-        }));
+        // the Flatiron's lot is a wedge; what is left of the block is plaza
+        const wedge = CITY_CELL.lab[0] === c && CITY_CELL.lab[1] === r;
+        const along = (a2, b2, t) => ({ x:a2.x + (b2.x - a2.x) * t, y:a2.y + (b2.y - a2.y) * t });
+        const shape = wedge
+          ? [lot[0], along(lot[0], lot[1], 0.42), along(lot[1], lot[2], 0.78), lot[2], lot[3]]
+          : lot;
+        ground.appendChild(node('path', { d:roundPoly(shape, 6), class:'lot b' + ((c*3 + r*5) % 9) }));
         LOTS[c * 9 + r] = { quad:quad, lot:lot };
+        if (wedge) continue;
+        // A few blocks are two lots that never got knocked together: a party
+        // wall down them and a different colour either side of it.
+        if ((c * 5 + r) % 7 === 3){
+          const t = 0.34 + ((c + r) % 3) * 0.11;
+          const topL = { x:lot[0].x + (lot[1].x - lot[0].x) * t, y:lot[0].y + (lot[1].y - lot[0].y) * t };
+          const botL = { x:lot[3].x + (lot[2].x - lot[3].x) * t, y:lot[3].y + (lot[2].y - lot[3].y) * t };
+          ground.appendChild(node('path', {
+            d:roundPoly([lot[0], topL, botL, lot[3]], 5),
+            class:'lot b' + ((c * 7 + r * 2 + 4) % 9)
+          }));
+          ground.appendChild(node('line', {
+            x1:topL.x.toFixed(1), y1:topL.y.toFixed(1), x2:botL.x.toFixed(1), y2:botL.y.toFixed(1),
+            stroke:'#00000018', 'stroke-width':1.5
+          }));
+        }
       }
     }
+
+    // Central Park, three blocks of it, with the cross streets stopped at the
+    // wall. Everything in it is measured off the lot, so it follows the grid.
+    const parkQuad = blockQuad(PARK.col, PARK.row0, PARK.row1);
+    ground.appendChild(node('path', { d:roundPoly(parkQuad, 14), class:'sidewalk' }));
+    const parkLot = inset(parkQuad, 19);
+    ground.appendChild(node('path', { d:roundPoly(parkLot, 10), class:'lawn' }));
+    LOTS[PARK.col * 9 + PARK.row0] = { quad:parkQuad, lot:parkLot };
+    PARK_BOX = (function(){
+      const q = parkLot;
+      const x0 = Math.min(q[0].x, q[3].x), x1 = Math.max(q[1].x, q[2].x);
+      const y0 = Math.min(q[0].y, q[1].y), y1 = Math.max(q[2].y, q[3].y);
+      return { x0:x0, y0:y0, x1:x1, y1:y1, w:x1 - x0, h:y1 - y0, cx:(x0 + x1) / 2 };
+    })();
+    (function(){
+      const P = PARK_BOX, w = P.w, h = P.h, cx = P.cx;
+      // two drives winding the length of it
+      ground.appendChild(node('path', { class:'ppath', d:
+        'M' + (cx - w*0.30).toFixed(1) + ',' + P.y0 +
+        ' C' + (cx - w*0.04).toFixed(1) + ',' + (P.y0 + h*0.26).toFixed(1) +
+        ' '  + (cx - w*0.36).toFixed(1) + ',' + (P.y0 + h*0.58).toFixed(1) +
+        ' '  + (cx - w*0.14).toFixed(1) + ',' + P.y1 }));
+      ground.appendChild(node('path', { class:'ppath', d:
+        'M' + (cx + w*0.28).toFixed(1) + ',' + P.y0 +
+        ' C' + (cx + w*0.02).toFixed(1) + ',' + (P.y0 + h*0.30).toFixed(1) +
+        ' '  + (cx + w*0.34).toFixed(1) + ',' + (P.y0 + h*0.64).toFixed(1) +
+        ' '  + (cx + w*0.10).toFixed(1) + ',' + P.y1 }));
+      // the lake near the top, the reservoir down the bottom
+      ground.appendChild(node('ellipse', {
+        cx:(cx - w*0.05).toFixed(1), cy:(P.y0 + h*0.15).toFixed(1),
+        rx:(w*0.30).toFixed(1), ry:(h*0.065).toFixed(1), class:'pond' }));
+      ground.appendChild(node('ellipse', {
+        cx:(cx + w*0.03).toFixed(1), cy:(P.y1 - h*0.16).toFixed(1),
+        rx:(w*0.33).toFixed(1), ry:(h*0.085).toFixed(1), class:'pond' }));
+      // the green itself, and trees down both sides
+      [[-0.34,0.30,22],[0.33,0.24,20],[-0.30,0.52,19],[0.31,0.46,22],
+       [-0.33,0.74,20],[0.32,0.80,21],[-0.10,0.90,18],[0.10,0.07,19]].forEach(function(t){
+        ground.appendChild(node('text', {
+          x:(cx + w*t[0]).toFixed(1), y:(P.y0 + h*t[1]).toFixed(1),
+          'font-size':t[2], class:'scene' }, '🌳'));
+      });
+    })();
 
     // Zebra crossings on all four sides of every intersection. Each one is
     // worn on its own: a little faded, and some have lost an end stripe.
     NODE.forEach(function(col, i){ col.forEach(function(p, j){
       const ax = p.x, sy = p.y, aw = AVW[i] / 2, sw = STW[j] / 2;
-      [[ax-aw, sy-sw-6, ax+aw, sy-sw-6],
+      const walls = [[ax-aw, sy-sw-6, ax+aw, sy-sw-6],
        [ax-aw, sy+sw+6, ax+aw, sy+sw+6],
        [ax-aw-6, sy-sw, ax-aw-6, sy+sw],
-       [ax+aw+6, sy-sw, ax+aw+6, sy+sw]].forEach(function(w){
+       [ax+aw+6, sy-sw, ax+aw+6, sy+sw]];
+      // nothing crosses into the park, so it gets no crossing either
+      if (parkBlocks(j) && i === PARK.col) walls.splice(3, 1);
+      if (parkBlocks(j) && i === PARK.col + 1) walls.splice(2, 1);
+      walls.forEach(function(w){
         const eat = rnd() < 0.3 ? 0.12 + rnd() * 0.2 : 0;   // a stripe gone from one end
         ground.appendChild(node('line', {
           x1:w[0] + (w[2] - w[0]) * eat, y1:w[1] + (w[3] - w[1]) * eat, x2:w[2], y2:w[3],
@@ -1419,7 +1601,7 @@
     // up: hoarding round the edge, a crane over it, and the spoil left in a
     // heap. It is cut from its own lot, so it goes wherever that block landed.
     (function(){
-      const lot = LOTS[2 * 9 + 1].lot;
+      const lot = LOTS[DUG_CELL[0] * 9 + DUG_CELL[1]].lot;
       const x0 = Math.min(lot[0].x, lot[3].x), x1 = Math.max(lot[1].x, lot[2].x);
       const y0 = Math.min(lot[0].y, lot[1].y), y1 = Math.max(lot[2].y, lot[3].y);
       const w = x1 - x0, h = y1 - y0;
@@ -1468,9 +1650,11 @@
 
     // and one lot is cut in two by a service alley running through the middle
     (function(){
-      const lot = LOTS[1 * 9 + 3].lot;
-      const top = { x:(lot[0].x + lot[1].x) / 2, y:(lot[0].y + lot[1].y) / 2 };
-      const bot = { x:(lot[3].x + lot[2].x) / 2, y:(lot[3].y + lot[2].y) / 2 };
+      const lot = LOTS[ALLEY_CELL[0] * 9 + ALLEY_CELL[1]].lot;
+      // a quarter of the way in, so it runs past the building rather than through it
+      const t = 0.22;
+      const top = { x:lot[0].x + (lot[1].x - lot[0].x) * t, y:lot[0].y + (lot[1].y - lot[0].y) * t };
+      const bot = { x:lot[3].x + (lot[2].x - lot[3].x) * t, y:lot[3].y + (lot[2].y - lot[3].y) * t };
       const half = 13;
       ground.appendChild(node('rect', {
         x:(top.x - half - 3).toFixed(1), y:(top.y - 4).toFixed(1),
@@ -1515,15 +1699,10 @@
     // the elevated line skirts the top of the grid, above 59th
     ground.appendChild(node('line', { x1:SLAB.x0-620, y1:-36, x2:SLAB.x1+620, y2:-36, class:'rail' }));
 
-    // the park itself: pond, two paths that meet at the gazebo, and shade
-    ground.appendChild(node('ellipse', { cx:735, cy:640, rx:30, ry:15, class:'pond' }));
-    ground.appendChild(node('path', { d:'M668,482 Q800,575 932,668', class:'ppath' }));
-    ground.appendChild(node('path', { d:'M932,482 Q800,575 668,668', class:'ppath' }));
-
     // Street furniture: hydrants on the corners, scaffolding up on one block,
     // and a vent in the road that has been steaming for years.
     // corner, block column, block row — so a hydrant stays on its own kerb
-    [[0,0,0],[1,1,1],[0,2,3],[2,3,2],[1,0,4],[2,4,0]].forEach(function(h){
+    [[0,0,0],[1,1,1],[0,1,2],[2,3,2],[1,0,2],[2,4,0]].forEach(function(h){
       const q = LOTS[h[1] * 9 + h[2]].quad[h[0]];
       const mid = LOTS[h[1] * 9 + h[2]].lot[h[0]];
       const x = q.x + (mid.x - q.x) * 0.16, y = q.y + (mid.y - q.y) * 0.16;
@@ -1533,7 +1712,7 @@
       ground.appendChild(node('rect', { x:x-3.4, y:y+2, width:6.8, height:2, rx:1, class:'hydrant' }));
     });
     (function(){                       // scaffolding up against the high school
-      const lot = LOTS[3 * 9 + 2].lot, mid = (lot[0].x + lot[1].x) / 2;
+      const lot = LOTS[4 * 9 + 2].lot, mid = (lot[0].x + lot[1].x) / 2;
       const x0 = mid - 62, x1 = mid + 62, y = (lot[0].y + lot[1].y) / 2 + 7, bay = 31;
       ground.appendChild(node('rect', { x:x0, y:y-10, width:x1-x0, height:5, class:'scaff-deck' }));
       ground.appendChild(node('line', { x1:x0, y1:y+8, x2:x1, y2:y+8, class:'scaff' }));
@@ -1544,8 +1723,20 @@
         }
       }
     })();
+    // a tree on the corner of a few blocks, and a cart by the park
+    [[1,0,1],[3,1,0],[0,2,1],[4,3,0],[1,4,1],[3,4,0]].forEach(function(t){
+      const L = LOTS[t[0] * 9 + t[1]];
+      if (!L) return;
+      const q = L.quad[t[2]], m = L.lot[t[2]];
+      ground.appendChild(node('text', {
+        x:(q.x + (m.x - q.x) * 0.3).toFixed(1), y:(q.y + (m.y - q.y) * 0.3).toFixed(1),
+        'font-size':22, class:'scene' }, '🌳'));
+    });
+    ground.appendChild(node('text', {
+      x:(avXAt(PARK.col + 1, 470) + 26).toFixed(1), y:470, 'font-size':22, class:'scene' }, '🌭'));
+
     (function(){                       // the vent, and what comes off it
-      const x = avXAt(3, 520) - 8, y = 520;
+      const x = avXAt(PARK.col + 1, 520) + 9, y = 520;
       ground.appendChild(node('ellipse', { cx:x, cy:y, rx:9, ry:4.5, class:'vent' }));
       [[0,-4,7,0],[ -5,-6,5,1.6],[6,-7,5.5,3.2]].forEach(function(s){
         const puff = node('ellipse', { cx:x+s[0], cy:y+s[1], rx:s[2], ry:s[2]*0.8, class:'steam' });
@@ -1580,7 +1771,11 @@
     // The playground: swing frame, a swinging kid, a ball. On the Town it
     // stands full-size out east; on the City the same drawing is mapped into
     // the park corner in one transform.
-    const pg = node('g', CITY ? { transform:'translate(880,606) scale(0.45) translate(-1120,-764)' } : {});
+    const pgAt = CITY && PARK_BOX
+      ? { transform:'translate(' + (PARK_BOX.cx - PARK_BOX.w * 0.20).toFixed(1) + ',' +
+          (PARK_BOX.y0 + PARK_BOX.h * 0.42).toFixed(1) + ') scale(0.42) translate(-1120,-764)' }
+      : {};
+    const pg = node('g', pgAt);
     live.appendChild(pg);
     pg.appendChild(node('line', { x1:1060, y1:762, x2:1180, y2:762, class:'pline' }));
     pg.appendChild(node('line', { x1:1060, y1:762, x2:1044, y2:842, class:'pline' }));
@@ -1684,12 +1879,13 @@
       const marker = node('g', { class:'marker' });
       const bob = node('g', { class:'bob' });
       bob.style.animationDelay = (-(i * 0.47) % 3.2).toFixed(2) + 's';
-      if (BUILDS[p.id]){
+      const build = (CITY && CITY_BUILDS[p.id]) || BUILDS[p.id];
+      if (build){
         // scaled about its own anchor so a build carries the same weight as
         // the lettered markers beside it
         const art = node('g', { class:'art',
           transform:'translate(' + p.x + ',' + p.y + ') scale(' + (CITY ? 1.9 : 1.4) + ') translate(' + (-p.x) + ',' + (-p.y) + ')' });
-        BUILDS[p.id](art, p.x, p.y);
+        build(art, p.x, p.y, p);
         bob.appendChild(art);
       } else {
         bob.appendChild(node('circle', { cx:p.x, cy:p.y, r:24, class:'dot' }));
@@ -1923,13 +2119,19 @@
   // through somebody's block. Past the outer avenues there are no blocks left
   // to hit.
   function toEdge(from, back){
+    const mid = { x:(AVX[0] + AVX[AVX.length-1]) / 2, y:(STY[0] + STY[STY.length-1]) / 2 };
+    const far = n => Math.hypot(n.x - mid.x, n.y - mid.y);
     const out = [];
     let cur = from, last = back;
-    for (let g = 0; g < 8; g++){
-      const u = unitTo(last, cur);
-      let best = null, bestDot = 0.7;
+    for (let g = 0; g < 14; g++){
+      const u = unitTo(last, cur), here = far(cur);
+      // Only ever move further out, and go as straight as that allows. Every
+      // step increases the distance from the middle, so this always ends up on
+      // the outer ring — even from a T-junction against the park, where
+      // carrying straight on is not an option.
+      let best = null, bestDot = -2;
       cur.nb.forEach(function(n){
-        if (n === last) return;
+        if (n === last || far(n) <= here) return;
         const v = unitTo(cur, n), d = u.x * v.x + u.y * v.y;
         if (d > bestDot){ bestDot = d; best = n; }
       });
@@ -2518,7 +2720,7 @@
         '<p style="margin:0;color:var(--muted)">' + puzzle.cast.pic +
           ' <span class="who">' + puzzle.cast.name + '</span> was hiding at ' +
           puzzle.place.pic + ' <b>' + puzzle.place.name + '</b> — about ' +
-          walkMin(trueBlocks) + (walkMin(trueBlocks) === 1 ? ' minute' : ' minutes') + ' from The Town.</p>' +
+          walkMin(trueBlocks) + (walkMin(trueBlocks) === 1 ? ' minute' : ' minutes') + ' from ' + byId('town').name + '.</p>' +
       '</div>' +
       '<div class="share">' + share + '</div>' +
       '<p class="hint">Someone new misses dinner every day at midnight.</p>';
