@@ -12,12 +12,15 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="apple-touch-icon.png">
 <title>Home Before Dinner — The Town</title>
+<!-- GSAP drives the taxis; vendored so the game still needs no network -->
+<script src="vendor/gsap.min.js"></script>
+<script src="vendor/MotionPathPlugin.min.js"></script>
 <style>
   :root{
     --bg:#f7edd8; --panel:#fff8ea; --line:#e6d8bd; --ink:#3a332c;
     --muted:#8a7d6a; --accent:#e05e10; --good:#2e9e63;
     --glow:rgba(224,94,16,.25);
-    --paper:#fbf3df; --road:#b6ab97; --road2:#d2c8b3; --rail:#a68d72;
+    --paper:#9fcfe6; --rail:#8f97a3;
     --card:rgba(0,0,0,.05); --seg:rgba(0,0,0,.1); --sharebg:rgba(0,0,0,.05);
     --dash:#ffdf7e; --dis-bg:#ece1cb; --dis-ink:#a3947e;
   }
@@ -156,18 +159,36 @@
     100%{transform:translate3d(24px,-15%,0) scale(1.15);opacity:0}
   }
 
-  /* --- the map itself --- */
-  .street{stroke:var(--road);stroke-linecap:round;fill:none}
-  .street.major{stroke-width:13}
-  .street.minor{stroke:var(--road2);stroke-width:7}
+  /* --- the map itself: a midtown grid. The asphalt is one slab underneath and
+     the blocks sit on top, so the streets are simply the gaps between blocks. */
+  .asphalt{fill:#26282d}
+  .sidewalk{fill:#d5d8dc}
+  .lane-y{stroke:#e8b62c;stroke-width:2.6}
+  .lane-w{stroke:#f2f3f5;stroke-width:2.4;stroke-dasharray:16 20;opacity:.8}
+  .xwalk{stroke:#e8eaee;stroke-width:8;stroke-dasharray:3.5 4.5;opacity:.9}
   .rail{stroke:var(--rail);stroke-width:3;stroke-dasharray:9 7;fill:none}
-  .streetname{fill:var(--muted);font-size:13px;opacity:.8;font-family:inherit}
-  .green-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.3}
-  .cline{stroke:var(--dash);stroke-width:3;stroke-dasharray:15 11;stroke-linecap:round;fill:none}
-  /* every block of town coloured in with its own crayon */
+  .streetname{
+    fill:#f2f3f6;font-size:13px;opacity:.9;font-family:inherit;pointer-events:none;
+    paint-order:stroke;stroke:#26282d;stroke-width:5px;stroke-linejoin:round;
+  }
+  .cable{stroke:#5b6570;stroke-width:4;fill:none}
+  .btower{fill:#5b6570}
+  .bdeck{fill:#3a3f46}
+  .green-ring{fill:none;stroke:var(--accent);stroke-width:2;opacity:.35}
+  /* the lots, coloured in with the old crayons so the grid stays friendly */
   .b0{fill:#ffeaa7}.b1{fill:#ffd6de}.b2{fill:#c9edcb}.b3{fill:#cbe7f8}
   .b4{fill:#ffdfba}.b5{fill:#e4daf8}.b6{fill:#dcf2b0}.b7{fill:#ffe3d2}
   .b8{fill:#b7e6a6}
+  .lawn{fill:#93d38b}
+  .pond{fill:#7cc7ea}
+  .ppath{fill:none;stroke:#e9e0c6;stroke-width:10;stroke-linecap:round;opacity:.9}
+  /* yellow cabs, GSAP-driven along the lanes */
+  .taxi .cab{fill:#ffce0a;stroke:#b8901f;stroke-width:1}
+  .taxi .glass{fill:#39424e}
+  .taxi .check{fill:#23252a}
+  .taxi .sign{fill:#fff3c4;stroke:#b8901f;stroke-width:.8}
+  .taxi .headglow{fill:#fff3b8;opacity:0;transition:opacity .8s}
+  body.night .taxi .headglow{opacity:.85}
   /* vines draw themselves on as the night comes down */
   .vine{
     fill:none;stroke:#8f1626;stroke-linecap:round;stroke-linejoin:round;opacity:.9;
@@ -180,16 +201,6 @@
     transition:opacity .45s .55s ease-out,transform .45s .55s ease-out;
   }
   .bud.grown{opacity:.9;transform:scale(1)}
-  .sun-disc{fill:#ffd43b;stroke:#f2a71b;stroke-width:2.5}
-  .sun-ray{stroke:#f2a71b;stroke-width:4;stroke-linecap:round}
-  .sun-eye{fill:#8a5a00}
-  .sun-mouth{fill:none;stroke:#8a5a00;stroke-width:2.5;stroke-linecap:round}
-  /* the sun goes out as the light goes */
-  .sun-disc,.sun-ray{transition:fill .8s,stroke .8s}
-  body.night .sun-disc{fill:#3b3556;stroke:#2b2740}
-  body.night .sun-ray{stroke:#2b2740}
-  body.night .sun-eye,body.night .sun-mouth{display:none}
-
   .loc{cursor:pointer}
   .loc .halo{fill:transparent}
   .loc .dot{fill:var(--panel);stroke:var(--muted);stroke-width:2;transition:stroke .2s,fill .2s}
@@ -229,7 +240,7 @@
   /* the clue light: a flashlight beam and a ring, lit as their clues unlock */
   .beam{fill:url(#beamGrad);filter:url(#soften);opacity:0;transition:opacity .8s ease-out;pointer-events:none}
   .ring{fill:none;stroke:#ffcf4a;opacity:0;transition:opacity .8s ease-out;pointer-events:none;
-        filter:url(#soften);mix-blend-mode:multiply}
+        filter:url(#soften)}
   .hints.lit2 .beam{opacity:1}
   .hints.lit3 .ring{opacity:.5}
   body.night .beam{opacity:0}
@@ -257,11 +268,9 @@
   body.lamps .lampglow{opacity:.6}
   body.lamps .lamphead{fill:#ffe9a4}
   /* --- life around the town --- */
-  .lake{fill:#a4d9f2}
   .scene{font-family:inherit;text-anchor:middle;pointer-events:none;user-select:none}
   .pline{stroke:#8a6f4d;stroke-width:5;stroke-linecap:round;fill:none}
   .chain{stroke:#8a6f4d;stroke-width:3;stroke-linecap:round}
-  .slide{stroke:#d0873f;stroke-width:7;stroke-linecap:round}
   .swing-arm{transform-box:fill-box;transform-origin:top center;animation:sway 2.4s ease-in-out infinite alternate}
   @keyframes sway{from{transform:rotate(22deg)}to{transform:rotate(-22deg)}}
   .pball{animation:bounce 1.7s ease-in-out infinite}
@@ -408,7 +417,7 @@
 
 <div id="mapWrap">
   <!-- cropped to the drawn area: the town fills the frame instead of floating in margin -->
-  <svg id="map" viewBox="48 48 904 904" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
+  <svg id="map" viewBox="-70 -80 1740 1300" preserveAspectRatio="xMidYMid meet" aria-label="Map of The Town"></svg>
   <div id="dusk"></div>
   <div id="haze"></div>
   <div id="admin">
@@ -460,33 +469,34 @@
 
   /* ---------- the town ---------- */
 
-  // One block = 100 units. The Town sits dead centre at 500,500.
+  // One block = 100 units. The grid is 5 lots by 5 lots; every place owns a
+  // whole block, and The Town is the park in the middle at 800,575.
   const BLOCK = 100;
-  const TOWN = { x: 500, y: 500 };
+  const TOWN = { x: 800, y: 575 };
 
   const PLACES = [
-    { id:'town',    name:'The Town',          pic:'🏛️', x:500, y:500, hint:'the middle of everything' },
-    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:332, y:369, hint:'the whole block smells of oregano after four' },
-    { id:'library', name:'Public Library',    pic:'📚', x:321, y:662, hint:'you need a card to get in, and quiet to stay' },
-    { id:'middle',  name:'Middle School',     pic:'🎒', x:1047, y:655, hint:'the bell still rings at 2:40, even in summer' },
-    { id:'high',    name:'High School',       pic:'🏫', x:672, y:672, hint:'the field lights come on Friday nights' },
-    { id:'tower',   name:'Water Tower',       pic:'🗼', x:-165, y:663, hint:'you can see the whole grid from the catwalk' },
-    { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:96, y:765, hint:'it is open late and the jukebox eats quarters' },
-    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:-25, y:423, hint:'it is loud, and nobody looks up from the cabinets' , noLabel:true },
-    { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:53, y:553, hint:'you can walk in as yourself and walk out as somebody else' },
-    { id:'station', name:'Train Station',     pic:'🚂', x:500, y:246, hint:'the freight goes through hard enough to rattle windows' },
-    { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:-7, y:224, hint:'the town gave up on that quarry and the kids did not' },
-    { id:'pool',    name:'Community Pool',    pic:'🏊', x:609, y:786, hint:'it is closed for the season and the fence is easy enough' },
-    { id:'field',   name:'Baseball Field',    pic:'⚾', x:1419, y:651, hint:'the dugout stays dry when nothing else does' },
-    { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:668, y:330, hint:'it is the only place in town selling a decent antenna' },
-    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:633, y:144, hint:'if a thing in this town is broken, the part is there' },
-    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:498, y:738, hint:'the ovens run before sunrise and the line asks no questions' },
-    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:1088, y:215, hint:'the milk steamer hisses loud enough to cover any conversation' },
-    { id:'campagne',name:'Campagne House',    pic:'🥂', x:496, y:865, hint:'there is always a wedding on and nobody counts the guests' },
-    { id:'video',   name:'Family Video',      pic:'📼', x:360, y:150, hint:'the horror aisle cannot be seen from the register' },
-    { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:839, y:114, hint:'the fence says keep out and the gate was left open' },
-    { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:1474, y:400, hint:'it is brand new and nobody looks twice at a stranger' },
-    { id:'cookies', name:'Crumbl Cookies',   pic:'🍪', x:1243, y:403, hint:'the queue goes out of the door on a Friday and the boxes are pink' }
+    { id:'town',    name:'The Town',          pic:'🏛️', x:800, y:575, hint:'the middle of everything' },
+    { id:'bowl',    name:'The Old Bowl',      pic:'⛰️', x:160, y:115, hint:'the town gave up on that quarry and the kids did not' },
+    { id:'video',   name:'Family Video',      pic:'📼', x:480, y:115, hint:'the horror aisle cannot be seen from the register' },
+    { id:'station', name:'Train Station',     pic:'🚂', x:800, y:115, hint:'the freight goes through hard enough to rattle windows' },
+    { id:'lab',     name:'Hawkins Lab',       pic:'🧪', x:1120, y:115, hint:'the fence says keep out and the gate was left open' },
+    { id:'coffee',  name:"Mongo's Coffee",    pic:'☕', x:1440, y:115, hint:'the milk steamer hisses loud enough to cover any conversation' },
+    { id:'arcade',  name:'Palace Arcade',     pic:'👾', x:160, y:345, hint:'it is loud, and nobody looks up from the cabinets' , noLabel:true },
+    { id:'pizza',   name:"Pappardelle's Pizzeria", pic:'🍕', x:480, y:345, hint:'the whole block smells of oregano after four' },
+    { id:'smithy',  name:"Smithy's Hardware", pic:'🔧', x:800, y:345, hint:'if a thing in this town is broken, the part is there' },
+    { id:'sparks',  name:'Sparks Radio',      pic:'📻', x:1120, y:345, hint:'it is the only place in town selling a decent antenna' },
+    { id:'cookies', name:'Crumbl Cookies',    pic:'🍪', x:1440, y:345, hint:'the queue goes out of the door on a Friday and the boxes are pink' },
+    { id:'lanes',   name:'Lucky Salon',       pic:'💈', x:160, y:575, hint:'you can walk in as yourself and walk out as somebody else' },
+    { id:'library', name:'Public Library',    pic:'📚', x:480, y:575, hint:'you need a card to get in, and quiet to stay' },
+    { id:'high',    name:'High School',       pic:'🏫', x:1120, y:575, hint:'the field lights come on Friday nights' },
+    { id:'mall',    name:'Starcourt Mall',    pic:'🛍️', x:1440, y:575, hint:'it is brand new and nobody looks twice at a stranger' },
+    { id:'diner',   name:'The Grand Diner',   pic:'🥤', x:160, y:805, hint:'it is open late and the jukebox eats quarters' },
+    { id:'tower',   name:'Water Tower',       pic:'🗼', x:480, y:805, hint:'you can see the whole grid from the catwalk' },
+    { id:'bagel',   name:'Stuff a Bagel',     pic:'🥯', x:800, y:805, hint:'the ovens run before sunrise and the line asks no questions' },
+    { id:'middle',  name:'Middle School',     pic:'🎒', x:1120, y:805, hint:'the bell still rings at 2:40, even in summer' },
+    { id:'field',   name:'Baseball Field',    pic:'⚾', x:1440, y:805, hint:'the dugout stays dry when nothing else does' },
+    { id:'campagne',name:'Campagne House',    pic:'🥂', x:1120, y:1035, hint:'there is always a wedding on and nobody counts the guests' },
+    { id:'pool',    name:'Community Pool',    pic:'🏊', x:800, y:1035, hint:'it is closed for the season and the fence is easy enough' }
   ];
 
   const byId = id => PLACES.filter(function(p){ return p.id === id; })[0];
@@ -494,6 +504,104 @@
   // A few places are built rather than lettered: a shoebox in perspective, with
   // a lit face, a shaded side and a roof, so they stand up off the paper.
   const BUILDS = {
+    town: function(g, x, y){
+      // the park gazebo: everything in town is measured from here
+      g.appendChild(node('ellipse', { cx:x, cy:y+16, rx:22, ry:6, class:'shadow' }));
+      g.appendChild(node('rect', { x:x-17, y:y+8, width:34, height:5, rx:2, fill:'#cfc6b2' }));
+      [-13,-4.5,4,12.5].forEach(function(px){
+        g.appendChild(node('rect', { x:x+px-1.5, y:y-9, width:3, height:17, fill:'#f3ecd9', stroke:'#b3a482', 'stroke-width':0.7 }));
+      });
+      g.appendChild(node('rect', { x:x-16, y:y-12, width:32, height:3.5, fill:'#e6ddc6', stroke:'#b3a482', 'stroke-width':0.7 }));
+      g.appendChild(node('polygon', { points:(x-19)+','+(y-12)+' '+x+','+(y-26)+' '+(x+19)+','+(y-12), fill:'#2e7d5b', stroke:'#1f5b42', 'stroke-width':1 }));
+      g.appendChild(node('circle', { cx:x, cy:y-28, r:2.2, fill:'#f2c14e' }));
+    },
+    middle: function(g, x, y){
+      box(g, x-22, y+11, 44, 20, 7, '#e2a86b', '#c08a52', '#f0c99b');
+      [[-16,-4],[-5,-4],[6,-4]].forEach(function(w){
+        g.appendChild(node('rect', { x:x+w[0], y:y+w[1], width:8, height:6, fill:'#fdf3d8', stroke:'#00000018' }));
+      });
+      g.appendChild(node('rect', { x:x-4, y:y+2, width:9, height:9, fill:'#6f5140' }));
+      g.appendChild(node('circle', { cx:x+13, cy:y+5, r:3.2, fill:'#fdf6e8', stroke:'#8a7250', 'stroke-width':1 }));
+      g.appendChild(node('line', { x1:x-26, y1:y+11, x2:x-26, y2:y-16, class:'strut' }));
+      g.appendChild(node('polygon', { points:(x-26)+','+(y-16)+' '+(x-14)+','+(y-13)+' '+(x-26)+','+(y-10), fill:'#4d79c9' }));
+    },
+    lanes: function(g, x, y){
+      box(g, x-17, y+10, 34, 17, 6, '#f3d7e3', '#d8b3c4', '#fbe9f1');
+      for (let i = 0; i < 5; i++){
+        g.appendChild(node('rect', { x:x-17+i*6.8, y:y-11, width:6.8, height:4.5, fill:i%2 ? '#d95f8a' : '#fdf3f7' }));
+      }
+      g.appendChild(node('rect', { x:x-4, y:y+1, width:8, height:9, fill:'#7c5b6a' }));
+      g.appendChild(node('rect', { x:x+8, y:y-2, width:7, height:6, fill:'#cfeef8' }));
+      // the barber pole by the door
+      g.appendChild(node('rect', { x:x-13, y:y-4, width:4, height:12, rx:2, fill:'#fff', stroke:'#b9a0ac', 'stroke-width':0.7 }));
+      [[0,'#d94f4f'],[4,'#4f6fd9'],[8,'#d94f4f']].forEach(function(s){
+        g.appendChild(node('rect', { x:x-13, y:y-3+s[0], width:4, height:2, fill:s[1] }));
+      });
+    },
+    bowl: function(g, x, y){
+      g.appendChild(node('ellipse', { cx:x, cy:y+6, rx:27, ry:14, fill:'#c9c4b8' }));
+      g.appendChild(node('ellipse', { cx:x, cy:y+5, rx:20, ry:9.5, fill:'#a9a396' }));
+      g.appendChild(node('ellipse', { cx:x, cy:y+4, rx:12, ry:5.5, fill:'#8e8879' }));
+      g.appendChild(node('path', { d:'M'+(x-16)+','+(y+3)+' q16,-8 32,0', fill:'none', stroke:'#dcd7ca', 'stroke-width':1.6 }));
+      // a skateboard left on the lip
+      g.appendChild(node('rect', { x:x+12, y:y-6, width:13, height:3, rx:1.5, fill:'#d0873f', transform:'rotate(-18 '+(x+18)+' '+(y-5)+')' }));
+      g.appendChild(node('circle', { cx:x+14, cy:y-2.5, r:1.4, fill:'#4a4038' }));
+      g.appendChild(node('circle', { cx:x+22, cy:y-5, r:1.4, fill:'#4a4038' }));
+    },
+    sparks: function(g, x, y){
+      box(g, x-17, y+10, 34, 16, 6, '#d9cbb0', '#bda98a', '#eadfc8');
+      g.appendChild(node('rect', { x:x-13, y:y-2, width:9, height:7, fill:'#8fd3ef' }));
+      g.appendChild(node('rect', { x:x+3, y:y+1, width:8, height:9, fill:'#6f5c44' }));
+      // the lattice mast, and the light that never goes off
+      g.appendChild(node('line', { x1:x-4, y1:y-6, x2:x-4, y2:y-30, class:'strut' }));
+      g.appendChild(node('line', { x1:x-10, y1:y-6, x2:x-4, y2:y-20, class:'strut' }));
+      g.appendChild(node('line', { x1:x+2, y1:y-6, x2:x-4, y2:y-20, class:'strut' }));
+      g.appendChild(node('circle', { cx:x-4, cy:y-31, r:2, fill:'#e04b4b' }));
+      g.appendChild(node('path', { d:'M'+(x-12)+','+(y-30)+' q8,-7 16,0', fill:'none', stroke:'#9fb4c9', 'stroke-width':1.4 }));
+    },
+    smithy: function(g, x, y){
+      box(g, x-18, y+10, 36, 17, 6, '#c9d2d9', '#a7b2bc', '#e0e6ea');
+      g.appendChild(node('rect', { x:x-21, y:y-14, width:42, height:8, rx:2, fill:'#455361', stroke:'#2f3a45', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#ffd34e', class:'blab' }, 'HARDWARE'));
+      g.appendChild(node('rect', { x:x-4, y:y+1, width:8, height:9, fill:'#3f4a54' }));
+      g.appendChild(node('rect', { x:x-14, y:y-2, width:8, height:6, fill:'#fdf3d8' }));
+      g.appendChild(node('rect', { x:x+7, y:y-2, width:8, height:6, fill:'#fdf3d8' }));
+      // the hammer over the door
+      g.appendChild(node('line', { x1:x+14, y1:y-16, x2:x+20, y2:y-24, stroke:'#7a5c3a', 'stroke-width':2, 'stroke-linecap':'round' }));
+      g.appendChild(node('rect', { x:x+16, y:y-27, width:9, height:4.5, rx:1.5, fill:'#5b676f', transform:'rotate(35 '+(x+20)+' '+(y-25)+')' }));
+    },
+    bagel: function(g, x, y){
+      box(g, x-17, y+10, 34, 16, 6, '#f2e2c2', '#d8c49a', '#faefd8');
+      for (let i = 0; i < 5; i++){
+        g.appendChild(node('rect', { x:x-17+i*6.8, y:y-10, width:6.8, height:4.5, fill:i%2 ? '#d9a03f' : '#fdf6e6' }));
+      }
+      g.appendChild(node('rect', { x:x-4, y:y+1, width:8, height:9, fill:'#7c6243' }));
+      // the bagel itself, up on the roof
+      g.appendChild(node('circle', { cx:x, cy:y-20, r:8, fill:'#e0a95c', stroke:'#b57f38', 'stroke-width':1.2 }));
+      g.appendChild(node('circle', { cx:x, cy:y-20, r:3, fill:'#f2e2c2', stroke:'#b57f38', 'stroke-width':1 }));
+      g.appendChild(node('path', { d:'M'+(x-6)+','+(y-24)+' q6,-3 12,0', fill:'none', stroke:'#fdf1da', 'stroke-width':1.6 }));
+    },
+    coffee: function(g, x, y){
+      box(g, x-16, y+10, 32, 16, 6, '#b98a63', '#9a6f4d', '#d3a87e');
+      g.appendChild(node('rect', { x:x-12, y:y-2, width:10, height:7, fill:'#ffd98a' }));
+      g.appendChild(node('rect', { x:x+3, y:y+1, width:8, height:9, fill:'#5c4030' }));
+      // a mug on the roof, still steaming
+      g.appendChild(node('rect', { x:x-6, y:y-24, width:12, height:10, rx:2, fill:'#fdf6e8', stroke:'#8a6f4d', 'stroke-width':1.2 }));
+      g.appendChild(node('path', { d:'M'+(x+6)+','+(y-22)+' q5,0 5,3.5 q0,3.5 -5,3.5', fill:'none', stroke:'#8a6f4d', 'stroke-width':1.6 }));
+      g.appendChild(node('path', { d:'M'+(x-2)+','+(y-27)+' q2,-3 0,-6 M'+(x+2)+','+(y-27)+' q2,-3 0,-6', fill:'none', stroke:'#c9c2b4', 'stroke-width':1.4, 'stroke-linecap':'round' }));
+    },
+    video: function(g, x, y){
+      box(g, x-18, y+10, 36, 17, 6, '#5878b8', '#43609a', '#7593cc');
+      g.appendChild(node('rect', { x:x-21, y:y-14, width:42, height:8, rx:2, fill:'#f7c531', stroke:'#c99a2e', 'stroke-width':1 }));
+      g.appendChild(node('text', { x:x, y:y-7.8, 'font-size':6, 'text-anchor':'middle', fill:'#31456e', class:'blab' }, 'VIDEO'));
+      g.appendChild(node('rect', { x:x-13, y:y-2, width:9, height:7, fill:'#bcd7f2' }));
+      g.appendChild(node('rect', { x:x+4, y:y-2, width:9, height:7, fill:'#bcd7f2' }));
+      g.appendChild(node('rect', { x:x-4, y:y+2, width:8, height:8, fill:'#2c3a5c' }));
+      // a VHS above the sign
+      g.appendChild(node('rect', { x:x-8, y:y-22, width:16, height:7, rx:1.5, fill:'#2b2b30', stroke:'#111', 'stroke-width':0.8 }));
+      g.appendChild(node('circle', { cx:x-3.5, cy:y-18.5, r:1.6, fill:'#777' }));
+      g.appendChild(node('circle', { cx:x+3.5, cy:y-18.5, r:1.6, fill:'#777' }));
+    },
     mall: function(g, x, y){
       box(g, x-20, y+8, 40, 20, 9, '#e8b3c6', '#c98ba2', '#f6d3df');
       g.appendChild(node('rect', { x:x-13, y:y-4, width:26, height:11, rx:2, fill:'#f7e6a8', stroke:'#c9a94e', 'stroke-width':1 }));
@@ -620,84 +728,53 @@
     g.appendChild(node('rect', { x:x, y:y-h, width:w, height:h, fill:front }));
   }
 
-  // Roads are drawn from data, so the town stays easy to redraw.
-  const STREETS = [
-    { name:'Broadway',    major:true,  x1:500, y1:60,  x2:500, y2:940 },
-    { name:'Central Ave', major:true,  x1:-560, y1:500, x2:1560, y2:500 },
-    { name:'Grove St',    major:false, x1:240, y1:120, x2:240, y2:880 },
-    { name:'Cherry Ln',   major:false, x1:760, y1:120, x2:760, y2:880 },
-    { name:'School St',   major:false, x1:-460, y1:660, x2:1460, y2:660 },
-    { name:'Depot St',    major:false, x1:-460, y1:340, x2:1460, y2:340 },
-    { name:'The Parkway', major:true,  x1:944, y1:80,  x2:664, y2:944 }
-  ];
+  // The grid, drawn from data: avenues run north-south, streets east-west,
+  // and every block is the gap between them. Named like the city it copies.
+  const AVX = [0, 320, 640, 960, 1280, 1600];       // avenue centrelines
+  const STY = [0, 230, 460, 690, 920, 1150];        // street centrelines
+  const AVW = 40, STW = 30;                          // how wide each runs
+  const AVE_NAMES = ['10th Ave','8th Ave','Broadway','5th Ave','Park Ave','Lexington Ave'];
+  const ST_NAMES  = ['59th St','57th St','55th St','53rd St','51st St','49th St'];
+  const PARK = { col:2, row:2 };                     // The Town, mid-grid
+  // the asphalt slab runs a little past the outer avenues, and the whole of it
+  // stays in frame even though no place sits at its edge
+  const SLAB = { x0:-70, y0:-80, x1:1670, y1:1220 };
 
-  // Every block of town coloured in like a crayon map — one flat colour per
-  // block, nothing layered on top. Where a block IS a place, the whole block
-  // takes that colour: the pines and ball fields are green, the pond is blue.
-  // Corners are nudged off-square on purpose; the wobble filter does the rest.
-  const BLOCKS = [
-    { tone:'b3', points:'58,62 224,58 228,270 60,266' },        // NW corner
-    { tone:'b1', points:'256,60 484,66 482,268 254,272' },
-    { tone:'b5', points:'516,58 744,64 748,270 514,266' },
-    { tone:'b8', points:'776,64 926,70 866,268 772,272' },      // the pines
-    { tone:'b0', points:'58,356 226,352 224,486 60,482' },
-    { tone:'b5', points:'254,354 486,358 482,484 256,486' },
-    { tone:'b7', points:'514,356 746,352 744,486 516,482' },
-    { tone:'b0', points:'774,354 838,358 800,482 774,486' },    // west of the parkway
-    { tone:'b2', points:'872,356 944,352 944,638 780,642' },    // east of the parkway
-    { tone:'b1', points:'60,516 224,512 226,648 58,644' },
-    { tone:'b3', points:'256,514 484,518 482,646 254,644' },
-    { tone:'b0', points:'516,516 744,514 746,644 514,648' },
-    { tone:'b3', points:'58,676 226,672 224,936 62,938' },      // the pond
-    { tone:'b7', points:'254,674 486,678 484,936 256,934' },
-    { tone:'b8', points:'516,676 744,672 746,934 514,936' },    // ball fields
-    { tone:'b1', points:'770,676 944,672 944,936 684,938' },    // SE, past the parkway
-    // The countryside, seen when a wide screen looks past the town. The
-    // desktop view is biased east away from the clue card, so the east side
-    // gets the destinations and the west stays light.
-    { tone:'b8', points:'-560,62 40,58 42,468 -556,464' },      // the meadow
-    { tone:'b7', points:'-556,476 42,472 40,704 -552,708' },
-    { tone:'b6', points:'-552,716 40,712 42,938 -548,934' },    // the orchard
-    { tone:'b4', points:'958,62 1560,66 1556,330 962,326' },    // the lake
-    { tone:'b5', points:'962,338 1556,334 1560,656 958,652' },  // the fields
-    { tone:'b6', points:'958,664 1560,660 1556,936 954,932' }   // the playground
-  ];
-
-  // Life outside the town lines: trees, the duck on the lake, a cow, a
-  // tractor in the fields.
+  // Street trees on the sidewalk corners, a hot dog cart by the park, and
+  // boats out on the river for whoever's screen is wide enough to see it.
   const TREES = [
-    [-200,150,'🌳',36],[-90,240,'🌲',32],[-140,392,'🐄',26],
-    [-170,792,'🌳',34],[-80,852,'🌳',30],
-    [1050,180,'🌲',34],[1540,120,'🌳',30],[1320,180,'🦆',22],
-    [1180,568,'🚜',30],[1360,452,'🌾',28],[1520,590,'🌳',30],
-    [1490,720,'🌳',30],[1060,924,'🌳',28],[1470,884,'🌳',30]
+    [350,208,'🌳',24],[670,208,'🌳',24],[1310,208,'🌳',24],
+    [1560,438,'🌳',24],[350,898,'🌳',24],[1230,898,'🌳',24],
+    [690,1128,'🌳',24],[987,540,'🌭',22],
+    [690,515,'🌳',26],[910,505,'🌳',26],[700,662,'🌳',24],
+    [-330,240,'⛵',30],[-300,880,'🛥️',28],[1930,300,'🚤',28],
+    [2010,860,'⛵',30],[760,-300,'⛴️',30],[420,1460,'⛵',28],[1240,1420,'🛥️',28]
   ];
-  const LAKE = '1160,120 1380,100 1500,170 1440,258 1220,266 1140,200';
 
   // Red growth for after dark. Vines creep in from the edges of the drawing,
   // and `stage` is how far into the night each one appears — by nine the town
   // is overgrown and one vine has reached the green.
   const VINES = [
-    { d:'M52,60 C90,140 40,240 88,330 S60,480 96,560', w:7, stage:0 },
-    { d:'M948,180 C880,220 840,190 780,240 S730,330 742,400 q6,30 -6,50', w:6, stage:0 },
-    { d:'M88,330 q40,-16 74,-6', w:4, alt:true, stage:1 },
-    { d:'M250,948 C280,880 240,820 280,760 S330,690 320,640', w:6, stage:1 },
-    { d:'M780,240 q-30,-30 -60,-36', w:4, alt:true, stage:1 },
-    { d:'M96,560 q34,18 44,52', w:4, alt:true, stage:2 },
-    { d:'M420,52 C400,120 460,170 430,240 q-18,40 8,84', w:5, stage:2 },
-    { d:'M948,900 C880,870 850,900 800,860 S740,800 720,750', w:5, stage:2 },
-    { d:'M430,240 q-40,10 -66,-6', w:3.5, alt:true, stage:3 },
-    { d:'M280,760 q40,6 62,30', w:4, alt:true, stage:3 },
-    { d:'M700,52 q30,60 -6,110', w:4, stage:3 },
-    // the last one crosses the town and stops at the edge of the green
-    { d:'M948,520 C860,540 800,500 720,530 S620,540 585,515', w:5, alt:true, stage:4 },
-    { d:'M720,530 q-20,30 -54,34', w:3.5, stage:4 }
+    { d:'M-60,80 C20,180 -30,320 40,440 S0,600 60,700', w:7, stage:0 },
+    { d:'M1660,200 C1560,260 1500,230 1420,300 S1340,420 1360,500', w:6, stage:0 },
+    { d:'M40,440 q54,-18 96,-4', w:4, alt:true, stage:1 },
+    { d:'M420,1210 C450,1100 410,1010 450,930 S500,850 490,790', w:6, stage:1 },
+    { d:'M1420,300 q-44,-42 -88,-48', w:4, alt:true, stage:1 },
+    { d:'M60,700 q44,24 56,68', w:4, alt:true, stage:2 },
+    { d:'M620,-70 C600,50 660,130 630,230 q-22,54 10,110', w:5, stage:2 },
+    { d:'M1660,1030 C1540,1000 1490,1040 1420,980 S1340,900 1320,830', w:5, stage:2 },
+    { d:'M630,230 q-50,14 -84,-6', w:3.5, alt:true, stage:3 },
+    { d:'M450,930 q50,10 76,40', w:4, alt:true, stage:3 },
+    { d:'M980,-70 q38,90 -8,160', w:4, stage:3 },
+    // the last one crosses midtown and stops at the edge of the park
+    { d:'M1660,620 C1500,660 1400,600 1280,640 S1080,650 960,600 Q920,585 900,580', w:5, alt:true, stage:4 },
+    { d:'M1280,640 q-26,40 -70,46', w:3.5, stage:4 }
   ];
   const BUDS = [
-    { x:96,  y:560, r:4,   stage:2 }, { x:438, y:324, r:3.5, stage:3 },
-    { x:736, y:450, r:4,   stage:1 }, { x:320, y:640, r:3.5, stage:2 },
-    { x:720, y:750, r:3.5, stage:3 }, { x:694, y:162, r:3,   stage:4 },
-    { x:585, y:515, r:4.5, stage:4 }, { x:162, y:324, r:3,   stage:2 }
+    { x:60,   y:700, r:4,   stage:2 }, { x:640,  y:340, r:3.5, stage:3 },
+    { x:1360, y:500, r:4,   stage:1 }, { x:490,  y:790, r:3.5, stage:2 },
+    { x:1320, y:830, r:3.5, stage:3 }, { x:972,  y:90,  r:3,   stage:4 },
+    { x:900,  y:580, r:4.5, stage:4 }, { x:136,  y:436, r:3,   stage:2 }
   ];
 
   /* ---------- cast ---------- */
@@ -864,7 +941,7 @@
     wob.appendChild(node('feTurbulence', { type:'fractalNoise', baseFrequency:'0.013', numOctaves:'2', seed:'7', result:'n' }));
     wob.appendChild(node('feDisplacementMap', { in:'SourceGraphic', in2:'n', scale:'7' }));
     defs.appendChild(wob);
-    const glow = node('radialGradient', { id:'beamGrad', gradientUnits:'userSpaceOnUse', cx:TOWN.x, cy:TOWN.y, r:700 });
+    const glow = node('radialGradient', { id:'beamGrad', gradientUnits:'userSpaceOnUse', cx:TOWN.x, cy:TOWN.y, r:900 });
     [['0%','#ffd76a','0.5'], ['55%','#ffce4d','0.26'], ['100%','#f7bd35','0.07']].forEach(function(st){
       glow.appendChild(node('stop', { offset:st[0], 'stop-color':st[1], 'stop-opacity':st[2] }));
     });
@@ -874,37 +951,83 @@
     defs.appendChild(soften);
     svg.appendChild(defs);
 
-    // the ground wobbles; labels and markers stay crisp on top of it
-    const ground = node('g', { filter:'url(#wobble)' });
+    // The grid is drawn dead straight — no wobble filter. Asphalt first, one
+    // slab under everything; the blocks sit on top and the streets are simply
+    // the gaps between them.
+    const ground = node('g', {});
     svg.appendChild(ground);
 
-    BLOCKS.forEach(function(b){ ground.appendChild(node('polygon', { points:b.points, class:'blk ' + b.tone })); });
-    ground.appendChild(node('polygon', { points:LAKE, class:'lake' }));
+    ground.appendChild(node('rect', {
+      x:SLAB.x0, y:SLAB.y0, width:SLAB.x1-SLAB.x0, height:SLAB.y1-SLAB.y0, rx:18, class:'asphalt'
+    }));
 
-    // the railway runs east to west, just above Depot St
-    ground.appendChild(node('line', { x1:-700, y1:286, x2:1700, y2:286, class:'rail' }));
-
-    STREETS.forEach(function(s){
-      ground.appendChild(node('line', {
-        x1:s.x1, y1:s.y1, x2:s.x2, y2:s.y2, class:'street ' + (s.major ? 'major' : 'minor')
-      }));
-      if (s.major) ground.appendChild(node('line', { x1:s.x1, y1:s.y1, x2:s.x2, y2:s.y2, class:'cline' }));
+    // lane markings: double yellow down the avenues, broken white on streets
+    AVX.forEach(function(ax){
+      [-3, 3].forEach(function(o){
+        ground.appendChild(node('line', { x1:ax+o, y1:SLAB.y0+20, x2:ax+o, y2:SLAB.y1-20, class:'lane-y' }));
+      });
+    });
+    STY.forEach(function(sy){
+      ground.appendChild(node('line', { x1:SLAB.x0+20, y1:sy, x2:SLAB.x1-20, y2:sy, class:'lane-w' }));
     });
 
-    // a sun for the corner of the drawing (it goes out in the Upside Down)
-    const sun = node('g', { class:'sun' });
-    sun.appendChild(node('circle', { cx:118, cy:112, r:28, class:'sun-disc' }));
-    for (let i = 0; i < 8; i++){
-      const a = i * Math.PI / 4;
-      sun.appendChild(node('line', {
-        x1: 118 + Math.cos(a) * 38, y1: 112 + Math.sin(a) * 38,
-        x2: 118 + Math.cos(a) * 52, y2: 112 + Math.sin(a) * 52, class:'sun-ray'
-      }));
+    // the blocks: a sidewalk apron with the lot coloured in on top of it. The
+    // park keeps its lawn; everyone else gets one of the old crayons.
+    for (let c = 0; c < AVX.length - 1; c++){
+      for (let r = 0; r < STY.length - 1; r++){
+        const bx = AVX[c] + AVW/2, by = STY[r] + STW/2;
+        const bw = AVX[c+1] - AVW/2 - bx, bh = STY[r+1] - STW/2 - by;
+        ground.appendChild(node('rect', { x:bx, y:by, width:bw, height:bh, rx:10, class:'sidewalk' }));
+        const park = c === PARK.col && r === PARK.row;
+        ground.appendChild(node('rect', {
+          x:bx+14, y:by+14, width:bw-28, height:bh-28, rx:6,
+          class: park ? 'lawn' : 'lot b' + ((c*3 + r*5) % 9)
+        }));
+      }
     }
-    sun.appendChild(node('circle', { cx:108, cy:106, r:3, class:'sun-eye' }));
-    sun.appendChild(node('circle', { cx:128, cy:106, r:3, class:'sun-eye' }));
-    sun.appendChild(node('path', { d:'M106,119 Q118,130 130,119', class:'sun-mouth' }));
-    ground.appendChild(sun);
+
+    // zebra crossings on all four sides of every intersection
+    AVX.forEach(function(ax){ STY.forEach(function(sy){
+      ground.appendChild(node('line', { x1:ax-AVW/2, y1:sy-STW/2-6, x2:ax+AVW/2, y2:sy-STW/2-6, class:'xwalk' }));
+      ground.appendChild(node('line', { x1:ax-AVW/2, y1:sy+STW/2+6, x2:ax+AVW/2, y2:sy+STW/2+6, class:'xwalk' }));
+      ground.appendChild(node('line', { x1:ax-AVW/2-6, y1:sy-STW/2, x2:ax-AVW/2-6, y2:sy+STW/2, class:'xwalk' }));
+      ground.appendChild(node('line', { x1:ax+AVW/2+6, y1:sy-STW/2, x2:ax+AVW/2+6, y2:sy+STW/2, class:'xwalk' }));
+    }); });
+
+    // street names painted on the asphalt, avenue names running along them
+    STY.forEach(function(sy, i){
+      ground.appendChild(node('text', { class:'streetname', x:170, y:sy+4.5 }, ST_NAMES[i]));
+    });
+    AVX.forEach(function(ax, i){
+      ground.appendChild(node('text', {
+        class:'streetname', x:ax, y:346, 'text-anchor':'middle',
+        transform:'rotate(-90 ' + ax + ' 346)'
+      }, AVE_NAMES[i]));
+    });
+
+    // Manhattan is an island: the grid floats in the river, 55th St runs out
+    // over a suspension bridge on each side, and the el crosses on its own
+    // trestle. A wide screen sees the water; a phone sees it above and below.
+    [[SLAB.x0-620, SLAB.x0+12], [SLAB.x1-12, SLAB.x1+620]].forEach(function(bx){
+      const mid = (bx[0] + bx[1]) / 2;
+      ground.appendChild(node('rect', { x:bx[0], y:460-STW/2, width:bx[1]-bx[0], height:STW, class:'asphalt' }));
+      ground.appendChild(node('line', { x1:bx[0], y1:460, x2:bx[1], y2:460, class:'lane-w' }));
+      ground.appendChild(node('path', {
+        d:'M'+bx[0]+','+(460-78)+' Q'+mid+','+(460+4)+' '+bx[1]+','+(460-78), class:'cable'
+      }));
+      [bx[0]+110, bx[1]-110].forEach(function(tx){
+        ground.appendChild(node('rect', { x:tx-4, y:460-88, width:8, height:88, class:'btower' }));
+      });
+      ground.appendChild(node('rect', { x:bx[0], y:-44, width:bx[1]-bx[0], height:16, class:'bdeck' }));
+    });
+
+    // the elevated line skirts the top of the grid, above 59th
+    ground.appendChild(node('line', { x1:SLAB.x0-620, y1:-36, x2:SLAB.x1+620, y2:-36, class:'rail' }));
+
+    // the park itself: pond, two paths that meet at the gazebo, and shade
+    ground.appendChild(node('ellipse', { cx:735, cy:640, rx:30, ry:15, class:'pond' }));
+    ground.appendChild(node('path', { d:'M668,482 Q800,575 932,668', class:'ppath' }));
+    ground.appendChild(node('path', { d:'M932,482 Q800,575 668,668', class:'ppath' }));
 
     // the growth sits over the streets but under every label and marker
     {
@@ -928,10 +1051,13 @@
     TREES.forEach(function(t){
       live.appendChild(node('text', { x:t[0], y:t[1], 'font-size':t[3], class:'scene' }, t[2]));
     });
-    // the playground: swing frame, a swinging kid, a slide, a bouncing ball
-    live.appendChild(node('line', { x1:1060, y1:762, x2:1180, y2:762, class:'pline' }));
-    live.appendChild(node('line', { x1:1060, y1:762, x2:1044, y2:842, class:'pline' }));
-    live.appendChild(node('line', { x1:1180, y1:762, x2:1196, y2:842, class:'pline' }));
+    // the playground corner of the park: swing frame, a swinging kid, a ball.
+    // Drawn in its old coordinates and mapped into the park in one transform.
+    const pg = node('g', { transform:'translate(880,606) scale(0.45) translate(-1120,-764)' });
+    live.appendChild(pg);
+    pg.appendChild(node('line', { x1:1060, y1:762, x2:1180, y2:762, class:'pline' }));
+    pg.appendChild(node('line', { x1:1060, y1:762, x2:1044, y2:842, class:'pline' }));
+    pg.appendChild(node('line', { x1:1180, y1:762, x2:1196, y2:842, class:'pline' }));
     const swingAt = node('g', { transform:'translate(1120,764)' });   // pivot on the bar
     const arm = node('g', { class:'swing-arm' });
     // a whole kid, not a floating head: chains, seat, head, body, arms, legs
@@ -945,13 +1071,10 @@
     arm.appendChild(node('polyline', { points:'0,43 10,47 9,57',  class:'kid' }));
     arm.appendChild(node('polyline', { points:'0,43 13,45 14,55', class:'kid' }));
     swingAt.appendChild(arm);
-    live.appendChild(swingAt);
-    live.appendChild(node('line', { x1:1300, y1:792, x2:1362, y2:858, class:'slide' }));
-    live.appendChild(node('line', { x1:1300, y1:792, x2:1300, y2:858, class:'pline' }));
-    live.appendChild(node('text', { x:1240, y:892, 'font-size':24, class:'scene pball' }, '⚽'));
-    live.appendChild(node('text', { x:1210, y:930, class:'streetname', 'text-anchor':'middle' }, 'Playground'));
-    // street lamps along the big roads; they come on after eight
-    [[302,481],[700,481],[-140,481],[1046,481],[524,714],[556,300]].forEach(function(L){
+    pg.appendChild(swingAt);
+    pg.appendChild(node('text', { x:1240, y:892, 'font-size':24, class:'scene pball' }, '⚽'));
+    // street lamps on the sidewalk corners around the park; they come on after eight
+    [[610,436],[990,436],[610,722],[990,722],[354,262],[1250,952]].forEach(function(L){
       const lampG = node('g', { class:'lamp' });
       lampG.appendChild(node('circle', { cx:L[0]+7, cy:L[1]-26, r:14, class:'lampglow' }));
       lampG.appendChild(node('line', { x1:L[0], y1:L[1], x2:L[0], y2:L[1]-24, class:'lamppost' }));
@@ -962,13 +1085,13 @@
 
     // the cyclist and the freight cross, rest, and return from a random side
     const rider = node('g', { class:'rider' });
-    const riderGlyph = node('text', { x:0, y:506, 'font-size':28, class:'scene' }, '🚴');
+    const riderGlyph = node('text', { x:0, y:470, 'font-size':28, class:'scene' }, '🚴');
     rider.appendChild(riderGlyph);
     live.appendChild(rider);
 
     const train = node('g', { class:'train' });
     const trainBody = node('g', {});
-    const RAILY = 286;
+    const RAILY = -36;    // the elevated line above 59th
     function boxcar(bx, bw, fill){
       trainBody.appendChild(node('rect', { x:bx, y:RAILY-26, width:bw, height:20, rx:2.5, fill:fill, class:'tcar' }));
       trainBody.appendChild(node('circle', { cx:bx+8,    cy:RAILY-3, r:4, class:'twheel' }));
@@ -988,9 +1111,9 @@
     // the glyph faces left, and the engine leads left as drawn; flip for east
     movers.forEach(function(m){ m.stop(); });
     movers = [
-      mover(rider, { span:[-650, 1650], speed:95, gap:[2, 5], firstDelay:0.8,
+      mover(rider, { span:[-450, 2050], speed:95, gap:[2, 5], firstDelay:0.8,
         face:function(dir){ riderGlyph.setAttribute('transform', dir === 1 ? 'scale(-1 1)' : ''); } }),
-      mover(train, { span:[-850, 1800], speed:125, gap:[4, 8], firstDelay:2.5,
+      mover(train, { span:[-500, 2100], speed:125, gap:[4, 8], firstDelay:2.5,
         face:function(dir){ trainBody.setAttribute('transform', dir === 1 ? 'translate(116 0) scale(-1 1)' : ''); } })
     ];
     svg.appendChild(live);
@@ -1012,24 +1135,16 @@
     }));
     svg.appendChild(hints);
 
-    STREETS.forEach(function(s){
-      const horiz = Math.abs(s.y2 - s.y1) < Math.abs(s.x2 - s.x1);
-      const lx = Math.min(s.x1 + 9, 934);   // keep the Parkway's name inside the crop
-      svg.appendChild(node('text', {
-        class:'streetname',
-        x: horiz ? 84 : lx,
-        y: horiz ? s.y1 - 9 : 96,
-        transform: horiz ? '' : 'rotate(90 ' + lx + ' 96)'
-      }, s.name));
-    });
-
     svg.appendChild(node('circle', { cx:TOWN.x, cy:TOWN.y, r:80, class:'green-ring' }));
+
+    // the cabs drive between the ground and the buildings
+    startTaxis();
 
     PLACES.forEach(function(p, i){
       const g = node('g', { class:'loc' + (p.id === 'town' ? ' town' : ''), 'data-id':p.id });
-      // fat tap target: 46 units is as wide as it goes before the two closest
-      // places (the water tower and the station, 96 apart) start overlapping
-      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:46, class:'halo' }));
+      // fat tap target: every place owns a whole block now, so the halo can
+      // be nearly half a block wide before neighbours collide
+      g.appendChild(node('circle', { cx:p.x, cy:p.y, r:76, class:'halo' }));
       // marker takes the hover/selection scale; bob idles inside it, so the
       // two transforms never fight over the same element
       const marker = node('g', { class:'marker' });
@@ -1039,7 +1154,7 @@
         // scaled about its own anchor so a build carries the same weight as
         // the lettered markers beside it
         const art = node('g', { class:'art',
-          transform:'translate(' + p.x + ',' + p.y + ') scale(1.4) translate(' + (-p.x) + ',' + (-p.y) + ')' });
+          transform:'translate(' + p.x + ',' + p.y + ') scale(1.9) translate(' + (-p.x) + ',' + (-p.y) + ')' });
         BUILDS[p.id](art, p.x, p.y);
         bob.appendChild(art);
       } else {
@@ -1237,11 +1352,137 @@
     return { stop:function(){ stopped = true; park(); } };
   }
 
-  // A drawn marker can only be so fat before neighbours collide — the water
-  // tower and the station sit 96 units apart. So a tap that lands near a place
-  // counts for it: the nearest one inside this radius wins, which gives big
-  // finger-sized targets without any overlapping circles on the map.
-  const NEAR = 70;
+  /* ---------- taxis ----------
+     Yellow cabs, driven by GSAP along the lanes. Each one picks a random run
+     of turns through the grid, drives in from offscreen keeping to the
+     right-hand side of the road, rounds its corners, drives out, rests, and
+     goes again. GSAP is vendored next to the game; if it ever fails to load
+     the town simply has no traffic and everything else plays on. */
+
+  const TAXI_N = 5, TAXI_SPEED = 150, LANE = 9, CORNER = 16;
+  let taxiFleet = [];
+
+  function taxiNode(){
+    const g = node('g', { class:'taxi', transform:'translate(-3000,0)' });
+    g.appendChild(node('ellipse', { cx:0, cy:2, rx:17, ry:8, class:'shadow' }));
+    g.appendChild(node('circle', { cx:19, cy:-4.5, r:5, class:'headglow' }));
+    g.appendChild(node('circle', { cx:19, cy:4.5, r:5, class:'headglow' }));
+    g.appendChild(node('rect', { x:-16, y:-7.5, width:32, height:15, rx:4.5, class:'cab' }));
+    g.appendChild(node('rect', { x:5, y:-6, width:5, height:12, rx:1.5, class:'glass' }));
+    g.appendChild(node('rect', { x:-12, y:-6, width:4, height:12, rx:1.5, class:'glass' }));
+    for (let i = 0; i < 4; i++){
+      g.appendChild(node('rect', { x:-8 + i*4, y:-7.5, width:2, height:1.8, class:'check' }));
+      g.appendChild(node('rect', { x:-6 + i*4, y:5.7, width:2, height:1.8, class:'check' }));
+    }
+    g.appendChild(node('rect', { x:-2.5, y:-2.2, width:5, height:4.4, rx:1, class:'sign' }));
+    return g;
+  }
+
+  // a random run of turns through the grid, never straight back the way it came
+  function taxiWaypoints(){
+    let ix = Math.floor(Math.random() * AVX.length);
+    let iy = Math.floor(Math.random() * STY.length);
+    let last = null;
+    const nodes = [[ix, iy]];
+    const steps = 7 + Math.floor(Math.random() * 6);
+    for (let s = 0; s < steps; s++){
+      const opts = [[1,0],[-1,0],[0,1],[0,-1]].filter(function(d){
+        if (last && d[0] === -last[0] && d[1] === -last[1]) return false;
+        const nx = ix + d[0], ny = iy + d[1];
+        return nx >= 0 && nx < AVX.length && ny >= 0 && ny < STY.length;
+      });
+      let d = opts[Math.floor(Math.random() * opts.length)];
+      // mostly keep going straight — city drivers hate turning
+      if (last && Math.random() < 0.6 &&
+          opts.some(function(o){ return o[0] === last[0] && o[1] === last[1]; })) d = last;
+      ix += d[0]; iy += d[1]; last = d;
+      nodes.push([ix, iy]);
+    }
+    return nodes.map(function(n){ return { x:AVX[n[0]], y:STY[n[1]] }; });
+  }
+
+  const unitTo = function(a, b){
+    const L = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    return { x:(b.x - a.x) / L, y:(b.y - a.y) / L };
+  };
+
+  // shift the route into the right-hand lane, and run both ends offscreen
+  function taxiLane(pts){
+    const stretch = function(a, b, k){
+      const u = unitTo(b, a);
+      return { x:a.x + u.x * k, y:a.y + u.y * k };
+    };
+    const run = [stretch(pts[0], pts[1], 420)]
+      .concat(pts, [stretch(pts[pts.length-1], pts[pts.length-2], 420)]);
+    const right = function(a, b){
+      const u = unitTo(a, b);
+      return { x:-u.y, y:u.x };            // y grows downward: this is the right side
+    };
+    return run.map(function(p, i){
+      const n1 = i > 0 ? right(run[i-1], p) : right(p, run[i+1]);
+      const n2 = i < run.length - 1 ? right(p, run[i+1]) : right(run[i-1], p);
+      const dot = n1.x*n2.x + n1.y*n2.y;
+      const k = LANE / (1 + dot);          // miter join, exact at right angles
+      return { x:p.x + (n1.x + n2.x) * k, y:p.y + (n1.y + n2.y) * k };
+    });
+  }
+
+  // straights joined by rounded corners, as a path the cab can be driven along
+  function taxiPathD(pts){
+    let d = 'M' + pts[0].x.toFixed(1) + ',' + pts[0].y.toFixed(1);
+    for (let i = 1; i < pts.length - 1; i++){
+      const a = pts[i-1], p = pts[i], c = pts[i+1];
+      const u1 = unitTo(a, p), u2 = unitTo(p, c);
+      d += ' L' + (p.x - u1.x*CORNER).toFixed(1) + ',' + (p.y - u1.y*CORNER).toFixed(1) +
+           ' Q' + p.x.toFixed(1) + ',' + p.y.toFixed(1) +
+           ' '  + (p.x + u2.x*CORNER).toFixed(1) + ',' + (p.y + u2.y*CORNER).toFixed(1);
+    }
+    const e = pts[pts.length - 1];
+    return d + ' L' + e.x.toFixed(1) + ',' + e.y.toFixed(1);
+  }
+
+  function taxiGo(cab){
+    if (!cab.el.isConnected) return;                       // the map was redrawn
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches){
+      cab.timer = setTimeout(function(){ taxiGo(cab); }, 3000);
+      return;
+    }
+    const guide = node('path', { d:taxiPathD(taxiLane(taxiWaypoints())), fill:'none', stroke:'none' });
+    svg.appendChild(guide);
+    cab.tween = gsap.to(cab.el, {
+      duration: guide.getTotalLength() / TAXI_SPEED,
+      ease: 'none',
+      motionPath: { path: guide, autoRotate: true },
+      onComplete: function(){
+        guide.remove();
+        cab.timer = setTimeout(function(){ taxiGo(cab); }, 600 + Math.random() * 2600);
+      }
+    });
+  }
+
+  function startTaxis(){
+    taxiFleet.forEach(function(c){
+      if (c.tween) c.tween.kill();
+      clearTimeout(c.timer);
+    });
+    taxiFleet = [];
+    if (!window.gsap || !window.MotionPathPlugin) return;  // no framework, no traffic
+    gsap.registerPlugin(MotionPathPlugin);
+    const traffic = node('g', { class:'traffic' });
+    svg.appendChild(traffic);
+    for (let i = 0; i < TAXI_N; i++){
+      const cab = { el:taxiNode(), tween:null, timer:0 };
+      traffic.appendChild(cab.el);
+      taxiFleet.push(cab);
+      cab.timer = setTimeout(function(){ taxiGo(cab); }, 300 + i * 1100);
+    }
+  }
+
+  // A tap that lands near a place counts for it: the nearest one inside this
+  // radius wins, which gives big finger-sized targets without any overlapping
+  // circles on the map. Places sit one grid block apart (230 units at the
+  // closest), so 90 leaves comfortable daylight between neighbours.
+  const NEAR = 90;
 
   function nearestPlace(pt){
     let best = null, bestD = Infinity;
@@ -1270,7 +1511,10 @@
       y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
     });
     const m = 130;                       // room for the labels and the taller builds
-    BASE = { x:x0 - m, y:y0 - m, w:(x1 - x0) + m*2, h:(y1 - y0) + m*2 };
+    // the drawn city is bigger than its places — keep the whole slab in frame
+    x0 = Math.min(x0 - m, SLAB.x0); x1 = Math.max(x1 + m, SLAB.x1);
+    y0 = Math.min(y0 - m, SLAB.y0); y1 = Math.max(y1 + m, SLAB.y1);
+    BASE = { x:x0, y:y0, w:x1 - x0, h:y1 - y0 };
     if (typeof recomputeScale === 'function') recomputeScale();
   }
   recomputeBounds();

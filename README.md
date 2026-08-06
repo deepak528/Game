@@ -1,7 +1,7 @@
 # Home Before Dinner
 
-A daily hide-and-seek game played on a small fictional town, loosely shaped
-after the middle of Bethpage, NY. Someone from Hawkins is hiding at one of
+A daily hide-and-seek game played on a small fictional city — a Manhattan-style
+grid with Bethpage names on it. Someone from Hawkins is hiding at one of
 twenty-two places, and they were supposed to be home before dinner. You get
 clues, you search a place, and the town tells you how far off you were.
 
@@ -10,8 +10,8 @@ HAVE YOU SEEN, the face, the name.
 
 ## Playing
 
-Open `index.html` in a browser. That is the whole game — one file, no build, no
-dependencies, no network at all.
+Open `index.html` in a browser. That is the whole game — one file plus a
+vendored copy of GSAP in `vendor/` for the taxis, no build, no network at all.
 
 The map takes 55% of the screen. The panel below it keeps the guess and New
 hunt buttons pinned on one row so they are always in reach, scrolls the clues
@@ -23,14 +23,14 @@ takes space away from the town. The resting view is biased left by half of what
 the clue card covers, so every place stays visible and clickable rather than
 hiding underneath it.
 
-It is built for a phone. A tap counts for the nearest place within 70 map
-units, so the targets are finger-sized (about 60px on an iPhone) without any
+It is built for a phone. A tap counts for the nearest place within 90 map
+units, so the targets are finger-sized without any
 overlapping circles drawn on the map. Safe-area insets keep the controls clear
 of the notch and the home indicator, `dvh` units keep the layout honest while
 Safari's toolbar slides in and out, and adding it to the home screen gives it a
 name and an icon.
 
-Everything is measured from **The Town**, the green at the centre of the map.
+Everything is measured from **The Town**, the park in the middle of the grid.
 The date decides who is hiding and where, so everyone gets the same puzzle and
 scores are directly comparable, with no server and no accounts.
 
@@ -46,7 +46,7 @@ many blocks off you were and which way to go, and unlocks another clue:
 - **Clue 4** — why they picked the place they picked
 
 No compass points and no block counts: nobody knows which way north is on a
-drawing, and "3.5 blocks from the green" told you nothing. Guess feedback is in
+drawing, and "3.5 blocks from the park" told you nothing. Guess feedback is in
 minutes too — "≈4 min away". One block is about a two-minute walk.
 
 Clues are listed newest first, so the one a miss just bought is at the top of
@@ -87,40 +87,47 @@ Palace Arcade, Family Video, Hawkins Lab and Starcourt Mall are on loan from
 Hawkins; the bagels, the salon, the coffee, the cookies and Campagne House are
 pure Bethpage. The arcade goes unlabelled — the neon on the front says enough.
 
-The town is drawn like a crayon map: cream paper, every block coloured in with
-its own pastel, dashed yellow centrelines down the big streets, a smiling sun in
-the corner, and a turbulence filter over the ground so nothing is quite
-straight.
+The city is a grid, easy to follow the way the real one is: six avenues
+(10th, 8th, Broadway, 5th, Park, Lexington) cross six streets (59th down to
+49th), all black asphalt with a double yellow line down every avenue, broken
+white lanes on the streets, zebra crossings on all four sides of every
+intersection, and the street names painted straight onto the tarmac. The grid
+is drawn dead straight — the crayon wobble is gone — but every lot keeps a
+pastel from the old box of crayons, wrapped in a grey sidewalk, so the map
+stays friendly while the streets stay legible.
 
-Shading is one flat colour per block — nothing is layered on top. Where a
-block is a place, the whole block takes its colour: the pines and the ball
-fields are green, the pond block is blue.
+Every place owns a whole block, and every one of the twenty-two is built
+rather than lettered — big models in perspective with a lit face, a shaded
+side and a roof. The Town itself is the park in the middle of the grid: lawn,
+a pond, two paths that meet at the gazebo, trees, and a small swing where a
+kid still swings.
 
-Thirteen places are built rather than lettered — the Mall, Hawkins Lab, the
-Pool, the Baseball Field, the Water Tower, the Train Station, the Grand Diner,
-the High School, the Pizzeria, the Library, Palace Arcade, Crumbl Cookies and
-Campagne House — little models in perspective with a lit face, a shaded side and a
-roof, so they stand up off the paper.
+The grid floats in the river. 55th St runs out over a suspension bridge on
+each side and the elevated line crosses on its own trestle, so a wide desktop
+sees water, bridges and boats past the island, and a phone sees the river
+above and below it.
 
-Nothing crowds anything else: no two markers overlap, no two labels overlap,
-and no label sits on a neighbouring marker. The closest two places — the
-Community Pool and Stuff a Bagel — are 121 units apart, comfortably clear of
-the 70-unit tap radius.
+**Taxis.** Five yellow cabs work the grid, driven by GSAP's MotionPathPlugin
+(vendored, so the game still loads offline). Each cab picks a random run of
+turns through the intersections — mostly straight on, never a U-turn — keeps
+to the right-hand side of the road, rounds its corners on a real curve,
+drives in from offscreen and out again, rests a few seconds, and picks a new
+route. After dark their headlights come on. A cyclist still crosses on 55th
+and the freight still rattles over the trestle, one of each at a time, and
+everything stands still for players who prefer reduced motion.
 
-The town has surroundings, seen when a wide screen looks past it: a meadow and
-an orchard to the west, and to the east a lake with a duck, fields with a
-tractor, and a playground where a kid swings and a ball bounces. A cyclist
-crosses Central Ave and a drawn freight train crosses the rail line — each
-finishes its pass, rests a few seconds, and comes back from a random side, and
-there is only ever one of each. Markers idle with
-a gentle bob and grow a fifth larger under the mouse; by nightfall the kids
-and the cyclist have gone home, though the freight has not. All of it stands
-still for players who prefer reduced motion.
+Markers idle with a gentle bob and grow a fifth larger under the mouse; by
+nightfall the kid on the swing and the cyclist have gone home, though the
+freight and the cabs have not.
 
-Streets, blocks and the railway are all drawn from the `STREETS`, `BLOCKS` and
-`PLACES` arrays at the top of the script — move a coordinate and the town
-redraws. Adding a location means adding one entry
-with an `x`, a `y` and a `hint`; the clue system picks it up automatically.
+Nothing crowds anything else: places sit a full block apart (230 units at the
+closest), comfortably clear of the 90-unit tap radius, and the admin overlap
+check agrees at phone and desktop sizes alike.
+
+The grid is drawn from the `AVX`/`STY` avenue and street tables and the
+`PLACES` array at the top of the script — move a coordinate and the city
+redraws. Adding a location means adding one entry with an `x`, a `y` and a
+`hint`; the clue system picks it up automatically.
 
 ## Admin mode
 
@@ -172,10 +179,10 @@ the choice is remembered.
 
 Night falls on the map alone — the panel, clues and buttons stay in daylight
 the whole way through, so everything stays readable while the town goes dark.
-Along with the dimming and the vines, spores drift up over the map and the
-smiling sun in the corner goes out and loses its face.
+Along with the dimming and the vines, spores drift up over the map, and the
+cabs switch their headlights on.
 
-Six street lamps stand along the main roads. At **8:00 PM** they come on, and
+Six street lamps stand on the corners around the park. At **8:00 PM** they come on, and
 their pools of light are the last warm thing left as the town goes dark.
 
 The clock stops the moment the hunt ends, and New hunt puts it back to five
