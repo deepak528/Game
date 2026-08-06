@@ -100,13 +100,23 @@ turbulence filter over the ground so nothing is quite straight. Around it sit
 the meadow, the orchard, a lake with a duck, fields with a tractor and a cow,
 and a full-size playground with a swing, a slide and a ball.
 
-**The City** is a grid, easy to follow the way the real one is: five numbered
-avenues (10th, 8th, 7th, 5th, Park, Lexington) cross six streets (59th down to
-49th), all black asphalt with a double yellow line down every avenue, broken
-white lanes on the streets, zebra crossings on all four sides of every
-intersection, and the street names painted straight onto the tarmac. Every lot
-keeps a pastel from the old box of crayons, wrapped in a grey sidewalk, so the
-map stays friendly while the streets stay legible.
+**The City** is a grid, easy to follow the way the real one is: six avenues
+(10th, 8th, 7th, 5th, Park, Lexington) cross six streets (59th down to 49th),
+all black asphalt with a double yellow line down every avenue, broken white
+lanes on the streets, zebra crossings on all four sides of every intersection,
+and the street names painted straight onto the tarmac. Every lot keeps a
+pastel from the old box of crayons, wrapped in a grey sidewalk, so the map
+stays friendly while the streets stay legible.
+
+**But nobody laid it with a ruler.** No road is quite the width of its
+neighbour — the streets run 32 to 40 units and the avenues 38 to 48, with Park
+Ave a 52-unit boulevard — and no two intersections line up exactly, so an
+avenue is a polyline through its own crossings rather than a straight line and
+every block is a slightly different quadrilateral. The lane paint follows the
+kinks, the crosswalks take their width from the two roads that meet there, and
+the block shapes fall out of wherever the corners landed. The one hard floor is
+the narrowest street: it still has to hold a cab driving a lane's width off the
+centreline, which is what sets the minimum.
 
 **Broadway does not care about the grid.** It runs the whole way across on the
 diagonal, top right to bottom left, crossing every avenue and every street and
@@ -114,6 +124,8 @@ shaving a corner off the park. What is left of the square blocks either side of
 it are wedge lots, and on the biggest sliver the city planted a triangle of
 grass and called it Herald Sq. Broadway is threaded so that at each row of
 blocks it passes midway between two of them, so nothing it cuts is a building.
+Herald Sq is cut from the lot it sits on, so it follows that block wherever
+the jitter happened to put it.
 
 Nothing else is quite perfect either. The paint is worn: every line is laid
 down in a few runs of different fadedness, a stretch here and there has gone
@@ -121,7 +133,8 @@ altogether, some crossings have lost a stripe from one end, and no street-name
 stencil is quite square. The island's edge is nibbled all the way round rather
 than ruled, with a pier sticking out into the water on each side. Hydrants
 stand on the corners, scaffolding is up against the high school, and a vent in
-5th Ave has been steaming for years. All of it is drawn from one fixed seed, so
+5th Ave has been steaming for years — each of them pinned to the block or road
+it belongs to rather than to a fixed coordinate. All of it is drawn from one fixed seed, so
 the city wears the same way every time it is drawn — a new hunt does not
 repave the streets.
 
@@ -157,8 +170,8 @@ apart (230 units); the Town packs them as close as 121, still clear of its
 70-unit tap radius. The admin overlap check agrees at phone and desktop sizes
 alike, on both.
 
-The City grid is drawn from the `AVX`/`STY` avenue and street tables plus
-`BWAY` for the diagonal, the
+The City grid is drawn from the `AVX`/`STY` avenue and street tables, jittered
+into the `NODE` table of real intersections, plus `BWAY` for the diagonal; the
 Town from its own `TOWN_STREETS`/`TOWN_BLOCKS`, and both share the
 `PLACES` array at the top of the script — move a coordinate and the city
 redraws. Adding a location means adding one entry with an `x`, a `y` and a
